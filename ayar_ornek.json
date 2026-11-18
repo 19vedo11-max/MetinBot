@@ -79,7 +79,7 @@
       "olunce": true
     }
   ],
-  "sadece_slot": false,
+  "sadece_slot": true,
   "slot_en_az": 3,
   "slot_yaricapi_piksel": 200,
   "tekli_bekleme_turu": 10,
@@ -107,7 +107,7 @@
   ],
   "olunce_yeniden_basla": true,
   "saldiran_yaricapi_piksel": 190,
-  "npc_gorevleri": true,
+  "npc_gorevleri": false,
   "npc_gorev_araligi_sn": 300,
   "npc_tekrar_dk": 20,
   "gorev_npcleri": {
@@ -135,13 +135,13 @@
   "vuramama_siniri_sn": 7,
   "yakinlik_halkasi_piksel": 260,
   "gorev_tusu": "n",
-  "seviye_alt_fark": 6,
+  "seviye_alt_fark": 0,
   "toplama_en_uzak_piksel": 450,
   "yurumeden_once_tur": 8,
-  "seviye_ust_fark": 25,
+  "seviye_ust_fark": 38,
   "en_fazla_yaratik_seviyesi": 9,
   "metin_vurus_suresi_sn": 120,
-  "metin_kes": true,
+  "metin_kes": false,
   "metin_tarama_sn": 3,
   "metin_kelimeleri": [
     "metin",
@@ -154,11 +154,11 @@
   "bos_tur_siniri": 40,
   "olum_kare_siniri": 3,
   "profil": "level",
-  "aranan_oncelik": true,
+  "aranan_oncelik": false,
   "yeniden_baglan": true,
   "dusuk_seviye_kesme": true,
   "av_gorevi": true,
-  "gorev_parsomen": true,
+  "gorev_parsomen": false,
   "beceri_sirasi": [],
   "beceri_sira_konum": [
     [

@@ -24,6 +24,7 @@ import numpy as np
 import win32gui
 from PIL import Image, ImageGrab
 
+import gorev_yurut as gy_mod
 import oku
 import rakam
 import yol as yolbul
@@ -83,6 +84,7 @@ VARSAYILAN = {
     "yolda_saldiri_can": 0.7,     # NPC'ye ya da baska bolgeye yururken can bunun altina inerse yolculugu birak
     "npc_gorevleri": True,        # gorev listesinde adi gecen NPC'ye gidip konus
     "npc_gorev_araligi_sn": 300,
+    "gorev_metni_topla": True,    # gorev aciklama metinlerini gorev_metinleri.json'a topla (yalniz okur, ilerletmez)
     "halkali_npc": False,         # haritadaki pembe halkali yerlere gitme (Vedat istemedi; cogu yarim gorev, bosa yuruyus)
     "npc_tekrar_dk": 20,          # ayni NPC'ye en erken bu kadar dakika sonra yeniden git
     "gorev_npcleri": {            # gorev yazisinda gecen kelime -> haritadaki NPC adi
@@ -126,6 +128,8 @@ VARSAYILAN = {
     "kare_paylas_adi": "",        # paylasanin takma adi (bos = bilgisayar adi)
     "kare_paylas_gunluk": 200,    # gunde en cok bu kadar kare paylas
     "alan_kullan": False,         # True: cizilen kasilma alaninin disina cikma (panelde secenek)
+    "gorev_yurutucu": True,       # gorev_tablosu.json sirasiyla gorevleri yurut (yalniz profil yalniz_gorev/gorev)
+    "gorev_esya_dk": 5,           # esya_dusur adiminda yaratigi bu kadar dk kes, sonra NPC'ye teslime git
     "yalniz_gorev": False,        # True: genel slot kesme yok; yalniz gorev yaratigi, NPC ve parsomen
     "kasilma_alani": None,        # panelde haritaya cizilen daire {"harita", "x", "y", "r"} (oran); doluysa bot disina cikmaz
     "olum_dongusu_sayisi": 3,     # bu kadar olum ...
@@ -1246,6 +1250,43 @@ def calistir(ayar, sablon):
         tikla(*kapat_d)
         return False
 
+    GOREV_JSON = os.path.join(KLASOR, "gorev_metinleri.json")
+
+    def gorev_json_oku():
+        try:
+            with open(GOREV_JSON, encoding="utf-8") as f_:
+                d_ = json.load(f_)
+            return d_ if isinstance(d_, dict) else {}
+        except Exception:
+            return {}
+
+    def gorev_json_yaz(d_):
+        try:
+            gecici_ = GOREV_JSON + ".tmp"
+            with open(gecici_, "w", encoding="utf-8") as f_:
+                json.dump(d_, f_, ensure_ascii=False, indent=1)
+            os.replace(gecici_, GOREV_JSON)
+        except Exception as e_:
+            print(f"   gorev_json yazilamadi: {e_}")
+
+    def diyalog_kaydet(satirlar):
+        """Okunan her NPC diyalogunu (NPC adi + metin) gorev_metinleri.json 'diyaloglar' listesine ekler (son 200). Yalniz kayit."""
+        try:
+            parcalar_ = [t["yazi"].strip() for t in satirlar if t["yazi"].strip()]
+            if not parcalar_:
+                return
+            npc_ = next((p_.rstrip(":").strip() for p_ in parcalar_ if p_.endswith(":")), "")
+            d_ = gorev_json_oku()
+            liste_ = d_.setdefault("diyaloglar", [])
+            kayit_ = {"zaman": time.strftime("%Y-%m-%d %H:%M:%S"), "npc": npc_, "metin": " ".join(parcalar_)}
+            if liste_ and liste_[-1].get("metin") == kayit_["metin"]:
+                return
+            liste_.append(kayit_)
+            del liste_[:-200]
+            gorev_json_yaz(d_)
+        except Exception:
+            pass
+
     def diyalog_acik(kf, taban):
         """Ortada konusma/gorev penceresi acik mi? (karartma ya da OK/Tamam/Evet yazisi)"""
         yuk_, gen_ = kf.shape[:2]
@@ -1279,6 +1320,8 @@ def calistir(ayar, sablon):
             satirlar = oku.oku(kf, kutu=(gen_ // 2 - 340, yuk_ * 0.2, gen_ // 2 + 340, yuk_ * 0.85), olcek=3)
             print(f"   diyalog adim {adim}:", " | ".join(t["yazi"] for t in satirlar))
             tum_s = oku.sade(" ".join(t["yazi"] for t in satirlar))
+            if not any(w in tum_s for w in ("satin al", "nesne market", "fiyat ep", "magaza", "fiyat", "satici")):
+                diyalog_kaydet(satirlar)
             if any(w in tum_s for w in ("satin al", "nesne market", "fiyat ep", "ep yukle", " ep ", "markete git", "magaza", "fiyat", "satici", "yere at", "atmak ist", "dusur")):
                 print("   KORUMA: satin alma / market penceresi - hicbir seye basilmadi, Esc ile kapatildi")
                 for _ in range(3):
@@ -2019,6 +2062,214 @@ def calistir(ayar, sablon):
         pencereleri_kapat()
         return yazi
 
+    son_gorev_metni = [0.0]
+
+    def gorev_metni_topla():
+        su_an[0] = "gorev_metni_topla"
+        """Gorev penceresindeki her gorevin parsomen simgesine tiklar, aciklama metnini OKUR (secim/onay yapmaz;
+        yalniz 'Devam' ile sonraki sayfaya gecer, en cok 5 sayfa), gorev_metinleri.json'a yazar. Ayni gorev gunde 1 kez."""
+        bugun = time.strftime("%Y-%m-%d")
+        dk = os.path.join(KLASOR, "goruntu", "gorev_metin")
+        os.makedirs(dk, exist_ok=True)
+
+        def pencere_ac():
+            pencereleri_kapat()
+            pydirectinput.press(ayar["gorev_tusu"])
+            time.sleep(1.0)
+            pydirectinput.moveTo(ox_son[0] + 960, ox_son[1] + 1000)
+            time.sleep(0.3)
+            kf_ = kare_al(h)
+            pen_ = sorted(acik_pencereler(kf_, kapat_s))
+            return kf_, pen_
+
+        def zaman_satiri(u):
+            sd_ = oku.sade(u["yazi"])
+            return "zaman" in sd_.split() or sd_.startswith("kalan") or oku.benzer(u["yazi"], "tamamlandi")
+
+        kf, pencere = pencere_ac()
+        if not pencere:
+            pencereleri_kapat()
+            return 0
+        cx, cy = pencere[0]
+        satirlar = oku.oku(kf, kutu=(max(0, cx - 520), cy + 10, cx + 15, cy + 560), olcek=3)
+        satirlar = sorted(satirlar, key=lambda t: t["y"])
+        gorevler = []                                   # (ham baslik, simge y)
+        for t in satirlar:
+            if zaman_satiri(t):
+                ust = [u for u in satirlar if 8 < t["y"] - u["y"] < 48 and not zaman_satiri(u) and u["x0"] > cx - 245]
+                if ust:
+                    gorevler.append((" ".join(u["yazi"] for u in ust), t["y"] + 8))
+        veri = gorev_json_oku()
+        print(f"{time.strftime('%H:%M:%S')}  gorev metni: {len(gorevler)} baslik: " + " | ".join(g[0] for g in gorevler))
+        okunan = 0
+        for i, (baslik, sy) in enumerate(gorevler[:8]):
+            anahtar = oku.sade(baslik)
+            if not anahtar:
+                continue
+            for k_ in list(veri):                          # OCR gurultusu: benzer eski anahtara esle
+                if k_ != "diyaloglar" and k_ != anahtar and oku.benzer(anahtar, k_, 0.85):
+                    anahtar = k_
+                    break
+            kayit = veri.get(anahtar)
+            if kayit and kayit.get("son") == bugun:
+                continue
+            if i > 0:
+                kf, pencere = pencere_ac()
+                if not pencere:
+                    break
+                cx, cy = pencere[0]
+            taban = orta_parlaklik(kf)
+            tikla(cx - 252, sy)
+            time.sleep(1.3)
+            if not diyalog_acik(kare_al(h), taban):
+                print(f"   gorev metni: '{baslik}' icin diyalog acilmadi")
+                pencereleri_kapat()
+                continue
+            sayfalar, goruntuler = [], []
+            for sayfa in range(5):
+                if win32gui.GetForegroundWindow() != h:
+                    break
+                kd = kare_al(h)
+                if not diyalog_acik(kd, taban):
+                    break
+                n = len([f_ for f_ in os.listdir(dk) if f_.startswith(bugun)]) + 1
+                yol_g = os.path.join(dk, f"{bugun}_{n}.png")
+                Image.fromarray(kd).save(yol_g)
+                goruntuler.append(os.path.relpath(yol_g, KLASOR))
+                yuk_, gen_ = kd.shape[:2]
+                sat = oku.oku(kd, kutu=(gen_ // 2 - 215, yuk_ * 0.32, gen_ // 2 + 215, yuk_ * 0.68), olcek=4)
+                metin = " ".join(t["yazi"].strip() for t in sat if t["yazi"].strip())
+                tum_s = oku.sade(metin)
+                if any(w in tum_s for w in ("satin al", "nesne market", "fiyat", "magaza", "satici")):
+                    break
+                if sayfalar and metin == sayfalar[-1]:
+                    break
+                sayfalar.append(metin)
+                kisa = [t for t in sat if len(oku.sade(t["yazi"])) <= 34]
+                kelimeler = set(w for t in kisa for w in oku.sade(t["yazi"]).split())
+                secim = kelimeler & {"evet", "hayir", "kabul", "ret", "vazgec", "reddet", "onayla"}
+                devam = [t for t in kisa if any(w in oku.sade(t["yazi"]).split() for w in ("devam", "ileri", "sonraki"))]
+                if secim or not devam:
+                    break                               # secim ya da belirsiz/Tamam-Kapat: hicbir seye basma, Esc ile cik
+                tikla(devam[0]["x"], devam[0]["y"])
+                time.sleep(0.8)
+                pydirectinput.moveTo(ox_son[0] + 300, ox_son[1] + 900)
+            for _ in range(3):
+                pydirectinput.press("esc")
+                time.sleep(0.25)
+            if sayfalar:
+                veri = gorev_json_oku()                 # diyalog_kaydet de dosyaya yazmis olabilir
+                eski = veri.get(anahtar, {})
+                veri[anahtar] = {"baslik": baslik, "metin": sayfalar, "ilk": eski.get("ilk", bugun), "son": bugun,
+                                 "goruntu": goruntuler}
+                gorev_json_yaz(veri)
+                okunan += 1
+                print(f"{time.strftime('%H:%M:%S')}  gorev metni kaydedildi: {baslik} ({len(sayfalar)} sayfa)")
+        pencereleri_kapat()
+        return okunan
+
+    gy = {"k": None, "adim": 0, "ilerleme": 0.0, "adim_bas": 0.0, "kalan": None, "ceza": {}, "bos": 0.0,
+          "kasil_son": 0.0, "deneme": 0}
+
+    def gorev_yurut(yazi):
+        """gorev_tablosu.json'a gore gorevleri sirayla yurutur. NPC'ye yurudu/konustuysa True."""
+        su_an[0] = "gorev_yurut"
+        simdi = time.time()
+        tablo = gy_mod.tablo_yukle()
+        if not tablo:
+            return False
+        yalniz = bool(ayar.get("yalniz_gorev"))
+        gor, kalan_map, metinler = [], {}, None
+        for b_, kal_ in gy_mod.basliklari_ayir(yazi):
+            k_ = gy_mod.esle(b_, tablo)
+            if k_ is None:
+                metinler = metinler if metinler is not None else gorev_json_oku()
+                ad_ = next((kk for kk in metinler if kk != "diyaloglar" and difflib.SequenceMatcher(None, kk, b_).ratio() >= 0.8), None)
+                if gy_mod.eksik_yaz(b_, (metinler.get(ad_) or {}).get("metin") if ad_ else None):
+                    print(f"{time.strftime('%H:%M:%S')}  gorev: tabloda yok -> gorev_tablosu_eksik.json: {b_}")
+                continue
+            if k_ not in kalan_map:
+                gor.append(k_)
+                kalan_map[k_] = kal_
+        cur = gy["k"]
+        if cur:
+            if cur not in kalan_map:
+                print(f"{time.strftime('%H:%M:%S')}  gorev: '{cur}' listeden kalkti (bitti)")
+                cur = gy["k"] = None
+            else:
+                if kalan_map[cur] is not None and gy["kalan"] is not None and kalan_map[cur] < gy["kalan"]:
+                    gy["ilerleme"] = simdi
+                gy["kalan"] = kalan_map[cur]
+                if simdi - gy["ilerleme"] > 1200:
+                    print(f"{time.strftime('%H:%M:%S')}  gorev takildi: {cur} - sona alindi")
+                    gy["ceza"][cur] = simdi + 1800
+                    cur = gy["k"] = None
+        if not cur:
+            aday = sorted((tablo[k_].get("sira", 99), k_) for k_ in gor
+                          if not tablo[k_].get("atla") and gy["ceza"].get(k_, 0) < simdi
+                          and (tablo[k_].get("adimlar") or k_ == "av gorevi"))
+            if aday and simdi - gy["kasil_son"] > 600:
+                cur = gy["k"] = aday[0][1]
+                gy.update(adim=0, ilerleme=simdi, adim_bas=simdi, kalan=kalan_map[cur], bos=0.0, deneme=0)
+            elif aday:
+                return False                                   # kasilma beklemesi (10 dk)
+            else:
+                if not gy["bos"]:
+                    gy["bos"] = simdi
+                if not yalniz or simdi - gy["bos"] > 300:
+                    ayar["sadece_hedefler"] = []
+                    if simdi - gy["kasil_son"] > 600:
+                        gy["kasil_son"] = simdi
+                        print(f"{time.strftime('%H:%M:%S')}  gorev: yapilacak adim yok - kasiliyor")
+                else:
+                    ayar["sadece_hedefler"] = ["(gorev yaratigi yok)"]
+                return False
+        kayit = tablo[cur]
+        adimlar = kayit.get("adimlar") or [{"tur": "kes", "yaratik": "<gorev listesinden>"}]
+        if gy["adim"] >= len(adimlar):
+            gy["ceza"][cur] = simdi + (600 if kayit.get("tekrar") else 1800)
+            print(f"{time.strftime('%H:%M:%S')}  gorev: '{cur}' adimlari bitti ({'tekrar: sona' if kayit.get('tekrar') else 'listede kaldi: bekle'})")
+            gy["k"] = None
+            return False
+        a_ = adimlar[gy["adim"]]
+        tur = a_.get("tur")
+        hedef = a_.get("yaratik") or a_.get("npc") or ""
+        if str(hedef).startswith("<"):
+            hedef = av_aranan[0] if av_aranan else ""
+        etiket = (cur, gy["adim"])
+        if gy.get("son_etiket") != etiket:
+            gy["son_etiket"] = etiket
+            print(f"{time.strftime('%H:%M:%S')}  gorev sirasi: {cur} (adim {gy['adim'] + 1}/{len(adimlar)}: {tur} {hedef or '?'})")
+        if tur in ("kes", "esya_dusur"):
+            ayar["sadece_hedefler"] = [hedef] if hedef else (["(gorev yaratigi yok)"] if yalniz else [])
+            if tur == "esya_dusur" and hedef:
+                if hedef not in aranan_durum:
+                    aranan_durum.append(hedef)
+                    del aranan_durum[:-5]
+                    durum_yaz(aranan=aranan_durum)
+                if simdi - gy["adim_bas"] >= ayar.get("gorev_esya_dk", 5) * 60:      # esya dususu izi yok: sureye gore teslime
+                    gy["adim"] += 1
+                    gy["adim_bas"] = gy["ilerleme"] = simdi
+            return False
+        if tur in ("npc_ver", "npc_konus"):
+            if not hedef or win32gui.GetForegroundWindow() != h or not sakin_mi(kare_al(h)):
+                return False
+            ok_ = npc_git(hedef, [], "npc_gorev")
+            print(f"{time.strftime('%H:%M:%S')}  gorev npc '{hedef}' ({tur}): {'konusuldu' if ok_ else 'olmadi'}")
+            if ok_:
+                gy["adim"] += 1
+                gy["adim_bas"] = gy["ilerleme"] = simdi
+                gy["deneme"] = 0
+            else:
+                gy["deneme"] += 1
+                if gy["deneme"] >= 3:
+                    print(f"{time.strftime('%H:%M:%S')}  gorev takildi: {cur} - sona alindi")
+                    gy["ceza"][cur] = simdi + 1800
+                    gy["k"] = None
+            return True
+        gy["adim"] += 1                                         # bilinmeyen tur: atla
+        return False
+
     def npc_gorevi_yap():
         su_an[0] = "npc_gorevi_yap"
         """Once tamamlanan gorev odullerini alir, sonra haritada halkali (gorev veren) NPC'lere,
@@ -2027,17 +2278,30 @@ def calistir(ayar, sablon):
             return False
         yazi = gorev_listesi()
         print(f"{time.strftime('%H:%M:%S')}  gorevler: {yazi}")
+        if ayar.get("gorev_metni_topla") and time.time() - son_gorev_metni[0] > 1800 and sakin_mi(kare_al(h)):
+            son_gorev_metni[0] = time.time()
+            try:
+                gorev_metni_topla()
+            except Exception:
+                import traceback
+                print("gorev_metni_topla hatasi:", traceback.format_exc()[-400:])
+                pencereleri_kapat()
         m_av = re.search(r"av gorevi ((?:[a-z]+ ){1,4}?)(?:zaman|kalan)", " ".join(oku.sade(yazi).split()) + " ")
         yeni_av = [m_av.group(1).strip()] if m_av and len(m_av.group(1).replace(" ", "")) >= 5 else []
         if yeni_av != av_aranan:
             av_aranan[:] = yeni_av
-        if ayar.get("yalniz_gorev"):                       # yalniz gorev: yalniz gorevin istedigi yaratik kesilir
+        yurutucu = ayar.get("gorev_yurutucu", True) and ayar.get("profil") in ("yalniz_gorev", "gorev")
+        if yurutucu and gorev_yurut(yazi):
+            return True
+        if ayar.get("yalniz_gorev") and not yurutucu:      # yalniz gorev: yalniz gorevin istedigi yaratik kesilir
             ayar["sadece_hedefler"] = list(av_aranan) or ["(gorev yaratigi yok)"]
             print(f"{time.strftime('%H:%M:%S')}  av gorevi hedefi: {yeni_av[0] if yeni_av else 'yok'}")
         if not ayar["npc_gorevleri"]:               # yalniz av gorevi icin liste okundu; NPC'ye gidilmez
             return False
         if ayar["halkali_npc"] and halkali_npc_git():
             return True
+        if yurutucu:
+            return False
         denemeler = durum_oku().get("npc_deneme", {})
         for kelime, npc in ayar["gorev_npcleri"].items():
             if not oku.benzer(yazi, kelime):
@@ -2530,7 +2794,7 @@ def calistir(ayar, sablon):
         giris.pop("bilinmeyen_bas", None)
         return False
 
-    kod_dosyalari = [os.path.join(KLASOR, f) for f in ("bot.py", "oku.py", "rakam.py", "yol.py", "ayar.json")]
+    kod_dosyalari = [os.path.join(KLASOR, f) for f in ("bot.py", "oku.py", "rakam.py", "yol.py", "gorev_yurut.py", "ayar.json")]
 
     def kod_damgasi():
         return tuple(os.path.getmtime(f) if os.path.exists(f) else 0 for f in kod_dosyalari)
