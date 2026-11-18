@@ -1029,11 +1029,20 @@ def calistir(ayar, sablon):
             yakin = [e for e in esya_etiketleri(k) if math.hypot(e[0] - kx, e[1] - ky) < ayar["esya_yaricapi_piksel"]]
             if not yakin or win32gui.GetForegroundWindow() != h:
                 return
+            if saldiri_altinda():                           # vuruluyorum: once savas, esyalar sonra
+                return
             ex, ey = min(yakin, key=lambda e: math.hypot(e[0] - kx, e[1] - ky))
+            n0_ = len(yakin)
             pydirectinput.moveTo(ox_ + ex, oy_ + ey)
             time.sleep(0.05)
             pydirectinput.click()
-            time.sleep(0.25 + math.hypot(ex - kx, ey - ky) / 700)
+            # sabit bekleme yerine: esya alininca (etiket sayisi azalinca) hemen siradakine gec; uzaksa yurumesini bekle
+            bekle_ = time.time() + 0.5 + math.hypot(ex - kx, ey - ky) / 450
+            while time.time() < bekle_:
+                time.sleep(0.12)
+                k_t = kare_al(h)
+                if len([e for e in esya_etiketleri(k_t) if math.hypot(e[0] - kx, e[1] - ky) < ayar["esya_yaricapi_piksel"]]) < n0_:
+                    break
             pydirectinput.press(ayar["toplama_tusu"])
             time.sleep(0.08)
 
