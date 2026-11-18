@@ -1186,7 +1186,7 @@ def calistir(ayar, sablon):
         if len(menzil_ornek) < 15:
             return 170.0
         s_ = sorted(menzil_ornek)
-        return float(min(260, max(90, s_[int(len(s_) * 0.85)])))
+        return float(min(200, max(90, s_[int(len(s_) * 0.70)])))   # %70 dilim: uzaktan vuran beceri (kilic cevirme) ornekleri sismesin
 
     def menzil_kaydet(k_, gen_, yuk_):
         """Can dusurdugumuz anda hedefin uzakligini kaydet (saniyede en cok 1)."""
