@@ -80,10 +80,10 @@
     }
   ],
   "sadece_slot": true,
-  "slot_en_az": 3,
+  "slot_en_az": 6,
   "slot_yaricapi_piksel": 200,
   "tekli_bekleme_turu": 10,
-  "toplanacak_grup": 1,
+  "toplanacak_grup": 2,
   "grup_ayrim_piksel": 230,
   "toplama_can_siniri": 0.6,
   "spot_ust_sure_sn": 120,
@@ -186,5 +186,6 @@
   "hizli_vazgec": false,
   "hizli_engel": false,
   "yolo_slot": true,
-  "engel_hafiza": false
+  "engel_hafiza": false,
+  "kamera_egim_aralik_sn": 90
 }

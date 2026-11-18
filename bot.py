@@ -2747,6 +2747,14 @@ def calistir(ayar, sablon):
     son_c_seviye = [zaman_oku("c_seviye") if benim_sev else 0.0]   # yeniden acilista seviye biliniyorsa C penceresini hemen acma
     exp_olcum = []                # (zaman, seviye, exp, gerekli)
     exp_toplam = [0, time.time(), None]   # toplam kazanc, olcum baslangici, saatlik
+    try:                          # bot sik yeniden acilinca olcum hic tamamlanmiyordu: son olcumu dosyadan devral
+        with open(_ZAMAN_YOL, encoding="utf-8") as _f:
+            _z = json.load(_f)
+        if _z.get("exp_son") and time.time() - _z["exp_son"][0] < 1800:
+            exp_olcum.append(tuple(_z["exp_son"]))
+            exp_toplam[0], exp_toplam[1] = _z.get("exp_toplam", [0, _z["exp_son"][0]])
+    except Exception:
+        pass
 
     def exp_kaydet(sev_, exp_, gerekli_):
         """Okunan (seviye, exp, gerekli) kaydedilir; ilk okumadan bu yana saatlik tecrube hesaplanir."""
@@ -2766,6 +2774,8 @@ def calistir(ayar, sablon):
         else:
             exp_toplam[0], exp_toplam[1] = 0, simdi_
         exp_olcum.append((simdi_, sev_, exp_, gerekli_))
+        zaman_yaz("exp_son", [simdi_, sev_, exp_, gerekli_])
+        zaman_yaz("exp_toplam", [exp_toplam[0], exp_toplam[1]])
         gecen_ = simdi_ - exp_toplam[1]
         if gecen_ > 120:
             saat_ = exp_toplam[0] / gecen_ * 3600
