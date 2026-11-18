@@ -36,6 +36,63 @@ EN_COK_YENI = 700         # bir gecede en cok bu kadar yeni kare isaretlenir (su
 EN_COK_SET = 6000         # set6 bunu asarsa en eski egitim kareleri cikarilir
 ESIK_KONTROL = 0.35       # yeni karelerde mAP50 bunun altindaysa Vedat'tan kontrol iste
 TUR = 25
+EN_COK_ARKADAS = 400      # bir gecede arkadas karelerinden en cok bu kadar (kendi kotasindan ayri)
+EK_KAYNAKLAR = [os.path.join(os.environ["OneDrive"], "MetinBot-Kareler")] if os.environ.get("OneDrive") else []
+
+
+def arkadas_kareleri():
+    """EK_KAYNAKLAR altindaki kisi/gun/*.jpg (60 sn den eski) -> {kisi: [dosya]}."""
+    kisiler = {}
+    for kok in EK_KAYNAKLAR:
+        if not os.path.isdir(kok):
+            continue
+        for f in glob.glob(os.path.join(kok, "*", "**", "*.jpg"), recursive=True):
+            try:
+                if time.time() - os.path.getmtime(f) <= 60:
+                    continue
+            except OSError:
+                continue
+            kisi = os.path.relpath(f, kok).split(os.sep)[0]
+            kisiler.setdefault(kisi, []).append(f)
+    return kisiler
+
+
+def adil_dagit(kisiler, toplam):
+    """Kisi basina esit pay; az olanin artani digerlerine gecer."""
+    havuz = {k: random.sample(v, len(v)) for k, v in kisiler.items() if v}
+    secim, sira = [], sorted(havuz)
+    while len(secim) < toplam and any(havuz.values()):
+        for k in sira:
+            if havuz[k] and len(secim) < toplam:
+                secim.append(havuz[k].pop())
+    return secim
+
+
+def arkadas_adi(f):
+    for kok in EK_KAYNAKLAR:
+        if f.startswith(kok):
+            return os.path.relpath(f, kok).split(os.sep)[0]
+    return "?"
+
+
+def benzersiz_ad(f):
+    """Arkadas karesi icin set/arsiv adi: kisi_gun_zaman (cakisma olmasin)."""
+    for kok in EK_KAYNAKLAR:
+        if f.startswith(kok):
+            kisi, gun, zaman = (os.path.relpath(f, kok).split(os.sep) + ["", "", ""])[:3]
+            return f"ark_{kisi}_{gun}_{os.path.splitext(os.path.basename(f))[0]}.jpg"
+    return os.path.basename(f)
+
+
+def kuru_say():
+    ham = [f for f in glob.glob(os.path.join(Y.HAM, "*.jpg")) if time.time() - os.path.getmtime(f) > 60]
+    ark = arkadas_kareleri()
+    secilen = adil_dagit(ark, EN_COK_ARKADAS)
+    print(f"kendi yeni kare: {len(ham)} (esik {EN_AZ_YENI}, gece en cok {EN_COK_YENI})")
+    for k, v in sorted(ark.items()):
+        print(f"arkadas {k}: {len(v)} kare bulundu, {sum(1 for f in secilen if arkadas_adi(f) == k)} secilecek")
+    if not ark:
+        print("arkadas karesi yok")
 
 
 def _pythonw():
@@ -98,12 +155,27 @@ def calis():
     for f in [f for f in ham if os.path.basename(f) in set_adlari]:      # zaten sette olanlar: arsive
         shutil.move(f, os.path.join(ARSIV, os.path.basename(f)))
     yeni = [f for f in sorted(glob.glob(os.path.join(Y.HAM, "*.jpg"))) if time.time() - os.path.getmtime(f) > 60]
-    if len(yeni) < EN_AZ_YENI:
-        yaz(f"yeni kare az ({len(yeni)} < {EN_AZ_YENI}) - egitim yok")
-        return
     random.seed(int(time.time()))
+    ark_say = {}
+    ark_sec = adil_dagit(arkadas_kareleri(), EN_COK_ARKADAS)
+    for f in ark_sec:
+        ark_say[arkadas_adi(f)] = ark_say.get(arkadas_adi(f), 0) + 1
+    if len(yeni) + len(ark_sec) < EN_AZ_YENI:
+        yaz(f"yeni kare az (kendi {len(yeni)} + arkadas {len(ark_sec)} < {EN_AZ_YENI}) - egitim yok")
+        return
     random.shuffle(yeni)
     secilen, artan = yeni[:EN_COK_YENI], yeni[EN_COK_YENI:]
+    if ark_sec:
+        yaz(f"arkadas kareleri: kendi {len(secilen)}, arkadas {len(ark_sec)} (" +
+            ", ".join(f"{k} {n}" for k, n in sorted(ark_say.items())) + ")")
+        for f in ark_sec:                                  # ham'a kopyala (benzersiz ad), paylasimdan SIL
+            try:
+                hedef = os.path.join(Y.HAM, benzersiz_ad(f))
+                shutil.copy(f, hedef)
+                os.remove(f)
+                secilen.append(hedef)
+            except OSError as e:
+                print("arkadas kare:", e)
     for f in artan:                                                      # fazlasi arsive (gerekirse sonra kullanilir)
         shutil.move(f, os.path.join(ARSIV, os.path.basename(f)))
 
@@ -197,6 +269,9 @@ def calis():
 
 if __name__ == "__main__":
     os.chdir(KLASOR)
+    if "--kuru" in sys.argv:
+        kuru_say()
+        sys.exit(0)
     if sys.stdout is None or sys.stderr is None:                 # pythonw (Gorev Zamanlayici): cikti dosyaya
         _log = open(os.path.join(KLASOR, "gece_egit.log"), "a", encoding="utf-8", buffering=1)
         sys.stdout = sys.stderr = _log

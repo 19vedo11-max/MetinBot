@@ -119,6 +119,9 @@ VARSAYILAN = {
     "savunma_yaricapi_piksel": 330,   # hasar alinca bu yaricaptaki her yaratik hedef (seviye/slot filtresi yok)
     "yolo_veri_sn": 4,            # sekil modeli egitim verisi: bu aralikla kare kaydet (0 = kapali)
     "yolo_veri_en_cok": 3000,
+    "kare_paylas_klasoru": "",    # bos = kapali; doluysa kaydedilen karelerin bir kismi bu klasore kopyalanir
+    "kare_paylas_adi": "",        # paylasanin takma adi (bos = bilgisayar adi)
+    "kare_paylas_gunluk": 200,    # gunde en cok bu kadar kare paylas
     "alan_kullan": False,         # True: cizilen kasilma alaninin disina cikma (panelde secenek)
     "yalniz_gorev": False,        # True: genel slot kesme yok; yalniz gorev yaratigi, NPC ve parsomen
     "kasilma_alani": None,        # panelde haritaya cizilen daire {"harita", "x", "y", "r"} (oran); doluysa bot disina cikmaz
@@ -186,6 +189,35 @@ PROFILLER = {
                      "yalniz_gorev": True, "halkali_npc": True, "sadece_hedefler": ["(gorev yaratigi yok)"]},
     "ozel": {},
 }
+
+
+_PAYLAS = {"n": 0, "gun": "", "say": 0}
+
+
+def _kare_paylas(kare, ayar):
+    """Kaydedilen her 5. kareyi paylasim klasorune kopyalar (kapaliysa/hatada sessizce gecer)."""
+    try:
+        kl = (ayar.get("kare_paylas_klasoru") or "").strip()
+        if not kl or not os.path.isdir(kl):
+            return
+        _PAYLAS["n"] += 1
+        if _PAYLAS["n"] % 5:
+            return
+        gun = time.strftime("%Y%m%d")
+        if _PAYLAS["gun"] != gun:
+            _PAYLAS["gun"], _PAYLAS["say"] = gun, 0
+        if _PAYLAS["say"] >= int(ayar.get("kare_paylas_gunluk") or 0):
+            return
+        ad = re.sub(r'[\\/:*?"<>|]+', "_", (ayar.get("kare_paylas_adi") or "").strip()
+                    or os.environ.get("COMPUTERNAME", "bilgisayar"))
+        hk = os.path.join(kl, ad, gun)
+        os.makedirs(hk, exist_ok=True)
+        Image.fromarray(kare).save(os.path.join(hk, time.strftime("%H%M%S") + ".jpg"), quality=85)
+        _PAYLAS["say"] += 1
+    except Exception:
+        pass
+
+
 
 
 def ayar_yukle():
@@ -3612,6 +3644,7 @@ def calistir(ayar, sablon):
                     os.makedirs(vk, exist_ok=True)
                     if len(os.listdir(vk)) < ayar["yolo_veri_en_cok"] and kirmizi_etiketler(kare):
                         Image.fromarray(kare).save(os.path.join(vk, time.strftime("%Y%m%d_%H%M%S") + ".jpg"), quality=93)
+                        _kare_paylas(kare, ayar)
                 except Exception as e_y:
                     print("yolo veri:", e_y)
             if time.time() - son_izleme > ayar["izleme_araligi_sn"]:

@@ -223,6 +223,14 @@ dialog .ic{overflow:auto;flex:1;min-height:0}
       <select id="statu" aria-label="Puan dağıtımı"></select>
     </div></section>
 
+    <section class="pen"><h2 class="bs">Kare paylaş</h2><div class="ic">
+      <p class="ozet">Oynarken kaydedilen ekran karelerinden günde en çok N tanesi bu klasöre kopyalanır; klasör Vedat'ın paylaştığı OneDrive klasörü olmalı. Kareler ekranının görüntüsüdür (sohbet, adlar dahil); istemiyorsan boş bırak.</p>
+      <input type="text" id="kpKlasor" placeholder="Klasör yolu (boş = kapalı)" aria-label="Paylaşım klasörü" style="width:100%;margin-bottom:.4rem">
+      <input type="text" id="kpAd" placeholder="Takma adın" aria-label="Takma ad" style="width:100%;margin-bottom:.4rem">
+      <input type="number" id="kpSayi" min="0" max="2000" placeholder="Günlük kare sayısı" aria-label="Günlük kare sayısı" style="width:100%;margin-bottom:.4rem">
+      <div class="satir"><span></span><button class="d kucuk" id="kpKaydet">Kaydet</button></div>
+    </div></section>
+
     <section class="pen"><h2 class="bs">Sınırlar</h2><div class="ic" id="kaydirlar"></div></section>
 
     <section class="pen genis"><h2 class="bs">Harita</h2><div class="ic">
@@ -309,6 +317,8 @@ const PLAN_DURUM={level:"level kasıyor",metin:"metin kesiyor",gorev:"önce gör
 
 function ciz(){
   const c=D.canli, a=D.ayar, acik=c.ayakta, durak=c.duraklat, onde=c.oyun_onde;
+  if(!document.activeElement||!String(document.activeElement.id).startsWith("kp")){
+    if(!$("#kpKlasor")._d||Date.now()-dokunuldu>3000){$("#kpKlasor").value=a.kare_paylas_klasoru||"";$("#kpAd").value=a.kare_paylas_adi||"";$("#kpSayi").value=a.kare_paylas_gunluk??200;$("#kpKlasor")._d=1}}
   $("#isik").className="isik "+(acik?(durak||!onde?"bekle":"acik"):"");
   $("#durum").textContent=!acik?"Kapalı":durak?"Duraklatıldı":!onde?"Bekliyor: oyun penceresi önde değil":`Çalışıyor, ${PLAN_DURUM[c.profil]||c.profil}`+(c.pot_bitti?" · can potu bitti, pot al":"");
   $("#sev").textContent=c.seviye||"–";
@@ -364,7 +374,7 @@ function kur(){
   TUM.forEach(([k])=>$("#a_"+k).addEventListener("change",e=>ayarYaz({[k]:e.target.checked})));
   $("#statu").innerHTML=STATULER.map(([k,e])=>`<option value="${k}">${e}</option>`).join("");
   $("#statu").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({statu:e.target.value})});
-  $("#topDugme").onclick=topla; $("#esyaDugme").onclick=esyaPenceresi; $("#beceriDugme").onclick=beceriPenceresi; $("#hedefDugme").onclick=canavarPenceresi;
+  $("#topDugme").onclick=topla; $("#esyaDugme").onclick=esyaPenceresi; $("#beceriDugme").onclick=beceriPenceresi; $("#kpKaydet").onclick=()=>ayarYaz({kare_paylas_klasoru:$("#kpKlasor").value.trim(),kare_paylas_adi:$("#kpAd").value.trim(),kare_paylas_gunluk:Math.max(0,parseInt($("#kpSayi").value)||0)}); $("#hedefDugme").onclick=canavarPenceresi;
   $("#kaydirlar").innerHTML=KAYDIRLAR.map(([k,e,mn,mx,ad])=>`<div class="kaydir"><div><span>${e}</span><b id="v_${k}"></b></div><input type="range" id="r_${k}" min="${mn}" max="${mx}" step="${ad}" aria-label="${e}"></div>`).join("");
   KAYDIRLAR.forEach(([k,,,,ad,f])=>{const i=$("#r_"+k);
     i.addEventListener("input",()=>{dokunuldu=Date.now();$("#v_"+k).textContent=f(+i.value,D.canli.seviye)});

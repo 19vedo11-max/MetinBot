@@ -34,6 +34,7 @@ with open(_yol_anahtar) as f:
 
 # panelden degistirilebilen ayarlar (baska anahtar yazilmaz)
 AYAR_IZINLI = {
+    "kare_paylas_klasoru", "kare_paylas_adi", "kare_paylas_gunluk",
     "profil", "alan_kullan", "av_gorevi", "gorev_parsomen", "aranan_oncelik", "npc_gorevleri",
     "dusuk_seviye_kesme", "sadece_slot", "esyaya_tikla", "olunce_yeniden_basla", "yeniden_baglan",
     "beceri_puani_dagit", "pot_yuvasi_doldur", "metin_kes", "pot_satin_al", "pot_al_kirmizi_paket", "pot_al_mavi_paket",
