@@ -1,0 +1,22 @@
+# kullaniciya ozel / calisma dosyalari (guncellemede ezilmesin)
+ayar.json
+web_anahtar.txt
+canli.json
+durum.json
+komut.json
+komut.json.tmp
+pot_al.istek
+exp_olcum.csv
+*.log
+goruntu/
+veri_yolo/
+runs/
+model/
+yolo_env/
+rapor/
+_gecici/
+dist/
+__pycache__/
+araclar/X-AnyLabeling/
+araclar/kurulum/
+araclar/xany_calisma/

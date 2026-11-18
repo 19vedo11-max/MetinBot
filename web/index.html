@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MetinBot</title>
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/amblem.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Alegreya+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --lake:#120c0a; --lake2:#1a1210; --lake3:#251a16; --cizgi:#4a3a2c;
+  --bronz:#b08a4a; --bronz-acik:#d9b46a; --yesim:#5fae8c; --zincifre:#a8281a;
+  --pirinc:#e8d9b5; --soluk:#a8987f; --sonuk:#74675a;
+  --bas1:#5a1e14; --bas2:#3a120c; --tas1:#6a6a6e; --tas2:#3c3c40;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--lake);color:var(--pirinc)}
+body{font:16px/1.5 "Alegreya Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Cpath d='M4 44V4h40v32H16V16h16v8' fill='none' stroke='%23b08a4a' stroke-opacity='.07' stroke-width='2'/%3E%3C/svg%3E"),
+    radial-gradient(1000px 500px at 15% -10%, #2c1710 0%, transparent 60%),
+    var(--lake)}
+h1,h2,h3{font-family:Cinzel,Georgia,"Times New Roman",serif;font-weight:600;letter-spacing:.03em}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--bronz-acik);outline-offset:2px}
+.kap{max-width:1240px;margin:0 auto;padding:22px 20px 110px}
+
+/* Metin2 penceresi */
+.pen{position:relative;background:var(--lake2);border:1px solid var(--bronz);border-radius:3px;
+  box-shadow:0 0 0 1px #000,0 0 0 3px #2a1d12,0 0 0 4px #7a5d33aa,0 10px 30px #000a;min-width:0}
+.pen::before{content:"";position:absolute;inset:3px;pointer-events:none;z-index:1;
+  background:
+   linear-gradient(#d9b46a,#d9b46a) 0 0/10px 2px no-repeat,
+   linear-gradient(#d9b46a,#d9b46a) 0 0/2px 10px no-repeat,
+   linear-gradient(#d9b46a,#d9b46a) 100% 0/10px 2px no-repeat,
+   linear-gradient(#d9b46a,#d9b46a) 100% 0/2px 10px no-repeat,
+   linear-gradient(#d9b46a,#d9b46a) 0 100%/10px 2px no-repeat,
+   linear-gradient(#d9b46a,#d9b46a) 0 100%/2px 10px no-repeat,
+   linear-gradient(#d9b46a,#d9b46a) 100% 100%/10px 2px no-repeat,
+   linear-gradient(#d9b46a,#d9b46a) 100% 100%/2px 10px no-repeat}
+.bs{margin:0;padding:7px 14px;font-size:.95rem;text-align:center;color:var(--pirinc);
+  background:linear-gradient(180deg,var(--bas1),var(--bas2));border-bottom:1px solid var(--bronz);
+  box-shadow:inset 0 1px 0 #d9b46a44;text-shadow:0 1px 0 #000}
+.bs::before,.bs::after{content:"\25C6";color:var(--bronz-acik);font-size:.6rem;margin:0 .7em;vertical-align:.15em}
+.ic{padding:16px 18px}
+h3{font-size:.85rem;font-weight:600;color:var(--bronz-acik);margin:1rem 0 .3rem;
+  padding-bottom:3px;border-bottom:1px solid var(--cizgi);letter-spacing:.05em}
+h3:first-child{margin-top:0}
+
+.ust{display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;margin-bottom:22px}
+.muhur{width:96px;height:96px;background:radial-gradient(circle at 35% 30%,#3a120c,#1a0a07);color:var(--pirinc);
+  border-radius:50%;display:grid;place-items:center;position:relative;
+  box-shadow:inset 0 0 0 4px #1a0a07,inset 0 0 0 5px var(--bronz),0 0 0 2px var(--bronz),0 6px 20px #000a}
+.muhur b{font-family:Cinzel,serif;font-size:2.6rem;line-height:1;font-weight:700;margin-top:10px}
+.muhur small{position:absolute;top:13px;left:0;right:0;text-align:center;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--bronz-acik)}
+.kim h1{margin:0;font-size:2.1rem;line-height:1.05;display:flex;align-items:center;gap:12px;flex-wrap:wrap;text-shadow:0 2px 0 #000}
+.imza{font-family:Cinzel,serif;font-size:.7rem;letter-spacing:.1em;background:var(--zincifre);color:#fbe9df;padding:3px 8px;border-radius:2px;
+  transform:rotate(-4deg);box-shadow:inset 0 0 0 1px #e7826a88,0 2px 6px #000a;text-shadow:none;font-weight:700}
+.kim .durum{display:flex;align-items:center;gap:10px;margin-top:6px;color:var(--soluk)}
+.isik{width:10px;height:10px;border-radius:50%;background:var(--sonuk);flex:none}
+.isik.acik{background:var(--yesim);box-shadow:0 0 0 0 #5fae8c88;animation:nabiz 2.4s infinite}
+.isik.bekle{background:var(--bronz-acik)}
+@keyframes nabiz{70%{box-shadow:0 0 0 10px #5fae8c00}100%{box-shadow:0 0 0 0 #5fae8c00}}
+.dugmeler{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.d{border:1px solid #9a9aa0;border-top-color:#c4c4c8;border-bottom-color:#2a2a2e;background:linear-gradient(180deg,var(--tas1),var(--tas2));
+  padding:8px 16px;border-radius:3px;cursor:pointer;color:#ece6d6;text-shadow:0 1px 0 #000;transition:filter .15s,box-shadow .15s;
+  box-shadow:inset 0 1px 0 #ffffff22,0 1px 2px #000a}
+.d:hover{filter:brightness(1.25);box-shadow:inset 0 1px 0 #ffffff44,0 0 8px #d9b46a55}
+.d:active{filter:brightness(.9)}
+.d.ana{border-color:var(--bronz-acik);background:linear-gradient(180deg,#7a5d33,#4a3519);color:#fff3d4}
+.d.tehlike{background:linear-gradient(180deg,#8a2418,#4a110a);border-color:#c0584a;border-bottom-color:#2a0a06}
+.d.tehlike:hover{box-shadow:inset 0 1px 0 #ffffff33,0 0 10px #c4462f88}
+.d.kucuk{padding:4px 12px;font-size:.9rem;flex:none}
+
+.serit{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;margin-bottom:18px}
+.serit>*,.izgara>*{min-width:0}
+.tecrube .sayi{font-family:Cinzel,serif;font-size:2.5rem;line-height:1.1;color:var(--bronz-acik)}
+.tecrube .alt{color:var(--soluk);font-size:.95rem;margin-top:4px}
+.grafik{width:100%;height:110px;margin-top:8px;display:block}
+.sayilar{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--cizgi)}
+.sayilar div{background:var(--lake2);padding:14px 16px}
+.sayilar b{display:block;font-family:Cinzel,serif;font-size:1.7rem;line-height:1.2}
+.sayilar span{color:var(--soluk);font-size:.9rem}
+.olum b{color:#e98a74}
+
+.izgara{align-items:start;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.genis{grid-column:1/-1}
+.plan{display:grid;gap:6px}
+.plan label{display:grid;grid-template-columns:18px 1fr;gap:12px;padding:9px 12px;border-radius:3px;cursor:pointer;border:1px solid transparent}
+.plan label:hover{background:var(--lake3)}
+.plan input{accent-color:var(--bronz);margin-top:4px}
+.plan label:has(input:checked){border-color:var(--bronz);background:#b08a4a18}
+.plan small,.anahtar small,.satir small{display:block;color:var(--soluk);line-height:1.3}
+.anahtar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #4a3a2c66;cursor:pointer}
+.anahtar:last-child{border-bottom:0}
+.anahtar.kilit{opacity:.55;cursor:not-allowed}
+.sw{appearance:none;width:42px;height:22px;border-radius:3px;background:#0c0806;border:1px solid var(--cizgi);position:relative;cursor:pointer;flex:none;margin:0}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:2px;background:linear-gradient(180deg,#8a8a8e,#4a4a4e);transition:transform .15s}
+.sw:checked{background:#1d3a2c;border-color:var(--yesim)}
+.sw:checked::after{transform:translateX(20px);background:linear-gradient(180deg,#d9b46a,#8a6a30)}
+.kaydir{padding:7px 0}
+.kaydir div{display:flex;justify-content:space-between;gap:10px;color:var(--soluk)}
+.kaydir div b{color:var(--pirinc);font-weight:700;white-space:nowrap}
+input[type=range]{width:100%;accent-color:var(--bronz)}
+select,.ara{background:#0c0806;border:1px solid var(--cizgi);border-radius:3px;padding:7px 10px;color:var(--pirinc);width:100%}
+.satir{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0}
+.satir>div,.satir>p{min-width:0}
+.ozet{color:var(--soluk);font-size:.92rem;margin:.2rem 0 .5rem;overflow-wrap:anywhere}
+
+.harita-ust{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.sekme{display:flex;gap:6px;flex-wrap:wrap}
+.sekme button{border:1px solid var(--cizgi);background:#0c0806;padding:4px 12px;border-radius:3px;cursor:pointer;color:var(--soluk)}
+.sekme button[aria-pressed=true]{color:var(--pirinc);border-color:var(--bronz);background:#3a120c}
+.harita-alan{position:relative;width:min(100%,508px);aspect-ratio:254/317;margin:0 auto;border:1px solid var(--bronz);
+  overflow:hidden;touch-action:none;cursor:crosshair;background:var(--lake3)}
+.harita-alan img{width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none}
+.harita-alan svg{position:absolute;inset:0;width:100%;height:100%}
+.ipucu{color:var(--soluk);font-size:.92rem;margin:.6rem auto 0;max-width:508px}
+.mod{display:flex;border:1px solid var(--cizgi);border-radius:3px;overflow:hidden}
+.mod button{background:#0c0806;border:0;padding:5px 14px;cursor:pointer;color:var(--soluk)}
+.mod button[aria-pressed=true]{background:#5a1e14;color:var(--pirinc)}
+
+.gunluk{font:12.5px/1.55 "Cascadia Mono",Consolas,monospace;max-height:360px;overflow:auto;background:#0c0806;border:1px solid var(--cizgi);padding:10px 12px;color:#cfc2b1}
+.gunluk div{white-space:pre-wrap;word-break:break-word}
+.gunluk .k{color:#ec8e78}.gunluk .y{color:#8fd1b2}.gunluk .b{color:var(--bronz-acik)}.gunluk .s{color:#7b6c62}
+.rapor{white-space:pre-wrap;color:#d9cdbb;font:inherit;font-size:.95rem;margin:0}
+.ekran{width:100%;display:block;border:1px solid var(--bronz);min-height:60px;background:var(--lake3)}
+.bos{color:var(--soluk)}
+
+dialog{padding:0;border:0;background:none;color:var(--pirinc);max-width:min(760px,96vw);width:100%;max-height:92vh;overflow:visible}
+dialog::backdrop{background:#000a}
+dialog .pen{display:flex;flex-direction:column;max-height:88vh}
+dialog .ic{overflow:auto;flex:1;min-height:0}
+.liste{display:grid;gap:2px;margin-top:8px}
+.liste button{display:grid;grid-template-columns:22px 1fr auto;gap:8px;text-align:left;background:none;border:1px solid transparent;
+  padding:6px 8px;cursor:pointer;border-radius:3px;color:inherit}
+.liste button:hover{background:var(--lake3)}
+.liste button.sec{border-color:var(--bronz);background:#b08a4a18}
+.liste small{grid-column:2/4;color:var(--soluk);line-height:1.25}
+.liste i{font-style:normal;color:var(--bronz-acik)}
+.altsrt{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--cizgi)}
+
+.bildirim{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);opacity:0;background:#3a120c;color:var(--pirinc);
+  border:1px solid var(--bronz-acik);padding:10px 18px;border-radius:3px;transition:all .25s;z-index:50;pointer-events:none;max-width:90vw}
+.bildirim.gor{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (max-width:860px){
+  .serit,.izgara{grid-template-columns:minmax(0,1fr)}
+  .tecrube .sayi{font-size:2rem}
+  .ust{grid-template-columns:auto 1fr;gap:14px}
+  .dugmeler{grid-column:1/-1;justify-content:stretch;position:fixed;left:0;right:0;bottom:0;padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+    background:#120c0af2;border-top:1px solid var(--bronz);z-index:40;flex-wrap:nowrap;gap:6px}
+  .dugmeler .d{flex:1;min-width:0;padding:11px 2px;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .muhur{width:76px;height:76px}.muhur b{font-size:2rem;margin-top:8px}.muhur small{top:10px;font-size:.5rem}
+  .kim h1{font-size:1.5rem}
+  .kap{padding:16px 14px 100px}
+  .bildirim{bottom:76px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="kap">
+  <header class="ust">
+    <div class="muhur" aria-label="Seviye"><small>seviye</small><b id="sev">–</b></div>
+    <div class="kim">
+      <h1>MetinBot <span class="imza">Vedo</span></h1>
+      <div class="durum"><span class="isik" id="isik"></span><span id="durum">Bağlanıyor…</span></div>
+    </div>
+    <nav class="dugmeler">
+      <button class="d ana" id="anaDugme">Botu başlat</button>
+      <button class="d" data-komut="koy1">1. köye ışınlan</button>
+      <button class="d" data-komut="koy2">2. köye ışınlan</button>
+      <button class="d tehlike" data-komut="kapat">Botu kapat</button>
+    </nav>
+  </header>
+
+  <section class="serit">
+    <div class="pen"><h2 class="bs">Tecrübe</h2><div class="ic tecrube">
+      <div class="sayi" id="expSaat">–</div>
+      <div class="alt" id="expAlt">Saatlik tecrübe; ilk ölçüm bot açıldıktan yaklaşık 20 dk sonra gelir.</div>
+      <svg class="grafik" id="expGrafik" viewBox="0 0 600 110" preserveAspectRatio="none" role="img" aria-label="Saatlik tecrübe grafiği"></svg>
+    </div></div>
+    <div class="pen"><h2 class="bs">Son 30 dakika</h2><div class="sayilar">
+      <div><b id="kesilen">–</b><span>kesilen yaratık</span></div>
+      <div class="olum"><b id="olum">–</b><span>ölüm</span></div>
+      <div><b id="slot">–</b><span>slot</span></div>
+      <div><b id="yerDeg">–</b><span>yer değiştirme</span></div>
+    </div></div>
+  </section>
+
+  <div class="izgara">
+    <section class="pen"><h2 class="bs">Ne yapsın</h2><div class="ic">
+      <div class="plan" id="plan"></div>
+      <div class="satir" style="margin-top:10px;border-top:1px solid var(--cizgi);padding-top:12px">
+        <div><b>Otomatik toplama</b><small id="topSat">Bot yalnız Z'ye basar; karakteri sen oynarsın.</small></div>
+        <button class="d kucuk" id="topDugme">Aç</button>
+      </div>
+    </div></section>
+
+    <section class="pen"><h2 class="bs">Yanında</h2><div class="ic">
+      <p class="ozet" id="yanNot">Kasılırken bunlardan hangilerini de yapsın:</p>
+      <div id="yanAnahtar"></div>
+      <h3>Genel</h3>
+      <div id="anahtarlar"></div>
+      <p class="ozet" style="margin-top:.6rem">Beceri sırası (ekrandan tıklamalı seçim) burada yok; eski panelden (panel.py) ayarlanır.</p>
+    </div></section>
+
+    <section class="pen"><h2 class="bs">Beceriler</h2><div class="ic">
+      <p class="ozet" id="beceriOzet"></p>
+      <div class="satir"><span></span><button class="d kucuk" id="beceriDugme">Beceri ayarları…</button></div>
+    </div></section>
+
+    <section class="pen"><h2 class="bs">Av hedefi</h2><div class="ic">
+      <h3>Eşya avı</h3>
+      <div class="satir"><p class="ozet" id="esyaOzet" style="margin:0"></p><button class="d kucuk" id="esyaDugme">Eşya seç…</button></div>
+      <h3>Yalnız şu canavarlar</h3>
+      <div class="satir"><p class="ozet" id="hedefOzet" style="margin:0"></p><button class="d kucuk" id="hedefDugme">Canavar seç…</button></div>
+      <h3>Seviye puanı</h3>
+      <p class="ozet">Seviye atlayınca puanlar hangi özelliğe gitsin. “Dağıtma” seçilirse puan verilmez.</p>
+      <select id="statu" aria-label="Puan dağıtımı"></select>
+    </div></section>
+
+    <section class="pen"><h2 class="bs">Sınırlar</h2><div class="ic" id="kaydirlar"></div></section>
+
+    <section class="pen genis"><h2 class="bs">Harita</h2><div class="ic">
+      <div class="harita-ust">
+        <div class="sekme" id="sekmeler"></div>
+        <div class="mod" role="group" aria-label="Haritaya dokununca">
+          <button id="modGit" aria-pressed="true">Oraya git</button>
+          <button id="modAlan" aria-pressed="false">Alan çiz</button>
+        </div>
+      </div>
+      <div class="harita-alan" id="haritaAlan">
+        <img id="haritaResim" alt="Bölge haritası">
+        <svg id="haritaSvg" viewBox="0 0 254 317" preserveAspectRatio="none"></svg>
+      </div>
+      <p class="ipucu">Oraya git: dokunduğun yere karakter yürür. Alan çiz: basılı tutup sürükle, bot o dairenin içinde kasar.</p>
+      <label class="anahtar" style="max-width:508px;margin:8px auto 0">
+        <div><b>Çizdiğim alanda kal</b><small>Kapalıyken bot bölgeyi kendisi seçer; çizim saklı kalır.</small></div>
+        <input type="checkbox" class="sw" id="alanKullan">
+      </label>
+    </div></section>
+
+    <section class="pen"><h2 class="bs">Bot ne yapıyor</h2><div class="ic">
+      <div class="gunluk" id="gunluk"></div>
+    </div></section>
+
+    <section class="pen"><h2 class="bs">Ekran</h2><div class="ic">
+      <img class="ekran" id="ekran" alt="Oyundan son kare (40 sn'de bir)">
+      <h3 style="margin-top:1.1rem">Gece raporu</h3>
+      <pre class="rapor" id="rapor"><span class="bos">Henüz rapor yok; ilk rapor 30 dk sonra yazılır.</span></pre>
+    </div></section>
+  </div>
+</div>
+
+<dialog id="pencere"><div class="pen"><h2 class="bs" id="pBaslik"></h2>
+  <div class="ic" id="pIc"></div><div class="altsrt" id="pAlt"></div></div></dialog>
+<div class="bildirim" id="bildirim" role="status"></div>
+
+<script>
+const K = new URLSearchParams(location.search).get("k") || "";
+const api = (y) => K ? y + (y.includes("?") ? "&" : "?") + "k=" + encodeURIComponent(K) : y;
+const $ = (s) => document.querySelector(s);
+let D = null, seciliHarita = null, mod = "git", dokunuldu = 0, hedefNokta = null, cizim = null;
+
+function bildir(m){const b=$("#bildirim");b.textContent=m;b.classList.add("gor");clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove("gor"),2600)}
+async function gonder(yol, veri, sessiz){
+  try{const r=await fetch(api(yol),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(veri)});
+    const j=await r.json(); if(!sessiz||!r.ok)bildir(j.mesaj||j.hata||"Tamam"); dokunuldu=Date.now(); setTimeout(yenile,600); return r.ok}
+  catch(e){bildir("Panel sunucusuna ulaşılamadı.")}
+}
+const ayarYaz=(o)=>gonder("/api/ayar",o);
+const esc=s=>String(s).replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"})[m]);
+
+const YANINDA=[
+  ["av_gorevi","Av görevini de yap","Görevin istediği yaratığı görünce önce onu keser."],
+  ["gorev_parsomen","Görev parşömenlerini aç","Ödülleri alır, biten av görevinin yerine yenisini seçer."],
+  ["aranan_oncelik","Görev eşyası düşüreni öne al","Örneğin Biyolog'un çiçeği için Aç Alfa Kurt."],
+  ["npc_gorevleri","Görev NPC'lerine git","Görevli NPC'lere yürür; kasılmayı böler."],
+];
+const ANAHTARLAR=[
+  ["metin_kes","Metin taşı kes","Ekranda metin görünce önce onu keser."],
+  ["dusuk_seviye_kesme","Çok düşük seviyeliyi kesme","Exp vermeyenlerle oyalanmaz, uygun bölgeye gider; çizilen alanda geçersiz."],
+  ["sadece_slot","Yalnız slot kes","Tek gezen yaratığa gitmez, kalabalık gruba gider."],
+  ["esyaya_tikla","Yere düşen eşyaları topla","Düşen eşyaya tıklayıp alır."],
+  ["pot_yuvasi_doldur","Pot yuvasını doldur","Hızlı çubuktaki pot bitince envanterden koyar."],
+  ["pot_satin_al","Pot bitince satıcıdan al","Envanterde kırmızı pot kalmayınca köydeki Satıcı'ya gidip aşağıdaki kadar paket alır."],
+  ["beceri_puani_dagit","Beceri puanlarını dağıt","Eski panelde seçtiğin sıraya göre puan verir."],
+  ["olunce_yeniden_basla","Ölünce kendisi kalksın","Burada yeniden başla'ya basar."],
+  ["yeniden_baglan","Atılınca yeniden bağlan","Giriş ekranında kayıtlı hesapla girer."],
+];
+const STATULER=[["str","Güç (STR)"],["vit","Yaşam (VIT)"],["dex","Çeviklik (DEX)"],["int","Zekâ (INT)"],["","Dağıtma"]];
+const KAYDIRLAR=[
+  ["seviye_ust_fark","En çok kaç seviye üstüne saldırsın",0,50,1,(v,s)=>`+${v}`+(s?`, Lv ${s+v}'e kadar`:"")],
+  ["seviye_alt_fark","En çok kaç seviye altını kessin",0,15,1,(v,s)=>`−${v}`+(s?`, Lv ${Math.max(1,s-v)}'den`:"")],
+  ["savunma_can_esigi","Can buna inince yanındakine dönsün",.5,1,.05,v=>`%${Math.round(v*100)}`],
+  ["can_esigi","Can potu basma eşiği",.1,.9,.05,v=>`%${Math.round(v*100)}`],
+  ["mana_esigi","Mana potu basma eşiği",0,.9,.05,v=>v?`%${Math.round(v*100)}`:"kapalı"],
+  ["toplanacak_grup","Kesmeden önce toplanacak grup sayısı",1,5,1,v=>`${v}`],
+  ["slot_en_az","Slot sayılması için en az yaratık",2,8,1,v=>`${v}`],
+  ["pot_al_kirmizi_paket","Kaç paket küçük kırmızı pot alsın",0,10,1,v=>`${v} paket, ${v*20} adet`],
+  ["pot_al_mavi_paket","Kaç paket küçük mavi pot alsın",0,10,1,v=>`${v} paket, ${v*20} adet`],
+];
+const TUM=[...YANINDA,...ANAHTARLAR];
+const PLAN_DURUM={level:"level kasıyor",metin:"metin kesiyor",gorev:"önce görevler",yalniz_gorev:"yalnız görev yapıyor",toplama:"yalnız topluyor",ozel:"özel ayarlarla"};
+
+function ciz(){
+  const c=D.canli, a=D.ayar, acik=c.ayakta, durak=c.duraklat, onde=c.oyun_onde;
+  $("#isik").className="isik "+(acik?(durak||!onde?"bekle":"acik"):"");
+  $("#durum").textContent=!acik?"Kapalı":durak?"Duraklatıldı":!onde?"Bekliyor: oyun penceresi önde değil":`Çalışıyor, ${PLAN_DURUM[c.profil]||c.profil}`+(c.pot_bitti?" · can potu bitti, pot al":"");
+  $("#sev").textContent=c.seviye||"–";
+  const ana=$("#anaDugme");
+  ana.textContent=!acik?"Botu başlat":durak?"Devam et":"Duraklat";
+  ana.dataset.komut=!acik?"baslat":durak?"devam":"duraklat";
+
+  const exp=D.exp.filter(r=>r.length>=5).map(r=>({sev:+r[1],e:+r[2],g:+r[3],s:+r[4]}));
+  const s=c.exp_saat||(exp.length?exp.at(-1).s:0);
+  if(s){$("#expSaat").textContent=s.toLocaleString("tr-TR")+" exp/saat";
+    const son=exp.at(-1); if(son){const dk=Math.round((son.g-son.e)/s*60);
+      $("#expAlt").textContent=`Seviye ${son.sev}'den ${son.sev+1}'e: ${son.e.toLocaleString("tr-TR")} / ${son.g.toLocaleString("tr-TR")}, atlamaya yaklaşık ${dk} dk`}}
+  const g=$("#expGrafik");
+  if(exp.length>1){const m=Math.max(...exp.map(x=>x.s))||1, p=exp.map((x,i)=>`${(i/(exp.length-1)*600).toFixed(1)},${(105-x.s/m*95).toFixed(1)}`).join(" ");
+    g.innerHTML=`<defs><linearGradient id="dg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#c9974a" stop-opacity=".35"/><stop offset="1" stop-color="#c9974a" stop-opacity="0"/></linearGradient></defs>
+      <polygon fill="url(#dg)" points="0,110 ${p} 600,110"/><polyline fill="none" stroke="#e2b56c" stroke-width="2" vector-effect="non-scaling-stroke" points="${p}"/>`}
+  else g.innerHTML=`<text x="0" y="70" fill="#7b6c62" font-size="14">Grafik iki ölçümden sonra çizilir.</text>`;
+
+  const s30=D.son30;
+  if(s30){$("#slot").textContent=s30.slot;$("#kesilen").textContent=s30.kesilen;$("#olum").textContent=s30.olum;$("#yerDeg").textContent=s30.yer_degistirme}
+  if(D.son_rapor)$("#rapor").textContent=D.son_rapor.metin.replace(/^# .*\n\n/,"");
+
+  if(Date.now()-dokunuldu>3000){
+    $("#plan").querySelectorAll("input").forEach(i=>i.checked=i.value===a.profil);
+    const hepsi=a.profil==="gorev";
+    TUM.forEach(([k])=>{const i=$("#a_"+k); if(i)i.checked=!!a[k]});
+    YANINDA.forEach(([k])=>{const i=$("#a_"+k); i.disabled=hepsi; if(hepsi)i.checked=true; i.closest("label").classList.toggle("kilit",hepsi)});
+    $("#yanNot").textContent=hepsi?"“Önce görevler” seçiliyken dördü de açık sayılır.":"Kasılırken bunlardan hangilerini de yapsın:";
+    $("#statu").value=a.statu==null?"str":a.statu;
+    KAYDIRLAR.forEach(([k,,,,,f])=>{const i=$("#r_"+k); if(i&&a[k]!=null){i.value=a[k];$("#v_"+k).textContent=f(+a[k],c.seviye)}});
+    $("#alanKullan").checked=!!a.alan_kullan;
+  }
+  const top=acik&&c.profil==="toplama";
+  $("#topDugme").textContent=top?"Kapat":"Aç";
+  $("#topSat").textContent=top?"Çalışıyor: bot yalnız Z'ye basıyor. Kapatırsan bot tamamen kapanır.":"Bot yalnız Z'ye basar; karakteri sen oynarsın.";
+  const eo=a.esya_avi, ho=a.sadece_hedefler||[];
+  $("#beceriOzet").textContent=`Sınıf: ${a.sinif||"?"} / ${a.beceri_grubu||"?"}${a.uzak_dovus?" (uzak dövüş)":""}. Güçlendirme: ${(a.sureli_tuslar||[]).map(x=>x.tus).join(", ")||"yok"}; saldırı becerileri: ${(a.saldiri_becerileri||[]).map(x=>x.tus).join(", ")||"yok"}; hamle: ${a.hamle_tusu||"kapalı"}.`;
+  $("#esyaOzet").textContent=eo?`Avlanan: ${eo}. Düştüğü canavarlar öne alınır.`:"Kapalı. Seçersen bot o eşyanın düştüğü canavarlara odaklanır.";
+  $("#hedefOzet").textContent=ho.length?"Yalnız bunlar kesilir: "+ho.join(", "):"Kapalı: seviyeye uygun her canavar kesilir.";
+  const gl=$("#gunluk"), altta=gl.scrollTop+gl.clientHeight>=gl.scrollHeight-20;
+  gl.innerHTML=D.log.map(s=>{const k=/oldu \(|Traceback|hatasi/.test(s)?"k":/grup:|slot bitti|tecrube/.test(s)?"y":/hasar|engel|ulasilamadi/.test(s)?"b":/DURAKLAMA/.test(s)?"s":"";
+    return `<div class="${k}">${esc(s)}</div>`}).join("");
+  if(altta)gl.scrollTop=gl.scrollHeight;
+  if(!seciliHarita&&D.haritalar.length){seciliHarita=(a.kasilma_alani&&a.kasilma_alani.harita)||D.haritalar[0];haritaSekme()}
+  alanCiz();
+}
+
+function kur(){
+  $("#plan").innerHTML=D.profiller.map(p=>`<label><input type="radio" name="plan" value="${esc(p.ad)}"><span><b>${esc(p.etiket)}</b><small>${esc(p.aciklama)}</small></span></label>`).join("");
+  $("#plan").addEventListener("change",e=>ayarYaz({profil:e.target.value}));
+  const an=l=>l.map(([k,e,a])=>`<label class="anahtar"><div><b>${e}</b><small>${a}</small></div><input type="checkbox" class="sw" id="a_${k}"></label>`).join("");
+  $("#yanAnahtar").innerHTML=an(YANINDA); $("#anahtarlar").innerHTML=an(ANAHTARLAR);
+  TUM.forEach(([k])=>$("#a_"+k).addEventListener("change",e=>ayarYaz({[k]:e.target.checked})));
+  $("#statu").innerHTML=STATULER.map(([k,e])=>`<option value="${k}">${e}</option>`).join("");
+  $("#statu").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({statu:e.target.value})});
+  $("#topDugme").onclick=topla; $("#esyaDugme").onclick=esyaPenceresi; $("#beceriDugme").onclick=beceriPenceresi; $("#hedefDugme").onclick=canavarPenceresi;
+  $("#kaydirlar").innerHTML=KAYDIRLAR.map(([k,e,mn,mx,ad])=>`<div class="kaydir"><div><span>${e}</span><b id="v_${k}"></b></div><input type="range" id="r_${k}" min="${mn}" max="${mx}" step="${ad}" aria-label="${e}"></div>`).join("");
+  KAYDIRLAR.forEach(([k,,,,ad,f])=>{const i=$("#r_"+k);
+    i.addEventListener("input",()=>{dokunuldu=Date.now();$("#v_"+k).textContent=f(+i.value,D.canli.seviye)});
+    i.addEventListener("change",()=>ayarYaz({[k]:ad<1?+(+i.value).toFixed(2):+i.value}))});
+  $("#alanKullan").addEventListener("change",e=>ayarYaz({alan_kullan:e.target.checked}));
+  $("#anaDugme").addEventListener("click",e=>gonder("/api/komut",{komut:e.currentTarget.dataset.komut}));
+  document.querySelectorAll("[data-komut]").forEach(b=>{if(b.id==="anaDugme")return;
+    b.addEventListener("click",()=>{if(b.dataset.komut==="kapat"&&!confirm("Bot kapansın mı?"))return; gonder("/api/komut",{komut:b.dataset.komut})})});
+  $("#modGit").onclick=()=>modSec("git"); $("#modAlan").onclick=()=>modSec("alan");
+  haritaOlaylari();
+}
+function modSec(m){mod=m;$("#modGit").setAttribute("aria-pressed",m==="git");$("#modAlan").setAttribute("aria-pressed",m==="alan")}
+function haritaSekme(){
+  $("#sekmeler").innerHTML=D.haritalar.map(h=>`<button aria-pressed="${h===seciliHarita}">${esc(h)}</button>`).join("");
+  $("#sekmeler").querySelectorAll("button").forEach(b=>b.onclick=()=>{seciliHarita=b.textContent;haritaSekme();alanCiz()});
+  $("#haritaResim").src=api("/harita/"+encodeURIComponent(seciliHarita)+"?t="+Date.now());
+}
+function alanCiz(onizleme){
+  const a=onizleme||(D&&D.ayar.kasilma_alani);
+  let h="";
+  if(a&&a.harita===seciliHarita){const cx=a.x*254,cy=a.y*317,r=a.r*254;
+    h=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#5fae8c22" stroke="#5fae8c" stroke-width="2" vector-effect="non-scaling-stroke" ${onizleme?'stroke-dasharray="5 4"':""}/><circle cx="${cx}" cy="${cy}" r="2.5" fill="#5fae8c"/>`}
+  if(hedefNokta&&hedefNokta.h===seciliHarita&&Date.now()-hedefNokta.t<60000)
+    h+=`<circle cx="${hedefNokta.x*254}" cy="${hedefNokta.y*317}" r="6" fill="none" stroke="#e2b56c" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
+  $("#haritaSvg").innerHTML=h;
+}
+function haritaOlaylari(){
+  const alan=$("#haritaAlan");
+  const oran=e=>{const r=alan.getBoundingClientRect();return{x:Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),y:Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))}};
+  alan.addEventListener("pointerdown",e=>{if(!seciliHarita)return;const p=oran(e);
+    if(mod==="git"){hedefNokta={h:seciliHarita,x:p.x,y:p.y,t:Date.now()};alanCiz();gonder("/api/git",{harita:seciliHarita,x:+p.x.toFixed(4),y:+p.y.toFixed(4)});return}
+    alan.setPointerCapture(e.pointerId);cizim={x:p.x,y:p.y,r:.03}});
+  alan.addEventListener("pointermove",e=>{if(!cizim)return;const p=oran(e);
+    cizim.r=Math.max(.02,Math.hypot(p.x-cizim.x,(p.y-cizim.y)*317/254));alanCiz({harita:seciliHarita,...cizim})});
+  alan.addEventListener("pointerup",async()=>{if(!cizim)return;const a={harita:seciliHarita,x:+cizim.x.toFixed(4),y:+cizim.y.toFixed(4),r:+cizim.r.toFixed(4)};
+    cizim=null;D.ayar.kasilma_alani=a;D.ayar.alan_kullan=true;$("#alanKullan").checked=true;alanCiz();modSec("git");
+    if(await gonder("/api/ayar",{kasilma_alani:a,alan_kullan:true},true))bildir("Alan kaydedildi; bot bu dairenin içinde kasacak.")});
+}
+async function topla(){
+  const c=D.canli;
+  if(c.ayakta&&c.profil==="toplama"){ if(confirm("Otomatik toplama kapansın mı? Bot tamamen kapanır."))gonder("/api/komut",{komut:"kapat"}); return}
+  if(await gonder("/api/ayar",{profil:"toplama"},true)){ if(!c.ayakta)gonder("/api/komut",{komut:"baslat"}); else bildir("Otomatik toplama açıldı; bot birkaç saniyede yeni ayarla açılır.")}
+}
+let L=null;
+async function listeAl(){
+  if(L)return L;
+  try{const r=await fetch(api("/api/listeler"),{cache:"no-store"}); L=await r.json()}catch(e){L={haritalar:[],gorulen:[],esyalar:[]}}
+  return L;
+}
+function pencereAc(baslik,govde,alt){
+  $("#pBaslik").textContent=baslik; $("#pIc").innerHTML=govde; $("#pAlt").innerHTML=alt||"";
+  const p=$("#pencere"); if(!p.open)p.showModal(); return p;
+}
+const kapatP=()=>$("#pencere").close();
+$("#pencere").addEventListener("click",e=>{if(e.target.id==="pencere")kapatP()});
+async function esyaPenceresi(){
+  const l=await listeAl(), sec=D.ayar.esya_avi||"";
+  if(!l.esyalar.length){bildir("Eşya tablosu (esya_avi.json) henüz yok.");return}
+  const kat=["Hepsi",...new Set(l.esyalar.map(e=>e.kategori))]; let ak="Hepsi", q="";
+  pencereAc("Eşya avı",`<p class="ozet">Avlanacak eşyaya dokun. Kaynağı seviyenden yüksekse bot o canavarı kesemez.</p>
+    <input class="ara" id="eAra" placeholder="Eşya ara…" aria-label="Eşya ara"><div class="sekme" id="eKat" style="margin-top:8px"></div><div class="liste" id="eListe"></div>`,
+    `<button class="d" id="eBirak">Avı bırak</button><button class="d" id="eKapat">Kapat</button>`);
+  const ciz2=()=>{
+    $("#eKat").innerHTML=kat.map(k=>`<button aria-pressed="${k===ak}">${esc(k)}</button>`).join("");
+    $("#eKat").querySelectorAll("button").forEach(b=>b.onclick=()=>{ak=b.textContent;ciz2()});
+    const f=l.esyalar.filter(e=>(ak==="Hepsi"||e.kategori===ak)&&(e.ad+" "+e.kisaltma+" "+e.nereden).toLocaleLowerCase("tr").includes(q)).sort((x,y)=>(x.seviye||0)-(y.seviye||0));
+    $("#eListe").innerHTML=f.map(e=>`<button data-ad="${esc(e.ad)}" class="${e.ad===sec?"sec":""}"><span>${e.ad===sec?"✓":""}</span><span><b>${esc(e.ad)}</b>${e.kisaltma?" ["+esc(e.kisaltma)+"]":""}${e.tahmin?" (tahmin)":""}</span><i>Lv ${e.seviye||"?"}</i><small>${esc(e.sinif)} · ${esc(e.nereden||"kaynak bilinmiyor")}</small></button>`).join("")||'<p class="bos">Eşleşen eşya yok.</p>';
+    $("#eListe").querySelectorAll("button").forEach(b=>b.onclick=()=>{ayarYaz({esya_avi:b.dataset.ad});D.ayar.esya_avi=b.dataset.ad;ciz();kapatP()});
+  };
+  $("#eAra").oninput=e=>{q=e.target.value.toLocaleLowerCase("tr").trim();ciz2()};
+  $("#eBirak").onclick=()=>{ayarYaz({esya_avi:""});D.ayar.esya_avi="";ciz();kapatP()};
+  $("#eKapat").onclick=kapatP; ciz2();
+}
+async function canavarPenceresi(){
+  const l=await listeAl(); let secili=[...(D.ayar.sadece_hedefler||[])], q="";
+  const sek=[...l.haritalar.map(h=>({ad:h.ad,s:h.canavarlar})),...(l.gorulen.length?[{ad:"Oyunda görülen",s:l.gorulen.map(a=>[a,""])}]:[])];
+  let ak=0;
+  pencereAc("Yalnız şu canavarlar",`<p class="ozet">Kesilecek canavarlara dokun. Hiçbiri seçili değilse bot seviyeye uygun her canavarı keser.</p>
+    <input class="ara" id="cAra" placeholder="Canavar ara…" aria-label="Canavar ara"><div class="sekme" id="cSek" style="margin-top:8px"></div>
+    <div class="liste" id="cListe"></div>
+    <div class="satir" style="margin-top:10px"><input class="ara" id="cEkle" placeholder="Listede yoksa adını yaz" aria-label="Elle canavar adı"><button class="d kucuk" id="cEkleD">Ekle</button></div>`,
+    `<span class="ozet" id="cDurum" style="margin:0;flex:1 1 100%"></span><button class="d" id="cTemiz">Hepsini kaldır</button><span><button class="d" id="cKapat">Vazgeç</button> <button class="d ana" id="cKaydet">Kaydet</button></span>`);
+  const durum2=()=>$("#cDurum").textContent="Seçili: "+(secili.join(", ")||"yok");
+  const ciz2=()=>{
+    $("#cSek").innerHTML=sek.map((s,i)=>`<button aria-pressed="${i===ak}">${esc(s.ad)}</button>`).join("");
+    $("#cSek").querySelectorAll("button").forEach((b,i)=>b.onclick=()=>{ak=i;ciz2()});
+    const arama=q?sek.flatMap(s=>s.s).filter((x,i,a)=>a.findIndex(y=>y[0]===x[0])===i):(sek[ak]||{s:[]}).s;
+    const f=arama.filter(([ad])=>!q||ad.toLocaleLowerCase("tr").includes(q));
+    $("#cListe").innerHTML=f.map(([ad,lv])=>{const o=secili.includes(ad);return `<button data-ad="${esc(ad)}" class="${o?"sec":""}"><span>${o?"✓":""}</span><span>${esc(ad)}</span><i>${lv?"Lv "+lv:""}</i></button>`}).join("")||'<p class="bos">Eşleşen canavar yok.</p>';
+    $("#cListe").querySelectorAll("button").forEach(b=>b.onclick=()=>{const ad=b.dataset.ad;secili=secili.includes(ad)?secili.filter(x=>x!==ad):[...secili,ad];ciz2();durum2()});
+  };
+  $("#cAra").oninput=e=>{q=e.target.value.toLocaleLowerCase("tr").trim();ciz2()};
+  $("#cEkleD").onclick=()=>{const g=$("#cEkle"),ad=g.value.trim();if(ad&&!secili.includes(ad))secili.push(ad);g.value="";ciz2();durum2()};
+  $("#cTemiz").onclick=()=>{secili=[];ciz2();durum2()};
+  $("#cKapat").onclick=kapatP;
+  $("#cKaydet").onclick=()=>{ayarYaz({sadece_hedefler:secili});D.ayar.sadece_hedefler=secili;ciz();kapatP()};
+  ciz2();durum2();
+}
+let SN=null;
+async function beceriPenceresi(){
+  if(!SN){try{SN=await (await fetch(api("/api/siniflar"),{cache:"no-store"})).json()}catch(e){SN=[]}}
+  const A=D.ayar;
+  let sinif=A.sinif||"savasci", grup=A.beceri_grubu||"", uzak=!!A.uzak_dovus;
+  let sure=(A.sureli_tuslar||[]).map(x=>({...x})), sald=(A.saldiri_becerileri||[]).map(x=>({...x}));
+  const siniflar=[...new Map(SN.map(x=>[x.sinif,x.sinif_ad]))];
+  pencereAc("Beceriler",`<p class="ozet">Sınıfını ve beceri grubunu seç, “Hazır ayarı uygula” ile başlangıç tuşlarını doldur; sonra oyundaki hızlı çubuğa göre düzenle. Hazır ayarlardaki “tahmin” beceri adları doğrulanmadı.</p>
+    <div class="satir"><label for="bSinif">Sınıf</label><select id="bSinif"></select></div>
+    <div class="satir"><label for="bGrup">Beceri grubu</label><select id="bGrup"></select></div>
+    <div class="satir"><p class="ozet" id="bNot" style="margin:0"></p><button class="d kucuk" id="bHazir">Hazır ayarı uygula</button></div>
+    <h3>Güçlendirme (süreli) tuşları</h3><div id="bSure"></div>
+    <h3>Saldırı becerisi tuşları</h3><div id="bSald"></div>
+    <h3>Tuşlar</h3>
+    <div class="satir"><label for="bSaldTus">Saldırı</label><input class="ara" id="bSaldTus" style="width:90px"></div>
+    <div class="satir"><label for="bCan">Can potu</label><input class="ara" id="bCan" style="width:90px"></div>
+    <div class="satir"><label for="bMana">Mana potu (boş = basma)</label><input class="ara" id="bMana" style="width:90px"></div>
+    <div class="satir"><label for="bHamle">Hamle / atılma (boş = kapalı)</label><input class="ara" id="bHamle" style="width:90px"></div>
+    <div class="satir"><label for="bUzak">Uzak dövüşçü (okçu, kara büyü, şaman)</label><input type="checkbox" id="bUzak"></div>`,
+    `<span><button class="d" id="bKapat">Vazgeç</button> <button class="d ana" id="bKaydet">Kaydet</button></span>`);
+  const liste=(id,dizi)=>{
+    $(id).innerHTML=dizi.map((x,i)=>`<div class="satir"><input class="ara" data-i="${i}" data-a="tus" value="${esc(x.tus||"")}" aria-label="Tuş" style="width:90px"><input class="ara" data-i="${i}" data-a="aralik_sn" type="number" min="1" value="${x.aralik_sn||""}" aria-label="Süre (sn)" style="width:90px"><button class="d kucuk" data-sil="${i}" aria-label="Sil">Sil</button></div>`).join("")+`<button class="d kucuk" data-ekle="1">Ekle</button>`;
+    $(id).querySelectorAll("input").forEach(e=>e.oninput=()=>{const o=dizi[+e.dataset.i];o[e.dataset.a]=e.dataset.a==="tus"?e.value.trim().toLowerCase():(+e.value||0)});
+    $(id).querySelectorAll("[data-sil]").forEach(b=>b.onclick=()=>{dizi.splice(+b.dataset.sil,1);liste(id,dizi)});
+    $(id).querySelector("[data-ekle]").onclick=()=>{dizi.push({tus:"",aralik_sn:id==="#bSure"?55:6});liste(id,dizi)};
+  };
+  const gruplar=()=>SN.filter(x=>x.sinif===sinif);
+  const gCiz=()=>{
+    $("#bGrup").innerHTML=gruplar().map(x=>`<option value="${x.grup}"${x.grup===grup?" selected":""}>${esc(x.grup_ad)}${x.tahmin?" (tahmin)":""}</option>`).join("");
+    if(!gruplar().some(x=>x.grup===grup)&&gruplar()[0])grup=gruplar()[0].grup;
+    $("#bGrup").value=grup; nCiz();
+  };
+  const nCiz=()=>{const x=SN.find(y=>y.sinif===sinif&&y.grup===grup);
+    $("#bNot").textContent=x?"Beceriler: "+x.beceriler.map(b=>b.tus+" "+b.ad+(b.tahmin?" (tahmin)":"")+" ["+({guclendirme:"güçlendirme",saldiri:"saldırı",hamle:"atılma"})[b.tur]+"]").join(", "):""};
+  $("#bSinif").innerHTML=siniflar.map(([k,ad])=>`<option value="${k}"${k===sinif?" selected":""}>${esc(ad)}</option>`).join("");
+  $("#bSinif").onchange=e=>{sinif=e.target.value;gCiz()};
+  $("#bGrup").onchange=e=>{grup=e.target.value;nCiz()};
+  const doldur=()=>{liste("#bSure",sure);liste("#bSald",sald);
+    $("#bSaldTus").value=A.saldiri_tusu||"";$("#bCan").value=A.can_potu_tusu||"";$("#bMana").value=A.mana_potu_tusu||"";$("#bHamle").value=A.hamle_tusu||"";$("#bUzak").checked=uzak};
+  $("#bHazir").onclick=()=>{const x=SN.find(y=>y.sinif===sinif&&y.grup===grup);if(!x)return;const h=x.ayar;
+    sure=h.sureli_tuslar.map(z=>({...z}));sald=h.saldiri_becerileri.map(z=>({...z}));uzak=h.uzak_dovus;
+    Object.assign(A,{saldiri_tusu:h.saldiri_tusu,can_potu_tusu:h.can_potu_tusu,mana_potu_tusu:h.mana_potu_tusu,hamle_tusu:h.hamle_tusu});
+    doldur();bildir("Hazır ayar dolduruldu: Kaydet'e basana kadar uygulanmaz. Statü: "+h.statu)};
+  gCiz();doldur();
+  $("#bKapat").onclick=kapatP;
+  $("#bKaydet").onclick=async()=>{
+    const x=SN.find(y=>y.sinif===sinif&&y.grup===grup), h=x&&x.ayar, o={
+      sinif, beceri_grubu:grup, uzak_dovus:$("#bUzak").checked,
+      sureli_tuslar:sure.filter(z=>z.tus).map(z=>({tus:z.tus,aralik_sn:z.aralik_sn||55})),
+      saldiri_becerileri:sald.filter(z=>z.tus).map(z=>({tus:z.tus,aralik_sn:z.aralik_sn||6})),
+      saldiri_tusu:$("#bSaldTus").value.trim().toLowerCase(), can_potu_tusu:$("#bCan").value.trim().toLowerCase(),
+      mana_potu_tusu:$("#bMana").value.trim().toLowerCase(), hamle_tusu:$("#bHamle").value.trim().toLowerCase()};
+    if(o.uzak_dovus)o.hamle_tusu="";
+    if(h&&(grup!==A.beceri_grubu||sinif!==A.sinif)){o.egitmen_anahtar=h.egitmen_anahtar;o.statu=h.statu;if("beceri_puani_dagit" in h)o.beceri_puani_dagit=h.beceri_puani_dagit}
+    Object.assign(D.ayar,o);await ayarYaz(o);ciz();kapatP()};
+}
+async function yenile(){
+  try{const r=await fetch(api("/api/durum"),{cache:"no-store"});
+    if(!r.ok){$("#durum").textContent=r.status===403?"Anahtar geçersiz: adresi bilgisayardaki konsoldan kopyala.":"Panel hatası";return}
+    const ilk=!D; D=await r.json(); if(ilk)kur(); ciz()}
+  catch(e){$("#durum").textContent="Panel sunucusu kapalı: bilgisayarda Web-Panel.bat'ı aç.";$("#isik").className="isik"}
+}
+function ekranYenile(){$("#ekran").src=api("/api/ekran?t="+Date.now())}
+yenile();setInterval(yenile,2500);ekranYenile();setInterval(ekranYenile,20000);
+</script>
+</body>
+</html>

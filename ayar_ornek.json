@@ -1,0 +1,182 @@
+{
+  "pencere_basligi": "Waryong2",
+  "mod": "slot",
+  "saldiri_tusu": "space",
+  "toplama_tusu": "z",
+  "esyaya_tikla": true,
+  "esya_yaricapi_piksel": 420,
+  "en_cok_esya": 10,
+  "ilk_vurus_bekleme_sn": 7,
+  "takilma_sn": 1.2,
+  "takilma_esik": 1.2,
+  "durgun_esik": 1.0,
+  "kamera_donus_sn": 0.4,
+  "can_potu_tusu": "1",
+  "can_esigi": 0.7,
+  "mana_potu_tusu": "2",
+  "mana_esigi": 0.3,
+  "sureli_tuslar": [
+    {
+      "tus": "3",
+      "aralik_sn": 55
+    },
+    {
+      "tus": "f3",
+      "aralik_sn": 55
+    }
+  ],
+  "envanter_kullan": [
+    {
+      "sablon": "yesil_iksir.png",
+      "aralik_sn": 1800
+    },
+    {
+      "sablon": "mor_iksir.png",
+      "aralik_sn": 1800
+    },
+    {
+      "sablon": "sandik.png",
+      "aralik_sn": 900
+    },
+    {
+      "sablon": "ejderha_1.png",
+      "aralik_sn": 1800,
+      "sabit": true
+    },
+    {
+      "sablon": "ejderha_2.png",
+      "aralik_sn": 1800,
+      "sabit": true
+    },
+    {
+      "sablon": "ejderha_3.png",
+      "aralik_sn": 1800,
+      "sabit": true
+    },
+    {
+      "sablon": "ejderha_4.png",
+      "aralik_sn": 1800,
+      "sabit": true
+    },
+    {
+      "sablon": "ejderha_kritik.png",
+      "aralik_sn": 1800,
+      "sabit": true
+    },
+    {
+      "sablon": "ejderha_delici.png",
+      "aralik_sn": 1800,
+      "sabit": true
+    },
+    {
+      "sablon": "ejderha_koruma.png",
+      "aralik_sn": 1200,
+      "sabit": true
+    },
+    {
+      "sablon": "bonsai_muhur.png",
+      "aralik_sn": 60,
+      "olunce": true
+    }
+  ],
+  "sadece_slot": false,
+  "slot_en_az": 3,
+  "slot_yaricapi_piksel": 200,
+  "tekli_bekleme_turu": 10,
+  "toplanacak_grup": 1,
+  "grup_ayrim_piksel": 230,
+  "toplama_can_siniri": 0.6,
+  "spot_ust_sure_sn": 120,
+  "statu": "str",
+  "karakter_tusu": "c",
+  "beceri_grubu": "bedensel",
+  "egitmen_anahtar": "bedensel",
+  "saldiri_becerileri": [
+    {
+      "tus": "4",
+      "aralik_sn": 6
+    },
+    {
+      "tus": "f1",
+      "aralik_sn": 6
+    },
+    {
+      "tus": "f2",
+      "aralik_sn": 6
+    }
+  ],
+  "olunce_yeniden_basla": true,
+  "saldiran_yaricapi_piksel": 190,
+  "npc_gorevleri": false,
+  "npc_gorev_araligi_sn": 300,
+  "npc_tekrar_dk": 20,
+  "gorev_npcleri": {
+    "biyolog": "biyolog",
+    "chaegirab": "biyolog",
+    "ji-min": "olay yard",
+    "olay yard": "olay yard",
+    "yuzbasi": "yuzbasi",
+    "depocu": "depocu",
+    "balikci": "balikci",
+    "gardiyan": "gardiyan"
+  },
+  "beceri_puani_dagit": true,
+  "oncelikli_beceri_konumu": [
+    -123,
+    138
+  ],
+  "gorev_araligi_sn": 120,
+  "izleme_araligi_sn": 40,
+  "spot_yaricapi_piksel": 380,
+  "envanter_tusu": "i",
+  "beceri_tuslari": [],
+  "beceri_araligi_sn": 20,
+  "hedef_basi_ust_sure_sn": 30,
+  "vuramama_siniri_sn": 7,
+  "yakinlik_halkasi_piksel": 260,
+  "gorev_tusu": "n",
+  "seviye_alt_fark": 7,
+  "toplama_en_uzak_piksel": 450,
+  "yurumeden_once_tur": 8,
+  "seviye_ust_fark": 13,
+  "en_fazla_yaratik_seviyesi": 9,
+  "metin_vurus_suresi_sn": 120,
+  "metin_kes": true,
+  "metin_tarama_sn": 3,
+  "metin_kelimeleri": [
+    "metin",
+    "metni",
+    "tasi",
+    "metini"
+  ],
+  "etiket_alti_piksel": 45,
+  "kamera_tusu": "e",
+  "bos_tur_siniri": 40,
+  "olum_kare_siniri": 3,
+  "profil": "level",
+  "aranan_oncelik": false,
+  "yeniden_baglan": true,
+  "dusuk_seviye_kesme": true,
+  "av_gorevi": true,
+  "gorev_parsomen": false,
+  "beceri_sirasi": [],
+  "beceri_sira_konum": [
+    [
+      -112,
+      125
+    ]
+  ],
+  "esya_avi": "",
+  "toplama_en_uzun_sn": 1.5,
+  "olum_sehir_sayisi": 999,
+  "sadece_hedefler": [],
+  "alan_kullan": false,
+  "kasilma_alani": null,
+  "olum_dongusu_sayisi": 6,
+  "kamera_egim_t_sn": 0.8,
+  "pot_yuvasi_doldur": true,
+  "olum_dongusu_sn": 180,
+  "pot_satin_al": true,
+  "pot_al_kirmizi_paket": 5,
+  "pot_al_mavi_paket": 1
+}

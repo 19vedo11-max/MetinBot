@@ -1,0 +1,55 @@
+{
+ "_not": "Kaynak: tr/en wiki.metin2.gameforge.com (klasik Metin2) + waryong2.com, 17.11.2026 arastirmasi. Waryong2'de canavar seviyeleri klasikle birebir tutuyor (oyunda goruldu). 'tahmin' isaretliler dogrulanmadi. Oyunda gorulen her zaman esastir.",
+ "imparatorluk": "Jinno (mavi bayrak); 1. koy Pyungmoo, 2. koy Bakra",
+ "harita_eslesme": {"monastry": "1. köy haritası", "pyungmoo": "1. köy haritası", "bakra": "2. köy haritası"},
+ "isinlanma": {
+  "koy_bayragi": "Envanterde koy bayragi -> 'Empire Warp' menusu: Shinsoo / Chunjo / Jinno / Close (ikinci adim henuz gorulmedi)",
+  "isinlayici_hedefleri_klasik": [
+   {"ad": "Waryong", "seviye": [14, 31]}, {"ad": "Bokjung", "seviye": [19, 44]},
+   {"ad": "Seungryong Vadisi", "seviye": [34, 49]}, {"ad": "Yongbi Çölü", "seviye": [37, 50]},
+   {"ad": "Sohan Dağı", "seviye": [49, 65]}, {"ad": "Şeytan Kulesi", "seviye": [57, 69]},
+   {"ad": "Doyyumhwan", "seviye": [69, 72]}, {"ad": "Hayalet Orman", "seviye": [60, 90]},
+   {"ad": "Kızıl Orman", "seviye": [80, 99]}]
+ },
+ "haritalar": [
+  {"ad": "1. köy haritası", "diger_adlar": ["Monastry", "Yongan", "Joan", "Pyungmoo"], "seviye": [1, 30],
+   "canavarlar": [["Aç Yabani Köpek", 1], ["Yabani Köpek", 1], ["Kurt", 3], ["Aç Kurt", 3], ["Alfa Kurt", 4], ["Aç Alfa Kurt", 4],
+    ["Mavi Kurt", 6], ["Aç Mavi Kurt", 6], ["Yaban Domuzu", 7], ["Aç Yaban Domuzu", 7], ["Alfa Mavi Kurt", 9], ["Aç Alfa Mavi Kurt", 9],
+    ["Kırmızı Yaban Domuzu", 10], ["Aç Kırmızı Yaban Domuzu", 10], ["Ayı", 12], ["Gri Kurt", 13], ["Boz Ayı", 15],
+    ["Lanetli Kırmızı Yaban Domuzu", 15], ["Alfa Gri Kurt", 16], ["Kaplan", 18], ["Beyaz Yeminli Asker", 18], ["Siyah Ayı", 19],
+    ["Beyaz Yeminli Okçu", 20], ["Kahverengi Ayı", 21], ["Lanetli Alfa Gri Kurt", 21], ["Beyaz Kaplan", 24],
+    ["Beyaz Yeminli General", 25], ["Beyaz Yeminli Komutan", 25], ["Lanetli Beyaz Kaplan", 29]],
+   "metinler": [["Üzüntü Metini", 5], ["Dövüş Metini", 10], ["Savaş Metini", 15], ["Hırs Metini", 20], ["Siyah Metin", 25]]},
+  {"ad": "2. köy haritası", "diger_adlar": ["Jayang", "Bokjung", "Bakra"], "seviye": [19, 44],
+   "canavarlar": [["Beyaz Yeminli Asker", 18], ["Beyaz Yeminli Okçu", 20], ["Lanetli Beyaz Yeminli General", 25],
+    ["Siyah Rüzgar Askeri", 26], ["Siyah Rüzgar Delisi", 27], ["Yabani Piyade", 29], ["Siyah Rüzgar Okçusu", 29],
+    ["Siyah Rüzgar Jak-To", 30], ["Siyah Fırtına Askeri", 31], ["Yabani Uşak", 32], ["Siyah Rüzgar To-Su", 33],
+    ["Yabani Okçu", 35], ["Siyah Fırtına Okçusu", 35], ["Vahşi Asker", 35], ["Yabani General", 36], ["Vahşi Deli", 37],
+    ["Vahşi Okçu", 40], ["Siyah Fırtına Pho-Hwan", 40], ["Vahşi Uzman", 42]],
+   "metinler": [["Siyah Metin", 25], ["Karanlık Metin", 30], ["Kıskançlık Metini", 35]]},
+  {"ad": "Seungryong Vadisi", "diger_adlar": ["Ork Vadisi"], "seviye": [34, 49],
+   "canavarlar": [["Ork", 26], ["Ork Gözcüsü", 29], ["Ork Savaşçısı", 31], ["Ork Büyücüsü", 33], ["Elit Ork", 34],
+    ["Karanlık Fanatik", 35], ["Elit Ork Gözcüsü", 36], ["Karanlık Arahan", 38], ["Elit Ork Savaşçısı", 39],
+    ["Elit Ork Büyücüsü", 40], ["Mistik Arahan Savaşçısı", 41], ["Elit Ork Generali", 44], ["Mistik Arahan Reisi", 44]],
+   "metinler": [["Gölge Metini", 45]]},
+  {"ad": "Yongbi Çölü", "diger_adlar": [], "seviye": [37, 60],
+   "canavarlar": [["Çölün Uçan Gözü", 37], ["Kral Akrep", 39], ["Yavru Örümcek", 43], ["Genç Akrep Adam", 44]],
+   "metinler": [["Ruh Metini", 40], ["Gölge Metini", 45], ["Dayanıklılık Metini", 50]]},
+  {"ad": "Sohan Dağı", "diger_adlar": ["Buz Diyarı"], "seviye": [49, 72], "canavarlar": [["Yeti", 66]],
+   "metinler": [["Şeytan Metini", 55], ["Ölüm Metini", 65]]},
+  {"ad": "Doyyumhwan", "diger_adlar": ["Ateş Toprakları"], "seviye": [69, 75], "canavarlar": [], "metinler": [["Katil Metini", 70]]},
+  {"ad": "Hayalet Orman", "diger_adlar": [], "seviye": [70, 90], "canavarlar": [], "metinler": []},
+  {"ad": "Kızıl Orman", "diger_adlar": [], "seviye": [80, 99],
+   "canavarlar": [["Kırmızı Hayalet Ağaç", 80], ["Kırmızı Hayalet Ağaç Kökü", 82], ["Kırmızı Orman Perisi", 83],
+    ["Kırmızı Hayalet Söğüt", 86], ["Kırmızı Kötü Ağaç", 88]], "metinler": []}
+ ],
+ "seviye_onerisi": [
+  {"seviye": [1, 10], "harita": "1. köy haritası", "not": "köy çevresi: köpek, kurt, yaban domuzu; Lv5 Üzüntü / Lv10 Dövüş metini"},
+  {"seviye": [10, 20], "harita": "1. köy haritası", "not": "köyden uzak: ayı, gri kurt, kaplan; Dövüş/Savaş metinleri", "tahmin": true},
+  {"seviye": [20, 30], "harita": "1. köy haritası", "not": "dış kısım: Beyaz Yeminli, Beyaz Kaplan; Hırs/Siyah metin; 25+ 2. köye geç", "tahmin": true},
+  {"seviye": [30, 40], "harita": "2. köy haritası", "not": "Siyah Rüzgar/Yabani; Karanlık/Kıskançlık metinleri", "tahmin": true},
+  {"seviye": [40, 55], "harita": "Seungryong Vadisi", "not": "ork/arahan; Yongbi Çölü de olur", "tahmin": true},
+  {"seviye": [55, 75], "harita": "Sohan Dağı", "not": "69+ Doyyumhwan", "tahmin": true},
+  {"seviye": [75, 99], "harita": "Hayalet Orman", "not": "80+ Kızıl Orman", "tahmin": true}
+ ]
+}

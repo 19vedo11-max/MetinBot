@@ -1,0 +1,12 @@
+# MetinBot - zorunlu paketler (Python 3.11+, Windows)
+# Surumler gelistirme makinesinde calisan surumlerdir (alt sinir olarak yazildi).
+numpy>=1.26
+opencv-python>=4.8
+pillow>=10.0
+pywin32>=306
+pydirectinput>=1.0.4
+keyboard>=0.13.5
+mss>=9.0
+dxcam>=0.0.5
+# Istege bagli (YOLO/torch ile yaratik sekil modeli egitimi): pakete DAHIL DEGIL,
+# bot bunlar olmadan calisir. Gerekirse ayri bir sanal ortamda: pip install ultralytics
