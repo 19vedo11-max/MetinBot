@@ -39,6 +39,9 @@ VARSAYILAN = {
     "esyaya_tikla": True,         # yerdeki esya/yang etiketine tiklayarak topla
     "esya_yaricapi_piksel": 650,
     "en_cok_esya": 10,            # bir toplama turunda en cok kac esyaya tiklansin
+    "hizli_vazgec": True,         # ulasilamayan hedefte bekleme kisalt + atla suresini uzat
+    "hizli_vazgec_atla_sn": 45,   # ulasilamayan hedef (ayni nokta) bu kadar sn secilmez (eski: 12)
+    "gorev_av_okuma_sn": 900,     # yalniz av gorevi icin gorev listesini bu aralikla oku (0 = npc_gorev_araligi_sn)
     "ilk_vurus_bekleme_sn": 7,    # hedefe tikladiktan sonra ilk vurus icin en cok bu kadar bekle
     "takilma_sn": 1.2, 
     "takilma_esik": 1.2,          # mini harita 1 sn icinde bundan az degisirse karakter yerinde sayiyor           # sahne bu kadar sure hic degismezse karakter engele takilmis sayilir
@@ -3880,7 +3883,8 @@ def calistir(ayar, sablon):
 
             # NPC'ye gitmeyi isteyen gorevler (Biyolog, Ji-min vb.)
             if (not tehdit and (ayar["npc_gorevleri"] or ayar["av_gorevi"]) and kapat_s is not None
-                    and time.time() - son_npc_gorev > ayar["npc_gorev_araligi_sn"]):
+                    and time.time() - son_npc_gorev > (max(ayar["npc_gorev_araligi_sn"], ayar["gorev_av_okuma_sn"])
+                                                   if not ayar["npc_gorevleri"] else ayar["npc_gorev_araligi_sn"])):
                 son_npc_gorev = time.time()
                 try:
                     if npc_gorevi_yap():
@@ -4051,7 +4055,7 @@ def calistir(ayar, sablon):
                     sirali.append(((1, int(uzak // ayar["yakinlik_halkasi_piksel"]), -yog(t), -sev, uzak), t))
             yaratik = [t for _, t in sorted(sirali, key=lambda s: s[0])]
             if atla:                                              # az once ulasilamayanlari 12 sn atla
-                yaratik = [t for t in yaratik if not any(time.time() - z < 12 and math.hypot(t[0] - ax, t[1] - ay) < 70
+                yaratik = [t for t in yaratik if not any(time.time() - z < (ayar['hizli_vazgec_atla_sn'] if ayar['hizli_vazgec'] else 12) and math.hypot(t[0] - ax, t[1] - ay) < 70
                                                          for z, ax, ay in atla)]
             yog_gorulen.append((time.time(), sum(1 for k_s, _ in sirali if k_s[0] == 0)))
             del yog_gorulen[:-300]
@@ -4306,7 +4310,7 @@ def calistir(ayar, sablon):
                         birak()                     # yururken saldiri tusu basili olmasin
                         if not sec(yakin[0][0], yakin[0][1]) or not vurus_bekle(5):
                             yaklasma += 1
-                            if yaklasma > 2:
+                            if yaklasma > (1 if ayar['hizli_vazgec'] else 2):
                                 kacin(yakin[0][0], yakin[0][1], "slot ici yeni hedef")
                                 break
                             continue
@@ -4329,7 +4333,7 @@ def calistir(ayar, sablon):
                         yaklasma = 0
                     elif time.time() - son_degisim > 2.5:   # vuramiyor: tusu birak, yaratiga yuru
                         yaklasma += 1
-                        if yaklasma > 2:                    # uc denemede de vuramadi: ulasilamiyor
+                        if yaklasma > (1 if ayar['hizli_vazgec'] else 2):   # uc (hizli: iki) denemede de vuramadi: ulasilamiyor
                             birak()
                             kacin(gen // 2, int(yuk * 0.58) - 200, "vurulamayan hedef")
                             break

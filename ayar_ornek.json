@@ -135,10 +135,10 @@
   "vuramama_siniri_sn": 7,
   "yakinlik_halkasi_piksel": 260,
   "gorev_tusu": "n",
-  "seviye_alt_fark": 7,
+  "seviye_alt_fark": 6,
   "toplama_en_uzak_piksel": 450,
   "yurumeden_once_tur": 8,
-  "seviye_ust_fark": 13,
+  "seviye_ust_fark": 25,
   "en_fazla_yaratik_seviyesi": 9,
   "metin_vurus_suresi_sn": 120,
   "metin_kes": true,
@@ -178,5 +178,8 @@
   "olum_dongusu_sn": 180,
   "pot_satin_al": true,
   "pot_al_kirmizi_paket": 5,
-  "pot_al_mavi_paket": 1
+  "pot_al_mavi_paket": 1,
+  "kare_paylas_klasoru": "",
+  "kare_paylas_adi": "",
+  "kare_paylas_gunluk": 200
 }
