@@ -40,6 +40,7 @@ VARSAYILAN = {
     "esyaya_tikla": True,         # yerdeki esya/yang etiketine tiklayarak topla
     "esya_yaricapi_piksel": 650,
     "en_cok_esya": 10,            # bir toplama turunda en cok kac esyaya tiklansin
+    "ince_vurus": True,           # 1 piksellik can dususunu de vurus say; menzil disindaki hedefe bosa sallamadan yaklas
     "grupta_kal": True,           # slotta ulasilamayan/vurulamayan yaratik olursa, etrafta canli varken kacma: atla, digerlerine vur
     "hizli_vazgec": True,         # ulasilamayan hedefte bekleme kisalt + atla suresini uzat
     "hizli_vazgec_atla_sn": 45,   # ulasilamayan hedef (ayni nokta) bu kadar sn secilmez (eski: 12)
@@ -1014,6 +1015,18 @@ def calistir(ayar, sablon):
             return False
         finally:
             pydirectinput.keyUp(ayar["kamera_tusu"])
+
+    def vurus_sabri(k_, gen_, yuk_, son_degisim_):
+        """Hedefin cani dusmezse kac sn beklensin: hedef menzil disindaysa (secim halkasi karakterden uzak)
+        bosuna sallamasin - hemen yaklassin; yakinsa guclu yaratik olabilir - biraz daha sabret."""
+        if not ayar.get("ince_vurus", True):
+            return 2.5
+        if time.time() - son_degisim_ < 0.9:
+            return 2.5
+        halka_ = secim_halkasi(k_)
+        if halka_ and math.hypot(halka_[0] - gen_ // 2, halka_[1] - int(yuk_ * 0.60)) > 170:
+            return 0.9                                  # uzakta: bosa vuruyor, hemen yuru
+        return 3.5 if halka_ else 2.5
 
     def kacin(hx, hy, neden=""):
         su_an[0] = "kacin"
@@ -4695,11 +4708,11 @@ def calistir(ayar, sablon):
                             print(f"{time.strftime('%H:%M:%S')}  oto hedef: tus basiliyken siradaki yaratik kendiliginden secildi")
                     if son_can > 1.5:
                         son_can = hc
-                    elif hc < son_can - 0.01:
+                    elif hc < son_can - (0.005 if ayar.get("ince_vurus", True) else 0.01):   # 1 piksel dusus de vurus sayilir (guclu yaratik)
                         son_can, son_degisim = hc, time.time()
                         son_hasar = time.time()
                         yaklasma = 0
-                    elif time.time() - son_degisim > 2.5:   # vuramiyor: tusu birak, yaratiga yuru
+                    elif time.time() - son_degisim > vurus_sabri(k2, gen, yuk, son_degisim):   # vuramiyor: tusu birak, yaratiga yuru
                         yaklasma += 1
                         if yaklasma > (1 if ayar['hizli_vazgec'] else 2):   # uc (hizli: iki) denemede de vuramadi: ulasilamiyor
                             birak()
