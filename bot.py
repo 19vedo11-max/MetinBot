@@ -40,6 +40,8 @@ VARSAYILAN = {
     "esyaya_tikla": True,         # yerdeki esya/yang etiketine tiklayarak topla
     "esya_yaricapi_piksel": 650,
     "en_cok_esya": 10,            # bir toplama turunda en cok kac esyaya tiklansin
+    "yakin_saldir": True,         # dibime gelen yaratiga (seviye/ad filtresine bakmadan) canim dusmeden hemen vur
+    "yakin_saldir_piksel": 190,   # 'dibimde' sayilan uzaklik (karakter merkezinden)
     "ince_vurus": True,           # 1 piksellik can dususunu de vurus say; menzil disindaki hedefe bosa sallamadan yaklas
     "grupta_kal": True,           # slotta ulasilamayan/vurulamayan yaratik olursa, etrafta canli varken kacma: atla, digerlerine vur
     "hizli_vazgec": True,         # ulasilamayan hedefte bekleme kisalt + atla suresini uzat
@@ -4479,7 +4481,10 @@ def calistir(ayar, sablon):
             if tas:
                 tas = sorted(tas, key=lambda t: math.hypot(t[0] - karakter[0], t[1] - karakter[1]))
             hedefler, sure = (tas, ayar["metin_vurus_suresi_sn"]) if tas else (yaratik, ayar["hedef_basi_ust_sure_sn"])
-            if saldiri_altinda() or (can < ayar["savunma_can_esigi"] and saldiran):  # vuruluyorum: once yanimdakiler
+            dibimde_ = [t for t in kirmizi_etiketler(kare)                     # dibime gelen: filtre ne derse desin once o
+                        if math.hypot(t[0] - karakter[0], t[1] + 45 - karakter[1]) < ayar["yakin_saldir_piksel"]]
+            if (saldiri_altinda() or (can < ayar["savunma_can_esigi"] and saldiran)
+                    or (ayar["yakin_saldir"] and dibimde_ and not tas)):  # vuruluyorum ya da dibimde: once yanimdakiler
                 yakin_ = sorted((t for t in kirmizi_etiketler(kare)
                                  if math.hypot(t[0] - karakter[0], t[1] + 45 - karakter[1]) < ayar["savunma_yaricapi_piksel"]),
                                 key=lambda t: math.hypot(t[0] - karakter[0], t[1] + 45 - karakter[1]))
@@ -4554,7 +4559,8 @@ def calistir(ayar, sablon):
             alan["mini"] = 0
 
             # 0) slota girmeden once: hava kilici / ofke sonmusse once yak (savas ortasinda yakilmaz)
-            if ayar["sureli_tuslar"] and can_orani(kare) >= ayar["guc_can_esigi"]:
+            if (ayar["sureli_tuslar"] and can_orani(kare) >= ayar["guc_can_esigi"] and not saldiri_altinda()
+                    and not tehdit and su_an[0] != "savunma"):         # yaratik dibindeyken durup guclendirme yakma
                 gecen_g = time.time() - guc["son"]
                 if guc["hedef"] is None:
                     sonuk_ = gecen_g > min(t["aralik_sn"] for t in ayar["sureli_tuslar"])
