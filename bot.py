@@ -3128,11 +3128,13 @@ def calistir(ayar, sablon):
                 print(f"{an}  karakter secimi: bos yuva - yandaki yuvaya geciliyor ({giris['yuva']})")
                 time.sleep(1.2)
                 return True
-            ne = tikla_yazi("oyuna basla", "basla", "baslat", "start")
-            print(f"{an}  karakter secim ekrani - " + (f"'{ne}' tiklandi" if ne else "Enter"))
-            if not ne:
-                pydirectinput.press("enter")                    # oyunda degiliz: sohbet acma tehlikesi yok
-            time.sleep(8.0)
+            pydirectinput.press("enter")                        # Vedat: karakter seciminde Enter ile girilir
+            time.sleep(3.0)
+            ne = None
+            if hizli_cubuk_puani(kare_al(h)) < 0.5:              # hala secim ekraninda: 'Basla' dugmesine tikla
+                ne = tikla_yazi("oyuna basla", "basla", "baslat", "start")
+            print(f"{an}  karakter secim ekrani - Enter" + (f" + '{ne}' tiklandi" if ne else ""))
+            time.sleep(6.0)
             return True
         if giris["kopuk"]:                                      # yukleme ekrani vb.: bir sure bekle
             giris.setdefault("bilinmeyen_bas", time.time())
