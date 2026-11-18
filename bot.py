@@ -40,6 +40,7 @@ VARSAYILAN = {
     "esyaya_tikla": True,         # yerdeki esya/yang etiketine tiklayarak topla
     "esya_yaricapi_piksel": 650,
     "en_cok_esya": 10,            # bir toplama turunda en cok kac esyaya tiklansin
+    "grupta_kal": True,           # slotta ulasilamayan/vurulamayan yaratik olursa, etrafta canli varken kacma: atla, digerlerine vur
     "hizli_vazgec": True,         # ulasilamayan hedefte bekleme kisalt + atla suresini uzat
     "hizli_vazgec_atla_sn": 45,   # ulasilamayan hedef (ayni nokta) bu kadar sn secilmez (eski: 12)
     "gorev_av_okuma_sn": 900,     # yalniz av gorevi icin gorev listesini bu aralikla oku (0 = npc_gorev_araligi_sn)
@@ -4574,6 +4575,7 @@ def calistir(ayar, sablon):
             olduruldu, onceki_hc = 0, 0.0
             yaklasma = 0
             son_hasar = time.time()
+            slot_atla = []                  # bu slotta ulasilamayan/vurulamayan yaratiklar (zaman, x, y): 20 sn secilmez
             pydirectinput.keyDown(ayar["saldiri_tusu"])
             saldiri_basili = True
             su_an[0] = "slot kesiyor"
@@ -4623,6 +4625,9 @@ def calistir(ayar, sablon):
                         yakin = yakindakiler(k2b, 9999, 0, ayar["spot_yaricapi_piksel"] + 260, alt_s)
                         if ayar["sadece_hedefler"] and yakin and not vuruluyor:
                             yakin = sadece_suz(k2b, yakin, hemen=True)
+                    if slot_atla and yakin:
+                        slot_atla[:] = [a_ for a_ in slot_atla if time.time() - a_[0] < 20]
+                        yakin = [t for t in yakin if not any(math.hypot(t[0] - a_[1], t[1] - a_[2]) < 70 for a_ in slot_atla)]
                     if not yakin:
                         bos += 1
                         if vuruluyor and bos < 25:  # vuruluyor ama etiket gorunmuyor: yerinde vurmaya devam
@@ -4641,6 +4646,13 @@ def calistir(ayar, sablon):
                         if not sec(yakin[0][0], yakin[0][1]) or not vurus_bekle(5):
                             yaklasma += 1
                             if yaklasma > (1 if ayar['hizli_vazgec'] else 2):
+                                if ayar.get("grupta_kal", True) and (len(yakin) > 1 or saldiri_altinda()):
+                                    slot_atla.append((time.time(), yakin[0][0], yakin[0][1]))
+                                    yaklasma = 0
+                                    print(f"{time.strftime('%H:%M:%S')}  slot ici: ulasilamayan yaratik atlandi - gruptakilere devam")
+                                    pydirectinput.keyDown(ayar["saldiri_tusu"])
+                                    saldiri_basili = True
+                                    continue
                                 kacin(yakin[0][0], yakin[0][1], "slot ici yeni hedef")
                                 break
                             continue
@@ -4665,6 +4677,21 @@ def calistir(ayar, sablon):
                         yaklasma += 1
                         if yaklasma > (1 if ayar['hizli_vazgec'] else 2):   # uc (hizli: iki) denemede de vuramadi: ulasilamiyor
                             birak()
+                            if ayar.get("grupta_kal", True):
+                                nokta_ = govde_noktasi(k2, ayar["etiket_alti_piksel"])
+                                diger_ = [t for t in yakindakiler(k2, 9999, 0, ayar["spot_yaricapi_piksel"] + 160, None)
+                                          if not (nokta_ and abs(t[0] - nokta_[0]) < 60 and 0 < nokta_[1] - t[1] < 220)]
+                                if diger_ or saldiri_altinda():
+                                    if nokta_:
+                                        slot_atla.append((time.time(), nokta_[0], nokta_[1] - ayar["etiket_alti_piksel"]))
+                                    yaklasma = 0
+                                    print(f"{time.strftime('%H:%M:%S')}  slot ici: vurulamayan yaratik birakildi - gruptakilere devam")
+                                    if diger_ and sec(diger_[0][0], diger_[0][1]):
+                                        vurus_bekle(3)
+                                    pydirectinput.keyDown(ayar["saldiri_tusu"])
+                                    saldiri_basili = True
+                                    son_can, son_degisim = 2.0, time.time()
+                                    continue
                             kacin(gen // 2, int(yuk * 0.58) - 200, "vurulamayan hedef")
                             break
                         birak()

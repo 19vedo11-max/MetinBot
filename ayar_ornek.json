@@ -127,7 +127,7 @@
   ],
   "gorev_araligi_sn": 120,
   "izleme_araligi_sn": 40,
-  "spot_yaricapi_piksel": 380,
+  "spot_yaricapi_piksel": 240,
   "envanter_tusu": "i",
   "beceri_tuslari": [],
   "beceri_araligi_sn": 20,
@@ -181,5 +181,7 @@
   "pot_al_mavi_paket": 10,
   "kare_paylas_klasoru": "",
   "kare_paylas_adi": "",
-  "kare_paylas_gunluk": 200
+  "kare_paylas_gunluk": 200,
+  "mini_harita_yuru": false,
+  "hizli_vazgec": false
 }
