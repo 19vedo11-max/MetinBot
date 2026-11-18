@@ -162,7 +162,8 @@ VARSAYILAN = {
     "toplama_araligi_sn": 0.25,
     "grup_en_az": 3,              # bir grupta en az bu kadar canavar olmeden slot bitmis sayilmaz
     "guc_can_esigi": 0.5,         # can bunun altindayken hava kilici / ofke (sureli_tuslar) basilmaz
-    "alan_kisa_yuruyus": 5,       # slot bitince haritasiz kisa yuruyusle ayni alanda kac kez aransin
+    "mini_harita_yuru": True,     # buyuk haritadan once mini haritadaki kirmizi nokta kumesine yuru
+    "alan_kisa_yuruyus": 5,      # slot bitince haritasiz kisa yuruyusle ayni alanda kac kez aransin
     "dolum_esigi": 0.85,          # grup bitince can bu orana kadar pot ile doldurulur
     "sadece_hedefler": [],        # doluysa yalniz adi bunlara tutan canavarlar kesilir (or. "Kotu Siyah Firtina Okcusu")
     "pot_satin_al": True,         # can potu bitince koydeki Saticidan al (20'lik kucuk iksir paketleri)
@@ -292,7 +293,25 @@ def _dx_kare(x, y, w, hh):
         return None
 
 
+_son_kare = [None]
+
+
 def kare_al(h):
+    """Oyun penceresinin karesi. Pencere kucultulmus / ekran disina tasmis / bos kare gelirse cokme yerine
+    bekleyip yeniden dener; olmazsa son iyi kareyi (yoksa siyah kare) dondurur."""
+    for _d in range(6):
+        try:
+            f = _kare_al_ic(h)
+            if f is not None and f.size and f.shape[0] > 100 and f.shape[1] > 100:
+                _son_kare[0] = f
+                return f
+        except Exception:
+            pass
+        time.sleep(0.5)
+    return _son_kare[0] if _son_kare[0] is not None else np.zeros((1111, 1920, 3), np.uint8)
+
+
+def _kare_al_ic(h):
     if win32gui.IsIconic(h):                       # oyun simge durumuna kucultulmus: geri ac (yoksa bos kare -> cokus)
         win32gui.ShowWindow(h, 9)
         time.sleep(1.0)
@@ -1826,6 +1845,47 @@ def calistir(ayar, sablon):
                     return
             elif sum(1 for t in tum_ for u in tum_ if math.hypot(t[0] - u[0], t[1] - u[1]) < ayar["slot_yaricapi_piksel"]) >= 6:
                 return
+
+    def mini_harita_yuru():
+        """Buyuk haritayi acmadan: mini haritadaki en yakin kirmizi nokta kumesine dogru ekranda bos yone yuru.
+        Hedef etiketi gorunurse durur. Donus: True yurundu (kume vardi), False kume yok."""
+        try:
+            k_ = kare_al(h)
+            mm = k_[30:140, k_.shape[1] - 140:k_.shape[1] - 30].astype(int)
+            kir_m = ((mm[..., 0] > 140) & (mm[..., 1] < 90) & (mm[..., 2] < 90)).astype(np.uint8)
+            kir_m[48:63, 48:63] = 0
+            n_m, et_m, _, mer_m = cv2.connectedComponentsWithStats(cv2.dilate(kir_m, np.ones((9, 9), np.uint8)), 8)
+            en = None
+            for i_m in range(1, n_m):
+                ag = int(kir_m[et_m == i_m].sum())
+                if ag < max(12, 4 * ayar["slot_en_az"]):
+                    continue
+                vx, vy = mer_m[i_m][0] - 55, mer_m[i_m][1] - 55
+                uz = math.hypot(vx, vy)
+                if en is None or uz < en[0]:
+                    en = (uz, ag, math.atan2(vy, vx))
+            if en is None:
+                return False
+            su_an[0] = "mini harita: kumeye yuruyor"
+            print(f"{time.strftime('%H:%M:%S')}  mini harita: kumeye yuruyor ({en[1]} px kirmizi, {en[0]:.0f} px uzakta, {math.degrees(en[2]):.0f} derece)")
+            tx, ty = bos_yon(k_, en[2], rx=330, ry=210)
+            birak()
+            tikla(tx, ty)
+            pydirectinput.moveTo(ox_son[0] + k_.shape[1] // 2, ox_son[1] + int(k_.shape[0] * 0.9))
+            bas_ = time.time()
+            while time.time() - bas_ < 2.2 and durum["calis"] and not durum["duraklat"]:
+                time.sleep(0.2)
+                kf_ = kare_al(h)
+                tum_ = kirmizi_etiketler(kf_)
+                if ayar["sadece_hedefler"]:
+                    if sadece_suz(kf_, tum_):
+                        break
+                elif sum(1 for t in tum_ for u in tum_ if math.hypot(t[0] - u[0], t[1] - u[1]) < ayar["slot_yaricapi_piksel"]) >= 6:
+                    break
+            return True
+        except Exception as e_:
+            print("mini_harita_yuru:", e_)
+            return False
 
     alan_mola = [0.0, 0]   # [alan modunun askida oldugu son an, ust uste basarisiz alan yuruyusu]
 
@@ -4168,6 +4228,11 @@ def calistir(ayar, sablon):
                 # 3 turda da uygun hedef cikmadiysa (ya da cevrede yalniz dusuk seviyeli varsa) beklemeden baska bolgeye
                 if bos_tur < 3 and dusuk_var < 2 and etrafa_bak(ayar["etrafa_bakma_sn"]):
                     continue
+                if (ayar.get("mini_harita_yuru", True) and not alan_aktif() and dusuk_var < 2
+                        and alan.get("mini", 0) < 3):
+                    alan["mini"] = alan.get("mini", 0) + 1
+                    if mini_harita_yuru():
+                        continue
                 if alan["yerel"] < ayar["alan_kisa_yuruyus"] and dusuk_var < 2:
                     alan["yerel"] += 1
                     alan_ici_yuru()
@@ -4182,6 +4247,7 @@ def calistir(ayar, sablon):
                 continue
             bos_tur = 0
             alan["yerel"] = 0
+            alan["mini"] = 0
 
             # 0) slota girmeden once: hava kilici / ofke sonmusse once yak (savas ortasinda yakilmaz)
             if ayar["sureli_tuslar"] and can_orani(kare) >= ayar["guc_can_esigi"]:

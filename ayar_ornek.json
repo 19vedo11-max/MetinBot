@@ -107,7 +107,7 @@
   ],
   "olunce_yeniden_basla": true,
   "saldiran_yaricapi_piksel": 190,
-  "npc_gorevleri": false,
+  "npc_gorevleri": true,
   "npc_gorev_araligi_sn": 300,
   "npc_tekrar_dk": 20,
   "gorev_npcleri": {
@@ -154,11 +154,11 @@
   "bos_tur_siniri": 40,
   "olum_kare_siniri": 3,
   "profil": "level",
-  "aranan_oncelik": false,
+  "aranan_oncelik": true,
   "yeniden_baglan": true,
   "dusuk_seviye_kesme": true,
   "av_gorevi": true,
-  "gorev_parsomen": false,
+  "gorev_parsomen": true,
   "beceri_sirasi": [],
   "beceri_sira_konum": [
     [
@@ -177,8 +177,8 @@
   "pot_yuvasi_doldur": true,
   "olum_dongusu_sn": 180,
   "pot_satin_al": true,
-  "pot_al_kirmizi_paket": 5,
-  "pot_al_mavi_paket": 1,
+  "pot_al_kirmizi_paket": 10,
+  "pot_al_mavi_paket": 10,
   "kare_paylas_klasoru": "",
   "kare_paylas_adi": "",
   "kare_paylas_gunluk": 200
