@@ -11,7 +11,8 @@ exp_olcum.csv
 goruntu/
 veri_yolo/
 runs/
-model/
+model/*
+!model/yaratik.onnx
 yolo_env/
 rapor/
 _gecici/

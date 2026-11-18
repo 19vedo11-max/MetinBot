@@ -32,6 +32,10 @@ with zipfile.ZipFile(paket) as z:
         with z.open(u) as kaynak, open(hedef, "wb") as f:
             shutil.copyfileobj(kaynak, f)
 
+model_ = os.path.join(KLASOR, "model", "yaratik.onnx")       # sekil modeli de dagitilsin (arkadaslarin botu kullanir)
+if os.path.exists(model_):
+    os.makedirs(os.path.join(DEPO, "model"), exist_ok=True)
+    shutil.copy(model_, os.path.join(DEPO, "model", "yaratik.onnx"))
 subprocess.run(["git", "add", "-A"], cwd=DEPO, check=True)
 if subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=DEPO).returncode == 0:
     print("degisiklik yok - gonderilmedi")

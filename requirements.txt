@@ -10,3 +10,5 @@ mss>=9.0
 dxcam>=0.0.5
 # Istege bagli (YOLO/torch ile yaratik sekil modeli egitimi): pakete DAHIL DEGIL,
 # bot bunlar olmadan calisir. Gerekirse ayri bir sanal ortamda: pip install ultralytics
+# Istege bagli: sekil.py (YOLO onnx yardimcisi) icin onnxruntime; yoksa bot sessizce onsuz calisir
+onnxruntime>=1.18

@@ -40,6 +40,8 @@ VARSAYILAN = {
     "esyaya_tikla": True,         # yerdeki esya/yang etiketine tiklayarak topla
     "esya_yaricapi_piksel": 650,
     "en_cok_esya": 10,            # bir toplama turunda en cok kac esyaya tiklansin
+    "alan_bos_sn": 10,            # alan modunda bu kadar sn slot kesilmezse kisa yuruyusleri beklemeden alana don
+    "alana_donerken_dal": True,   # alana donerken yolda slot gorurse yuruyusu kesip ona dal
     "yakin_saldir": True,         # dibime gelen yaratiga (seviye/ad filtresine bakmadan) canim dusmeden hemen vur
     "yakin_saldir_piksel": 190,   # 'dibimde' sayilan uzaklik (karakter merkezinden)
     "ince_vurus": True,           # 1 piksellik can dususunu de vurus say; menzil disindaki hedefe bosa sallamadan yaklas
@@ -173,6 +175,10 @@ VARSAYILAN = {
     "mini_harita_yuru": True,     # buyuk haritadan once mini haritadaki kirmizi nokta kumesine yuru
     "alan_kisa_yuruyus": 5,      # slot bitince haritasiz kisa yuruyusle ayni alanda kac kez aransin
     "dolum_esigi": 0.85,          # grup bitince can bu orana kadar pot ile doldurulur
+    "yolo_kullan": True,         # sekil modeli (sekil.py) yardimci: etiketsiz yaratik + oyuncu korumasi
+    "yolo_esik": 0.45,           # yaratik kutusu min skoru
+    "yolo_slot": True,           # slot icinde etiket yoksa YOLO yaratik kutusuna vur
+    "yolo_oyuncu_koru": True,    # etiketin govdesi YOLO oyuncu ise hedef alma
     "sadece_hedefler": [],        # doluysa yalniz adi bunlara tutan canavarlar kesilir (or. "Kotu Siyah Firtina Okcusu")
     "pot_satin_al": True,         # can potu bitince koydeki Saticidan al (20'lik kucuk iksir paketleri)
     "pot_al_kirmizi_paket": 5,    # kac paket kucuk kirmizi (her biri 20 adet)
@@ -328,6 +334,50 @@ def zaman_yaz(ad, deger):
         pass
 
 
+_yolo = {"t": 0.0, "kutular": [], "kare_t": 0.0, "ms": 0.0, "sag": None, "ayar": {}}   # sekil izleginin paylasilan durumu
+
+
+def yolo_taze(yas=1.2):
+    """Son YOLO tespitleri (yas sn icindeyse), yoksa []. CPU'da bir cikarim ~0.4 sn: pencere 1.2 sn."""
+    return _yolo["kutular"] if time.time() - _yolo["t"] <= yas else []
+
+
+def _kesisim(a, b):
+    x0, y0, x1, y1 = max(a[0], b[0]), max(a[1], b[1]), min(a[2], b[2]), min(a[3], b[3])
+    return max(0.0, x1 - x0) * max(0.0, y1 - y0)
+
+
+def yolo_oyuncu_etiketi_mi(x, y):
+    """(x, y) kirmizi etiketin govdesi (x+-60, y+10..+200) YOLO'da oyuncuya ait, yaratiga degil mi?"""
+    if not _yolo["ayar"].get("yolo_oyuncu_koru", True) or not _yolo["ayar"].get("yolo_kullan", True):
+        return False
+    kutular = yolo_taze()
+    if not kutular:
+        return False
+    bolge = (x - 60, y + 10, x + 60, y + 200)
+    alan = 120 * 190.0
+    oy = any(k[0] == "oyuncu" and k[1] >= 0.5 and _kesisim(bolge, k[2:]) > 0.15 * alan for k in kutular)
+    if not oy:
+        return False
+    return not any(k[0] == "yaratik" and _kesisim(bolge, k[2:]) > 0.10 * alan for k in kutular)
+
+
+def yolo_yaratik_yakin(gen, yuk, yaricap):
+    """Karakter merkezine yaricap icindeki en yakin YOLO yaratik kutusu: (cx, govde_ortasi_y) ya da None."""
+    if not _yolo["ayar"].get("yolo_kullan", True) or not _yolo["ayar"].get("yolo_slot", True):
+        return None
+    kx, ky = gen // 2, yuk * 0.58
+    en = None
+    for k in yolo_taze():
+        if k[0] != "yaratik" or k[1] < _yolo["ayar"].get("yolo_esik", 0.45):
+            continue
+        cx, cy = (k[2] + k[4]) / 2, (k[3] + k[5]) / 2
+        d = math.hypot(cx - kx, cy - ky)
+        if d < yaricap and (en is None or d < en[0]):
+            en = (d, cx, cy)
+    return (en[1], en[2]) if en else None
+
+
 def kare_al(h):
     """Oyun penceresinin karesi. Pencere kucultulmus / ekran disina tasmis / bos kare gelirse cokme yerine
     bekleyip yeniden dener; olmazsa son iyi kareyi (yoksa siyah kare) dondurur."""
@@ -336,6 +386,7 @@ def kare_al(h):
             f = _kare_al_ic(h)
             if f is not None and f.size and f.shape[0] > 100 and f.shape[1] > 100:
                 _son_kare[0] = f
+                _yolo["kare_t"] = time.time()
                 return f
         except Exception:
             pass
@@ -1072,6 +1123,11 @@ def calistir(ayar, sablon):
         for t in kirmizi_etiketler(k):
             uzak = math.hypot(t[0] - kx, t[1] - ky)
             if not r_min <= uzak < r_max:
+                continue
+            if yolo_oyuncu_etiketi_mi(t[0], t[1]):
+                if time.time() - _yolo.get("log_t", 0) > 30:
+                    _yolo["log_t"] = time.time()
+                    print(f"{time.strftime('%H:%M:%S')}  sekil: oyuncu sanilan etiket atlandi")
                 continue
             sev = yaratik_seviyesi(k, t)
             if sev is None:
@@ -2835,7 +2891,7 @@ def calistir(ayar, sablon):
         giris.pop("bilinmeyen_bas", None)
         return False
 
-    kod_dosyalari = [os.path.join(KLASOR, f) for f in ("bot.py", "oku.py", "rakam.py", "yol.py", "gorev_yurut.py", "ayar.json")]
+    kod_dosyalari = [os.path.join(KLASOR, f) for f in ("bot.py", "oku.py", "rakam.py", "yol.py", "gorev_yurut.py", "sekil.py", "ayar.json")]
 
     def kod_damgasi():
         return tuple(os.path.getmtime(f) if os.path.exists(f) else 0 for f in kod_dosyalari)
@@ -3368,7 +3424,7 @@ def calistir(ayar, sablon):
             if saldiri_altinda():
                 print("   git: yolda saldiri - kesmeye donuluyor")
                 return False
-            if time.time() - bas_ > 3 and not alan_aktif():   # yolda slot: dur, kes (alan modunda once alana var)
+            if time.time() - bas_ > 3 and (not alan_aktif() or ayar["alana_donerken_dal"]):   # yolda slot: dur, kes
                 yk_, gn_ = kf_.shape[:2]
                 et_ = [t for t in kirmizi_etiketler(kf_) if math.hypot(t[0] - gn_ // 2, t[1] - yk_ * 0.58) < 450]
                 if len(et_) >= ayar["slot_en_az"]:
@@ -3839,6 +3895,40 @@ def calistir(ayar, sablon):
     if not ayar["sadece_toplama"]:
         threading.Thread(target=_olum_bekci, daemon=True).start()
 
+    _yolo["ayar"] = ayar
+
+    def _sekil_izlegi():
+        """YOLO sekil modeli: en son kareyi olculen sureye gore (en az 150 ms ara) modele verir."""
+        try:
+            import sekil as sekil_mod
+            model_ = sekil_mod.Sekil()
+        except Exception:
+            return
+        if not model_.ok:
+            print("sekil: model/onnxruntime yok - devre disi")
+            return
+        _yolo["sag"] = model_.saglayici
+        print(f"sekil: hazir ({model_.saglayici})")
+        son_kare_ = None
+        while durum["calis"]:
+            time.sleep(max(0.15, _yolo["ms"] / 1000.0))
+            try:
+                if (not ayar.get("yolo_kullan", True) or durum["duraklat"]
+                        or win32gui.GetForegroundWindow() != h):
+                    continue
+                k_ = _son_kare[0]
+                if k_ is None or k_ is son_kare_ or time.time() - _yolo["kare_t"] > 1.0:
+                    continue
+                son_kare_ = k_
+                t0_ = time.time()
+                kut_ = model_.tespit(k_, 0.25)
+                _yolo["ms"] = (time.time() - t0_) * 1000.0
+                _yolo["kutular"], _yolo["t"] = kut_, time.time()
+            except Exception as e_:
+                print("sekil izlegi:", e_)
+                time.sleep(2)
+
+    threading.Thread(target=_sekil_izlegi, daemon=True).start()
     def _durgun_bekci():
         """Karakter 3 sn'den uzun hem yurumuyor (mini harita sabit) hem vurmuyorsa (hedef cani degismiyor)
         ne yapildigini bir kez loga yazar."""
@@ -4542,7 +4632,8 @@ def calistir(ayar, sablon):
                     alan["mini"] = alan.get("mini", 0) + 1
                     if mini_harita_yuru():
                         continue
-                if alan["yerel"] < ayar["alan_kisa_yuruyus"] and dusuk_var < 2:
+                alan_bos_ = alan_aktif() and time.time() - son_savas[0] > ayar["alan_bos_sn"]   # 10 sn slot yok: alana don
+                if alan["yerel"] < ayar["alan_kisa_yuruyus"] and dusuk_var < 2 and not alan_bos_:
                     alan["yerel"] += 1
                     alan_ici_yuru()
                     continue
@@ -4673,6 +4764,11 @@ def calistir(ayar, sablon):
                     if slot_atla and yakin:
                         slot_atla[:] = [a_ for a_ in slot_atla if time.time() - a_[0] < 20]
                         yakin = [t for t in yakin if not any(math.hypot(t[0] - a_[1], t[1] - a_[2]) < 70 for a_ in slot_atla)]
+                    if not yakin and not tas and ayar.get("yolo_slot", True):
+                        yb_ = yolo_yaratik_yakin(gen, yuk, ayar["spot_yaricapi_piksel"] + 160)
+                        if yb_:
+                            print(f"{time.strftime('%H:%M:%S')}  sekil: etiketsiz yaratik - vuruluyor")
+                            yakin = [(yb_[0], yb_[1] - ayar["etiket_alti_piksel"])]
                     if not yakin:
                         bos += 1
                         if vuruluyor and bos < 25:  # vuruluyor ama etiket gorunmuyor: yerinde vurmaya devam
