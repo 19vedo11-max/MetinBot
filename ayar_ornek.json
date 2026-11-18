@@ -183,5 +183,7 @@
   "kare_paylas_adi": "",
   "kare_paylas_gunluk": 200,
   "mini_harita_yuru": false,
-  "hizli_vazgec": false
+  "hizli_vazgec": false,
+  "hizli_engel": false,
+  "yolo_slot": true
 }

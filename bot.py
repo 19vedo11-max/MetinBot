@@ -4896,6 +4896,7 @@ def calistir(ayar, sablon):
             yaklasma = 0
             son_hasar = time.time()
             slot_atla = []                  # bu slotta ulasilamayan/vurulamayan yaratiklar (zaman, x, y): 20 sn secilmez
+            yolo_deneme = [0]               # bu slotta sekil modeliyle (etiketsiz) yaratiga gidis sayisi
             pydirectinput.keyDown(ayar["saldiri_tusu"])
             saldiri_basili = True
             su_an[0] = "slot kesiyor"
@@ -4950,9 +4951,13 @@ def calistir(ayar, sablon):
                         yakin = [t for t in yakin if not any(math.hypot(t[0] - a_[1], t[1] - a_[2]) < 70 for a_ in slot_atla)]
                     if not yakin and not tas and ayar.get("yolo_slot", True):
                         yb_ = yolo_yaratik_yakin(gen, yuk, ayar["spot_yaricapi_piksel"] + 160)
-                        if yb_:
-                            print(f"{time.strftime('%H:%M:%S')}  sekil: etiketsiz yaratik - vuruluyor")
-                            yakin = [(yb_[0], yb_[1] - ayar["etiket_alti_piksel"])]
+                        if yb_:                                  # atlanan noktadaysa ya da bu slotta 2 kez denendiyse tekrar gitme
+                            yx_, yy_ = yb_[0], yb_[1] - ayar["etiket_alti_piksel"]
+                            if yolo_deneme[0] < 2 and not any(math.hypot(yx_ - a_[1], yy_ - a_[2]) < 90 for a_ in slot_atla):
+                                yolo_deneme[0] += 1
+                                print(f"{time.strftime('%H:%M:%S')}  sekil: etiketsiz yaratik - vuruluyor")
+                                yakin = [(yx_, yy_)]
+                                slot_atla.append((time.time(), yx_, yy_))   # ulasilsa da ulasilamasa da ayni noktaya bir daha degil
                     if not yakin:
                         bos += 1
                         if vuruluyor and bos < 25:  # vuruluyor ama etiket gorunmuyor: yerinde vurmaya devam
