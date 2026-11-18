@@ -2744,7 +2744,7 @@ def calistir(ayar, sablon):
     beceri_gerek = False          # acilista degil, "beceri gelistir" simgesi gorununce
     yeniden_baslat = [False]
     sev_aday = [None, 0]
-    son_c_seviye = [0.0]
+    son_c_seviye = [zaman_oku("c_seviye") if benim_sev else 0.0]   # yeniden acilista seviye biliniyorsa C penceresini hemen acma
     exp_olcum = []                # (zaman, seviye, exp, gerekli)
     exp_toplam = [0, time.time(), None]   # toplam kazanc, olcum baslangici, saatlik
 
@@ -2842,7 +2842,8 @@ def calistir(ayar, sablon):
     ulasilamayan = 0
     guc = {"hedef": None, "son": 0.0, "eksik": 0}
 
-    guc_tus_son = {}      # guclendirme tusu -> son basilma ani (hava kilici / ofke bekleme suresi takibi)
+    guc_tus_son = {t_["tus"]: zaman_oku("guc_" + t_["tus"]) for t_ in ayar["sureli_tuslar"]}   # tus -> son basilma (kalici)
+    guc["son"] = max(guc_tus_son.values(), default=0.0)   # yeniden acilista az once yakildiysa hemen tekrar yakma
 
     def grup_sonu_guclendir():
         """Grup bitince: bekleme suresi dolan guclendirmeyi (hava kilici, ofke) hemen yak - sonraki slota kilicsiz girme."""
@@ -2855,6 +2856,7 @@ def calistir(ayar, sablon):
         for t in hazir_:
             pydirectinput.press(t["tus"])
             guc_tus_son[t["tus"]] = time.time()
+            zaman_yaz("guc_" + t["tus"], guc_tus_son[t["tus"]])
             time.sleep(0.5)
         guc["son"], guc["eksik"] = time.time(), 0
         print(f"{time.strftime('%H:%M:%S')}  grup sonu: guclendirme yakildi ({', '.join(t['tus'] for t in hazir_)})")
@@ -2869,6 +2871,7 @@ def calistir(ayar, sablon):
         for t in ayar["sureli_tuslar"]:
             pydirectinput.press(t["tus"])
             guc_tus_son[t["tus"]] = time.time()
+            zaman_yaz("guc_" + t["tus"], guc_tus_son[t["tus"]])
             time.sleep(0.55)
         time.sleep(0.4)
         sonra = etki_sayisi(kare_al(h))
@@ -4791,6 +4794,7 @@ def calistir(ayar, sablon):
             if (gecen_c > ayar["seviye_kontrol_dk"] * 60
                     or (okunan and okunan != benim_sev and sev_aday[1] >= 5 and gecen_c > 600)):
                 son_c_seviye[0] = time.time()
+                zaman_yaz("c_seviye", son_c_seviye[0])
                 okunan = seviye_karakterden()
                 if okunan and okunan != benim_sev:
                     print(f"{time.strftime('%H:%M:%S')}  seviye: {okunan} (karakter penceresinden)")
