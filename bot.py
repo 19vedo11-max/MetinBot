@@ -47,6 +47,7 @@ VARSAYILAN = {
     "yakin_saldir": True,         # dibime gelen yaratiga (seviye/ad filtresine bakmadan) canim dusmeden hemen vur
     "yakin_saldir_piksel": 190,   # 'dibimde' sayilan uzaklik (karakter merkezinden)
     "ince_vurus": True,           # 1 piksellik can dususunu de vurus say; menzil disindaki hedefe bosa sallamadan yaklas
+    "grup_hasarsiz_sn": 15,       # grupta kalirken bu kadar sn hic can dusuremediyse (yokus/duvar) kalma, yer degistir
     "grupta_kal": True,           # slotta ulasilamayan/vurulamayan yaratik olursa, etrafta canli varken kacma: atla, digerlerine vur
     "hizli_vazgec": True,         # ulasilamayan hedefte bekleme kisalt + atla suresini uzat
     "hizli_vazgec_atla_sn": 45,   # ulasilamayan hedef (ayni nokta) bu kadar sn secilmez (eski: 12)
@@ -5080,7 +5081,8 @@ def calistir(ayar, sablon):
                         if not sec(yakin[0][0], yakin[0][1]) or not vurus_bekle(5):
                             yaklasma += 1
                             if yaklasma > (1 if ayar['hizli_vazgec'] else 2):
-                                if ayar.get("grupta_kal", True) and (len(yakin) > 1 or saldiri_altinda()):
+                                if (ayar.get("grupta_kal", True) and (len(yakin) > 1 or saldiri_altinda())
+                                        and time.time() - son_hasar < ayar["grup_hasarsiz_sn"]):   # uzun suredir hic vuramiyorsa kal-ma
                                     slot_atla.append((time.time(), yakin[0][0], yakin[0][1]))
                                     yaklasma = 0
                                     print(f"{time.strftime('%H:%M:%S')}  slot ici: ulasilamayan yaratik atlandi - gruptakilere devam")
@@ -5116,7 +5118,7 @@ def calistir(ayar, sablon):
                                 nokta_ = govde_noktasi(k2, ayar["etiket_alti_piksel"])
                                 diger_ = [t for t in yakindakiler(k2, 9999, 0, ayar["spot_yaricapi_piksel"] + 160, None)
                                           if not (nokta_ and abs(t[0] - nokta_[0]) < 60 and 0 < nokta_[1] - t[1] < 220)]
-                                if diger_ or saldiri_altinda():
+                                if (diger_ or saldiri_altinda()) and time.time() - son_hasar < ayar["grup_hasarsiz_sn"]:
                                     if nokta_:
                                         slot_atla.append((time.time(), nokta_[0], nokta_[1] - ayar["etiket_alti_piksel"]))
                                     yaklasma = 0
