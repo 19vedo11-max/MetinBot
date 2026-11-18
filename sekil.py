@@ -75,3 +75,81 @@ class Sekil:
             return sonuc
         except Exception:
             return []
+
+
+# ---------------------------------------------------------------- GPU sunucusu istemcisi
+YOLO_PYTHONW = os.path.join(KLASOR, "yolo_env", "Scripts", "pythonw.exe")
+SUNUCU = os.path.join(KLASOR, "sekil_sunucu.py")
+KARE_BASLIK, KARE_BOY = 32, 32 + 1200 * 2100 * 3
+SONUC_BASLIK, SONUC_BOY = 32, 1 << 16
+
+
+class GpuIstemci:
+    """sekil_sunucu.py ile paylasilan bellekten konusur. Sunucu baslatilamazsa/hazir olmazsa ok=False kalir
+    (cagiran CPU yoluna doner). Hicbir hata disari cikmaz."""
+
+    def __init__(self, bekle=20.0):
+        self.ok = False
+        self.sayac = 0
+        self.yazim = {}
+        self.son_sonuc = 0
+        try:
+            import struct
+            import subprocess
+            import time
+            from multiprocessing import shared_memory
+            self._st, self._tm = struct, time
+            self.kare = self._ac(shared_memory, "metinbot_kare", KARE_BOY)
+            self.sonuc = self._ac(shared_memory, "metinbot_sonuc", SONUC_BOY)
+            struct.pack_into("<I", self.kare.buf, 16, os.getpid())
+            if not self._hazir():
+                if not (os.path.exists(YOLO_PYTHONW) and os.path.exists(SUNUCU)
+                        and os.path.exists(os.path.join(KLASOR, "runs", "yaratik", "weights", "best.pt"))):
+                    return
+                subprocess.Popen([YOLO_PYTHONW, SUNUCU, str(os.getpid())], cwd=KLASOR, close_fds=True,
+                                 creationflags=0x08000000, stdin=subprocess.DEVNULL,
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                t0 = time.time()
+                while time.time() - t0 < bekle and not self._hazir():
+                    time.sleep(0.5)
+            self.ok = self._hazir()
+        except Exception:
+            self.ok = False
+
+    @staticmethod
+    def _ac(sm, ad, boy):
+        try:
+            return sm.SharedMemory(name=ad, create=True, size=boy)
+        except FileExistsError:
+            return sm.SharedMemory(name=ad)
+
+    def _hazir(self):
+        return self._st.unpack_from("<I", self.sonuc.buf, 20)[0] == 1
+
+    def yaz(self, rgb):
+        h, w = rgb.shape[:2]
+        if h * w * 3 > KARE_BOY - KARE_BASLIK:
+            return
+        b = self.kare.buf
+        a = np.frombuffer(b, np.uint8, h * w * 3, KARE_BASLIK)
+        a[:] = np.ascontiguousarray(rgb).reshape(-1)
+        self.sayac += 1
+        self.yazim[self.sayac] = self._tm.time()
+        if len(self.yazim) > 50:
+            self.yazim.pop(min(self.yazim))
+        self._st.pack_into("<QII", b, 0, self.sayac, h, w)
+
+    def oku(self):
+        """Yeni sonuc varsa (kutular, sunucu_ms, ucdan_uca_ms) dondurur, yoksa None."""
+        b = self.sonuc.buf
+        c, zt, n, hz, ms = self._st.unpack_from("<QdIIf", b, 0)
+        if not hz or c == self.son_sonuc or c == 0:
+            return None
+        veri = bytes(b[SONUC_BASLIK:SONUC_BASLIK + n])
+        if self._st.unpack_from("<Q", b, 0)[0] != c:
+            return None
+        import json
+        self.son_sonuc = c
+        kut = [(k[0], float(k[1]), k[2], k[3], k[4], k[5]) for k in json.loads(veri or b"[]")]
+        t_yaz = self.yazim.get(c)
+        return kut, float(ms), ((self._tm.time() - t_yaz) * 1000.0 if t_yaz else 0.0)

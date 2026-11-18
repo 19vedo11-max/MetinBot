@@ -42,6 +42,8 @@ VARSAYILAN = {
     "en_cok_esya": 10,            # bir toplama turunda en cok kac esyaya tiklansin
     "alan_bos_sn": 10,            # alan modunda bu kadar sn slot kesilmezse kisa yuruyusleri beklemeden alana don
     "alana_donerken_dal": True,   # alana donerken yolda slot gorurse yuruyusu kesip ona dal
+    "dalinca_hemen_sn": 10,       # yolda slota dalinca bu kadar sn yan isleri atla, dogrudan vur
+    "guc_on_mesafe": 350,         # slottan once guclendirme yalniz ilk hedef bundan uzaksa (yaklasana kadar yakilir)
     "yakin_saldir": True,         # dibime gelen yaratiga (seviye/ad filtresine bakmadan) canim dusmeden hemen vur
     "yakin_saldir_piksel": 190,   # 'dibimde' sayilan uzaklik (karakter merkezinden)
     "ince_vurus": True,           # 1 piksellik can dususunu de vurus say; menzil disindaki hedefe bosa sallamadan yaklas
@@ -178,6 +180,7 @@ VARSAYILAN = {
     "mini_harita_yuru": True,     # buyuk haritadan once mini haritadaki kirmizi nokta kumesine yuru
     "alan_kisa_yuruyus": 5,      # slot bitince haritasiz kisa yuruyusle ayni alanda kac kez aransin
     "dolum_esigi": 0.85,          # grup bitince can bu orana kadar pot ile doldurulur
+    "yolo_gpu": True,            # sekil modeli ekran kartinda ayri surecte (sekil_sunucu.py); yoksa CPU
     "yolo_kullan": True,         # sekil modeli (sekil.py) yardimci: etiketsiz yaratik + oyuncu korumasi
     "yolo_esik": 0.45,           # yaratik kutusu min skoru
     "yolo_slot": True,           # slot icinde etiket yoksa YOLO yaratik kutusuna vur
@@ -2779,6 +2782,7 @@ def calistir(ayar, sablon):
     engel_kac = [False]
     son_hamle = [0.0]
     son_savas = [0.0]
+    hemen_savas = [0.0]   # yolda slot gorulup dalindi: bu andan 10 sn yan isler (envanter, gorev, guclendirme) yok
     atla = []                     # ulasilamayan hedefler (zaman, x, y): kisa sure secilmez
     alan_don = [False]
     dusuk_gezin, dusuk_izin = [], [0.0]
@@ -3610,6 +3614,7 @@ def calistir(ayar, sablon):
                 et_ = [t for t in kirmizi_etiketler(kf_) if math.hypot(t[0] - gn_ // 2, t[1] - yk_ * 0.58) < 450]
                 if len(et_) >= ayar["slot_en_az"]:
                     print(f"{time.strftime('%H:%M:%S')}  git: yolda slot goruldu ({len(et_)}) - kesmeye donuluyor")
+                    hemen_savas[0] = time.time()
                     return True
             if hizli_adim(hz_, kf_):
                 onceki_, durgun_ = None, 0
@@ -4083,10 +4088,43 @@ def calistir(ayar, sablon):
 
     def _sekil_izlegi():
         """YOLO sekil modeli: en son kareyi olculen sureye gore (en az 150 ms ara) modele verir."""
+        gpu_ = gpu_aday_ = None
         try:
             import sekil as sekil_mod
-            model_ = sekil_mod.Sekil()
+            if ayar.get("yolo_gpu", True) and ayar.get("yolo_kullan", True):
+                gpu_aday_ = sekil_mod.GpuIstemci(20.0)
+                gpu_ = gpu_aday_ if gpu_aday_.ok else None
+                if not gpu_:
+                    print("sekil: GPU sunucu yok - CPU yoluna donuluyor (hazir olursa gecilir)")
+            model_ = None if gpu_ else sekil_mod.Sekil()
         except Exception:
+            return
+        if gpu_:
+            print("sekil: GPU sunucu hazir")
+            _yolo["sag"] = "GPU-sunucu"
+            son_kare_ = None
+            while durum["calis"]:
+                time.sleep(0.03)
+                try:
+                    if (not ayar.get("yolo_kullan", True) or durum["duraklat"]
+                            or win32gui.GetForegroundWindow() != h):
+                        continue
+                    k_ = _son_kare[0]
+                    if k_ is not None and k_ is not son_kare_ and time.time() - _yolo["kare_t"] <= 1.0:
+                        son_kare_ = k_
+                        gpu_.yaz(k_)
+                    o_ = gpu_.oku()
+                    if o_:
+                        _yolo["kutular"], _yolo["t"], _yolo["ms"] = o_[0], time.time(), o_[1]
+                        _yolo["uc_ms"] = o_[2]
+                        _yolo.setdefault("ist", []).append((o_[1], o_[2]))
+                        if len(_yolo["ist"]) >= 150:
+                            a_ = _yolo["ist"]
+                            print(f"{time.strftime('%H:%M:%S')}  sekil GPU: sunucu {sum(x[0] for x in a_) / len(a_):.1f} ms, uctan uca {sum(x[1] for x in a_) / len(a_):.0f} ms (n={len(a_)})")
+                            _yolo["ist"] = []
+                except Exception as e_:
+                    print("sekil gpu izlegi:", e_)
+                    time.sleep(2)
             return
         if not model_.ok:
             print("sekil: model/onnxruntime yok - devre disi")
@@ -4094,9 +4132,36 @@ def calistir(ayar, sablon):
         _yolo["sag"] = model_.saglayici
         print(f"sekil: hazir ({model_.saglayici})")
         son_kare_ = None
+        son_gpu_kontrol_ = time.time()
         while durum["calis"]:
             time.sleep(max(0.15, _yolo["ms"] / 1000.0))
             try:
+                if gpu_aday_ is not None and time.time() - son_gpu_kontrol_ > 5:
+                    son_gpu_kontrol_ = time.time()
+                    if ayar.get("yolo_gpu", True) and gpu_aday_._hazir():
+                        gpu_aday_.ok = True
+                        print("sekil: GPU sunucu hazir - GPU'ya gecildi")
+                        _yolo["sag"] = "GPU-sunucu"
+                        son_k2_ = None
+                        while durum["calis"]:
+                            time.sleep(0.03)
+                            if (not ayar.get("yolo_kullan", True) or durum["duraklat"]
+                                    or win32gui.GetForegroundWindow() != h):
+                                continue
+                            k2_ = _son_kare[0]
+                            if k2_ is not None and k2_ is not son_k2_ and time.time() - _yolo["kare_t"] <= 1.0:
+                                son_k2_ = k2_
+                                gpu_aday_.yaz(k2_)
+                            o2_ = gpu_aday_.oku()
+                            if o2_:
+                                _yolo["kutular"], _yolo["t"], _yolo["ms"] = o2_[0], time.time(), o2_[1]
+                                _yolo["uc_ms"] = o2_[2]
+                                _yolo.setdefault("ist", []).append((o2_[1], o2_[2]))
+                                if len(_yolo["ist"]) >= 150:
+                                    a_ = _yolo["ist"]
+                                    print(f"{time.strftime('%H:%M:%S')}  sekil GPU: sunucu {sum(x[0] for x in a_) / len(a_):.1f} ms, uctan uca {sum(x[1] for x in a_) / len(a_):.0f} ms (n={len(a_)})")
+                                    _yolo["ist"] = []
+                        return
                 if (not ayar.get("yolo_kullan", True) or durum["duraklat"]
                         or win32gui.GetForegroundWindow() != h):
                     continue
@@ -4277,6 +4342,8 @@ def calistir(ayar, sablon):
                 son_serbest, tehdit = time.time(), False
             else:
                 tehdit = True
+            if time.time() - hemen_savas[0] < ayar["dalinca_hemen_sn"]:
+                tehdit = True                                   # slota yeni dalindi: once vur, yan isler sonra
             # izleme: arada bir kare kaydet (gorev penceresi, olum ekrani gibi durumlari sonradan gormek icin)
             # sekil modeli (YOLO) icin egitim karesi: oyun ekrani, arayuz acik pencere yokken
             if ayar["yolo_veri_sn"] and time.time() - son_yolo_veri[0] > ayar["yolo_veri_sn"]:
@@ -4835,7 +4902,9 @@ def calistir(ayar, sablon):
 
             # 0) slota girmeden once: hava kilici / ofke sonmusse once yak (savas ortasinda yakilmaz)
             if (ayar["sureli_tuslar"] and can_orani(kare) >= ayar["guc_can_esigi"] and not saldiri_altinda()
-                    and not tehdit and su_an[0] != "savunma"):         # yaratik dibindeyken durup guclendirme yakma
+                    and not tehdit and su_an[0] != "savunma"            # yaratik dibindeyken durup guclendirme yakma
+                    and (not hedefler or math.hypot(hedefler[0][0] - karakter[0], hedefler[0][1] + 45 - karakter[1])
+                         > ayar["guc_on_mesafe"])):                     # hedef yakinsa once vur, guclendirme sonra (sakinken)
                 gecen_g = time.time() - guc["son"]
                 if guc["hedef"] is None:
                     sonuk_ = gecen_g > min(t["aralik_sn"] for t in ayar["sureli_tuslar"])

@@ -185,5 +185,6 @@
   "mini_harita_yuru": false,
   "hizli_vazgec": false,
   "hizli_engel": false,
-  "yolo_slot": true
+  "yolo_slot": true,
+  "engel_hafiza": false
 }
