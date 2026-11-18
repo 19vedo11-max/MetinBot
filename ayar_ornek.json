@@ -12,9 +12,9 @@
   "durgun_esik": 1.0,
   "kamera_donus_sn": 0.4,
   "can_potu_tusu": "1",
-  "can_esigi": 0.7,
+  "can_esigi": 0.85,
   "mana_potu_tusu": "2",
-  "mana_esigi": 0.3,
+  "mana_esigi": 0.35,
   "sureli_tuslar": [
     {
       "tus": "3",
@@ -138,7 +138,7 @@
   "seviye_alt_fark": 0,
   "toplama_en_uzak_piksel": 450,
   "yurumeden_once_tur": 8,
-  "seviye_ust_fark": 38,
+  "seviye_ust_fark": 14,
   "en_fazla_yaratik_seviyesi": 9,
   "metin_vurus_suresi_sn": 120,
   "metin_kes": false,

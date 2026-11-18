@@ -13,7 +13,7 @@ KOK_DOSYA = ["Bot-Baslat.bat", "Kur.bat", "requirements.txt", "BENIOKU.md", "aya
 KOK_UZANTI = (".py", ".pyw", ".ps1")
 ARAC = ["metinbot.ico", "metinbot_amblem.png", "KONTROL-NASIL.md"]
 KLASOR = ["web", "sablon"]
-YASAK_AD = ["ayar.json", "web_anahtar.txt", "canli.json", "durum.json", "komut.json", "pot_al.istek",
+YASAK_AD = ["ayar.json", "engeller.json", "web_anahtar.txt", "canli.json", "durum.json", "komut.json", "pot_al.istek",
             "exp_olcum.csv", "*.log", "*.log.*", "*.pt", "*.onnx", "*.exe"]
 YASAK_KLASOR = {"goruntu", "veri_yolo", "runs", "model", "yolo_env", "rapor", "_gecici", "dist", ".git",
                 "__pycache__", "weights", "X-AnyLabeling", "kurulum", "xany_calisma"}

@@ -52,6 +52,9 @@ VARSAYILAN = {
     "ilk_vurus_bekleme_sn": 7,    # hedefe tikladiktan sonra ilk vurus icin en cok bu kadar bekle
     "takilma_sn": 1.2, 
     "takilma_esik": 1.2,          # mini harita 1 sn icinde bundan az degisirse karakter yerinde sayiyor           # sahne bu kadar sure hic degismezse karakter engele takilmis sayilir
+    "hizli_engel": True,          # savas disi yuruyuste 0.8 sn kipirdamazsa beklemeden bos yone 1 adim yan cik
+    "su_kacin": True,             # ekranda nehir/gol (mavi-turkuaz zemin) varsa o yone tiklama
+    "engel_hafiza": True,         # takildigi yeri engeller.json'a yaz; alan/gezin noktasi secerken oralardan kac
     "durgun_esik": 1.0,           # iki kare arasi ortalama fark bunun altindaysa "duruyor"
     "kamera_donus_sn": 0.6,       # hedef yokken kamerayi her adimda bu kadar sure dondur
     "can_potu_tusu": "1",
@@ -505,6 +508,40 @@ def etki_sayisi(kare):
     return sayi
 
 
+_SU = {"acik": True, "log": 0.0}
+
+
+def su_ilk_kontrol(kare):
+    yuk, gen = kare.shape[:2]
+    k = kare[int(yuk * 0.45):yuk - 160:8, 60:gen - 280:8].astype(int)
+    return int(((k[..., 2] > k[..., 0] + 25) & (k[..., 2] > 90)).sum()) >= 40
+
+
+def su_maskesi(kare):
+    """Zemin bolgesinde (ekranin alt ~%55'i, arayuz haric) mavi-turkuaz doygun buyuk lekeler (nehir/gol).
+    Donus (kucuk_maske, x_ofset, y_ofset, olcek). Kucuk/ince lekeler (kilic parlamasi vb.) acinimla elenir."""
+    yuk, gen = kare.shape[:2]
+    y0, x0 = int(yuk * 0.45), 60
+    alt = cv2.resize(kare[y0:yuk - 160, x0:gen - 280], None, fx=0.25, fy=0.25, interpolation=cv2.INTER_AREA)
+    hsv = cv2.cvtColor(alt, cv2.COLOR_RGB2HSV)
+    m = ((hsv[..., 0] >= 85) & (hsv[..., 0] <= 112) & (hsv[..., 1] >= 70) & (hsv[..., 2] >= 70)).astype(np.uint8)
+    m = cv2.morphologyEx(m, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    n, et, ist, _ = cv2.connectedComponentsWithStats(m, 8)
+    out = np.zeros_like(m)
+    for i in range(1, n):
+        if ist[i][4] >= 190 and min(ist[i][2], ist[i][3]) >= 14 and ist[i][4] >= 0.3 * ist[i][2] * ist[i][3]:   # genis+dolgun leke: kilic parlamasi/ince seritler elenir
+            out[et == i] = 1
+    return out, x0, y0, 4
+
+
+def su_var(su, x, y):
+    m, x0, y0, o = su
+    cx, cy = int((x - x0) / o), int((y - y0) / o)
+    if not (0 <= cy < m.shape[0] and 0 <= cx < m.shape[1]):
+        return False
+    return bool(m[max(0, cy - 2):cy + 3, max(0, cx - 2):cx + 3].any())
+
+
 def bos_yon(kare, aci, rx=230, ry=150, engeller=None):
     """Karakterden 'aci' (radyan, ekran) yonune en yakin, yolunda yaratik govdesi olmayan yonu bulur.
     Donus: (x, y) tiklanacak ekran noktasi."""
@@ -512,7 +549,9 @@ def bos_yon(kare, aci, rx=230, ry=150, engeller=None):
     kx, ky = gen // 2, int(yuk * 0.58)
     if engeller is None:
         engeller = [(x, y + 45) for x, y, *_ in kirmizi_etiketler(kare)]   # etiketin altindaki govde
-    en_iyi, en_puan = None, None
+    en_iyi, en_puan, en_sapma = None, None, 0
+    su = su_maskesi(kare) if _SU["acik"] and su_ilk_kontrol(kare) else None
+    su_sapma0 = False
     for sapma in (0, 30, -30, 60, -60, 90, -90, 120, -120, 150, -150, 180):
         a = aci + math.radians(sapma)
         tx, ty = kx + rx * math.cos(a), ky + ry * math.sin(a)
@@ -524,9 +563,23 @@ def bos_yon(kare, aci, rx=230, ry=150, engeller=None):
             t = max(0.0, min(1.0, ((ex - kx) * vx + (ey - ky) * vy) / (vx * vx + vy * vy or 1)))
             if math.hypot(ex - (kx + t * vx), ey - (ky + t * vy)) < 70:
                 engel += 1
+        if su is not None:                                              # suya giden yon: engel say
+            say = 0
+            for t_ in (0.5, 0.75, 1.0):
+                px, py = kx + t_ * (tx - kx), ky + t_ * (ty - ky)
+                if math.hypot(px - kx, py - ky) >= 150 and su_var(su, px, py):   # karakterin kendi parlamasi sayilmasin
+                    say += 1
+            if say >= 2:
+                engel += 3
+                if sapma == 0:
+                    su_sapma0 = True
         puan = engel * 100 + abs(sapma)
         if en_puan is None or puan < en_puan:
             en_iyi, en_puan = (int(tx), int(ty)), puan
+            en_sapma = sapma
+    if su_sapma0 and en_iyi and en_sapma != 0 and time.time() - _SU["log"] > 10:
+        _SU["log"] = time.time()
+        print(f"{time.strftime('%H:%M:%S')}  engel: su yonu atlandi (secilen sapma {en_sapma} derece)")
     return en_iyi or (kx, ky + 150)
 
 
@@ -828,6 +881,7 @@ def plan_hesapla(bilgi, sev, harita_adi="monastry"):
 
 # ---------------------------------------------------------------- dongu
 def calistir(ayar, sablon):
+    _SU["acik"] = bool(ayar.get("su_kacin", True))
     import keyboard
     import pydirectinput
     pydirectinput.PAUSE = 0.03
@@ -987,6 +1041,39 @@ def calistir(ayar, sablon):
         g[kir] = 0
         return cv2.GaussianBlur(g, (5, 5), 0), kir
 
+    def hizli_baslat(aci=None, devam=None):
+        """Savas disi yuruyus icin hizli takilma izleyicisi (aci: ekranda gidilen yon, devam: yeniden tiklanacak nokta)."""
+        return {"t0": time.time(), "gec": [], "son": 0.0, "aci": aci, "devam": devam}
+
+    def hizli_adim(st, kf):
+        """Karakter yurumesi beklenirken mini harita 0.8 sn kipirdamadiysa bos yone (60-120 derece sapan) 1 adim
+        tiklar, hedefe devam eder. True: yan adim atildi. Savasta cagrilmaz."""
+        if not ayar.get("hizli_engel", True):
+            return False
+        simdi = time.time()
+        mh, kir = mini_harita(kf)
+        st["gec"].append((simdi, mh, kir))
+        st["gec"] = [g for g in st["gec"] if simdi - g[0] < 2.0]
+        if simdi - st["t0"] < 0.5 or simdi - st["son"] < 2.5:
+            return False
+        eski = [g for g in st["gec"] if simdi - g[0] >= 0.8]
+        if not eski:
+            return False
+        _, mh0, kir0 = eski[-1]
+        ort = ~(kir | kir0)
+        fark = float(np.abs(mh - mh0)[ort].mean()) if ort.any() else 99.0
+        if fark >= 0.6:
+            return False
+        st["son"], st["gec"] = simdi, []
+        a = st["aci"] if st["aci"] is not None else random.uniform(0, 2 * math.pi)
+        a += random.choice((-1, 1)) * math.radians(random.uniform(60, 120))
+        print(f"{time.strftime('%H:%M:%S')}  engel: hizli yon degisimi (0.8 sn kipirdamadi, fark {fark:.2f})")
+        tikla(*bos_yon(kf, a, 200, 130))
+        if st["devam"] is not None:
+            time.sleep(0.8)
+            tikla(*st["devam"])
+        return True
+
     def vurus_bekle(sure_sn, yana_kac=True):
         su_an[0] = "vurus_bekle"
         """Secili hedefe ilk vurus isabet edene (cani dusene) ya da hedef olene kadar bekler.
@@ -1099,6 +1186,10 @@ def calistir(ayar, sablon):
         if len(son_atla_) >= 3:                               # ust uste ulasilamiyor (cit, pazar, ev): buradan ayril
             print(f"{time.strftime('%H:%M:%S')}  hedefe ulasilamadi [{neden}] - 25 sn'de {len(son_atla_)}. kez, engel var: baska yere")
             atla.clear()
+            try:
+                engel_kaydet(neden or "ulasilamama")
+            except Exception as e_eh:
+                print("engel hafiza:", e_eh)
             tikla(*bos_yon(k, math.atan2(ky - hy, kx - hx), 430, 280))
             time.sleep(1.5)
             engel_kac[0] = True                               # ana dongu: haritadan baska bolgeye yuru
@@ -1926,6 +2017,7 @@ def calistir(ayar, sablon):
                 pydirectinput.moveTo(ox_son[0] + kb.shape[1] // 2, ox_son[1] + int(kb.shape[0] * 0.8))
         kapat_harita()                       # yuruyus basladi; harita kapaninca da devam ediyor (17.11 olculdu) - slotlar gorunsun
         bas, onceki, durgun = time.time(), None, 0
+        hz_ = hizli_baslat()
         while time.time() - bas < 25 and durum["calis"] and not durum["duraklat"]:
             time.sleep(0.4)
             kf = kare_al(h)
@@ -1947,6 +2039,9 @@ def calistir(ayar, sablon):
             if gordu:
                 kapat_harita()
                 return True                                    # slot gorundu: ana dongu hemen hedef secer
+            if hizli_adim(hz_, kf):
+                onceki, durgun = None, 0
+                continue
             mh, _ = mini_harita(kf)
             if onceki is not None:
                 durgun = durgun + 1 if float(np.abs(mh - onceki).mean()) < 0.6 else 0
@@ -1975,7 +2070,8 @@ def calistir(ayar, sablon):
         tikla(tx, ty)
         pydirectinput.moveTo(ox_son[0] + kx_, ox_son[1] + int(yk_ * 0.9))
         bas_ = time.time()
-        while time.time() - bas_ < 1.6 and durum["calis"] and not durum["duraklat"]:
+        hz_ = hizli_baslat(alan["aci"], (tx, ty))
+        while time.time() - bas_ < (2.2 if ayar.get("hizli_engel", True) else 1.6) and durum["calis"] and not durum["duraklat"]:
             time.sleep(0.2)
             kf_ = kare_al(h)
             tum_ = kirmizi_etiketler(kf_)
@@ -1984,6 +2080,8 @@ def calistir(ayar, sablon):
                     return
             elif sum(1 for t in tum_ for u in tum_ if math.hypot(t[0] - u[0], t[1] - u[1]) < ayar["slot_yaricapi_piksel"]) >= 6:
                 return
+            if not saldiri_altinda():
+                hizli_adim(hz_, kf_)
 
     def mini_harita_yuru():
         """Buyuk haritayi acmadan: mini haritadaki en yakin kirmizi nokta kumesine dogru ekranda bos yone yuru.
@@ -2012,6 +2110,7 @@ def calistir(ayar, sablon):
             tikla(tx, ty)
             pydirectinput.moveTo(ox_son[0] + k_.shape[1] // 2, ox_son[1] + int(k_.shape[0] * 0.9))
             bas_ = time.time()
+            hz_ = hizli_baslat(en[2], (tx, ty))
             while time.time() - bas_ < 2.2 and durum["calis"] and not durum["duraklat"]:
                 time.sleep(0.2)
                 kf_ = kare_al(h)
@@ -2021,6 +2120,8 @@ def calistir(ayar, sablon):
                         break
                 elif sum(1 for t in tum_ for u in tum_ if math.hypot(t[0] - u[0], t[1] - u[1]) < ayar["slot_yaricapi_piksel"]) >= 6:
                     break
+                if not saldiri_altinda():
+                    hizli_adim(hz_, kf_)
             return True
         except Exception as e_:
             print("mini_harita_yuru:", e_)
@@ -2032,13 +2133,82 @@ def calistir(ayar, sablon):
         """Alan secenegi acik ve alan modu askida degil (harita acilamayinca / baska haritadaysa askiya alinir)."""
         return bool(ayar.get("kasilma_alani") and ayar.get("alan_kullan")) and time.time() > alan_mola[0]
 
+    engel_dosya = os.path.join(KLASOR, "engeller.json")
+    engel_h = {"veri": None, "son": 0.0}
+
+    def engel_veri():
+        if engel_h["veri"] is None:
+            try:
+                with open(engel_dosya, encoding="utf-8") as f_:
+                    engel_h["veri"] = json.load(f_)
+            except Exception:
+                engel_h["veri"] = {}
+        return engel_h["veri"]
+
+    def engel_noktalari(ad):
+        """Kayitli takilma noktalari [(x, y, sayi)] (ad bos/bilinmiyorsa tum haritalar)."""
+        if not ayar.get("engel_hafiza", True):
+            return []
+        out_ = []
+        for k_, liste_ in engel_veri().items():
+            if not ad or k_ == "?" or oku.sade(k_) == oku.sade(ad):
+                out_ += [(e_[0], e_[1], e_[3]) for e_ in liste_]
+        return out_
+
+    def engel_yakin(ad, x, y):
+        for ex_, ey_, say_ in engel_noktalari(ad):
+            if math.hypot(x - ex_, y - ey_) < (0.03 if say_ >= 2 else 0.02):
+                return True
+        return False
+
+    def engel_kaydet(neden):
+        """Gercek takilmada genel haritadan kendi konumumu okuyup engeller.json'a yazar (en cok 60 sn'de bir)."""
+        if not ayar.get("engel_hafiza", True) or time.time() - engel_h["son"] < 60 or saldiri_altinda():
+            return
+        engel_h["son"] = time.time()
+        t0_ = time.time()
+        g_ = genel_harita_resmi()
+        if g_ is None:
+            return
+        kd_, resim, _, _ = g_
+        try:
+            if resim.shape[:2] != (317, 254):
+                return
+            ad_ = kayitli_harita_bul(resim) or "?"
+            yol_d["yigin"], arka_ = yolbul.arka_guncelle(yol_d["yigin"], resim)
+            oy_ = yolbul.oyuncu_bul(resim, arka_)
+        finally:
+            tikla(*kd_)
+        if oy_ is None:
+            print(f"{time.strftime('%H:%M:%S')}  engel hafiza: haritada yerim bulunamadi ({time.time() - t0_:.1f} sn)")
+            return
+        x_, y_ = round(float(oy_[0]) / 254, 4), round(float(oy_[1]) / 317, 4)
+        liste_ = engel_veri().setdefault(ad_, [])
+        for e_ in liste_:
+            if math.hypot(e_[0] - x_, e_[1] - y_) < 0.01:
+                e_[2], e_[3] = int(time.time()), e_[3] + 1
+                sayi_ = e_[3]
+                break
+        else:
+            liste_.append([x_, y_, int(time.time()), 1])
+            sayi_ = 1
+        try:
+            with open(engel_dosya + ".tmp", "w", encoding="utf-8") as f_:
+                json.dump(engel_veri(), f_, ensure_ascii=False)
+            os.replace(engel_dosya + ".tmp", engel_dosya)
+        except Exception as e_w:
+            print("engel hafiza yazilamadi:", e_w)
+        print(f"{time.strftime('%H:%M:%S')}  engel hafiza: kaydedildi {ad_} ({x_}, {y_}) sayi={sayi_} [{neden}] - harita okuma {time.time() - t0_:.1f} sn")
+
     def alan_noktasi():
-        """Cizilen kasilma alaninin icinde rastgele bir nokta (oran olarak)."""
+        """Cizilen kasilma alaninin icinde rastgele bir nokta (oran olarak); kayitli engel noktalarindan uzak."""
         a_ = ayar["kasilma_alani"]
-        for _ in range(20):
+        for _ in range(40):
             aci_, r_ = random.uniform(0, 2 * math.pi), a_["r"] * math.sqrt(random.uniform(0.05, 1.0))
             x_, y_ = a_["x"] + r_ * math.cos(aci_), a_["y"] + r_ * math.sin(aci_) * 254 / 317
             if 0.02 < x_ < 0.98 and 0.02 < y_ < 0.98:
+                if engel_yakin(a_.get("harita", ""), x_, y_):
+                    continue
                 return round(x_, 4), round(y_, 4)
         return a_["x"], a_["y"]
 
@@ -2083,6 +2253,16 @@ def calistir(ayar, sablon):
             cayir = (p[..., 1] > p[..., 0] + 5) & (p[..., 1] > p[..., 2] + 10) & (p[..., 1] > 55) & (p[..., 1] < 170)
             cayir = cv2.erode(cayir.astype(np.uint8), np.ones((9, 9), np.uint8)) > 0
             aday = np.argwhere(cayir & ~koy)
+            if len(aday) and ayar.get("engel_hafiza", True):
+                try:
+                    pts_ = engel_noktalari(kayitli_harita_bul(p.astype(np.uint8)) or "")
+                    keep_ = np.ones(len(aday), bool)
+                    for ex_, ey_, say_ in pts_:
+                        keep_ &= np.hypot(aday[:, 1] / 254 - ex_, aday[:, 0] / 317 - ey_) >= (0.03 if say_ >= 2 else 0.02)
+                    if keep_.any():
+                        aday = aday[keep_]
+                except Exception as e_ef:
+                    print("engel hafiza filtre:", e_ef)
             if len(aday):
                 yy, xx = bolge_sec(kapat_d, aday)
                 print(f"{time.strftime('%H:%M:%S')}  hedef yok - haritadan baska bolgeye yuruyor")
@@ -3416,6 +3596,7 @@ def calistir(ayar, sablon):
         if not yurudu:
             return False
         bas_, onceki_, durgun_ = time.time(), None, 0
+        hz_ = hizli_baslat()
         while time.time() - bas_ < 120 and durum["calis"] and not durum["duraklat"]:     # varana kadar kesmeye ara
             time.sleep(0.5)
             kf_ = kare_al(h)
@@ -3430,6 +3611,9 @@ def calistir(ayar, sablon):
                 if len(et_) >= ayar["slot_en_az"]:
                     print(f"{time.strftime('%H:%M:%S')}  git: yolda slot goruldu ({len(et_)}) - kesmeye donuluyor")
                     return True
+            if hizli_adim(hz_, kf_):
+                onceki_, durgun_ = None, 0
+                continue
             mh_, _ = mini_harita(kf_)
             if onceki_ is not None:
                 durgun_ = durgun_ + 1 if float(np.abs(mh_ - onceki_).mean()) < 0.6 else 0
