@@ -44,6 +44,9 @@ VARSAYILAN = {
     "alana_donerken_dal": True,   # alana donerken yolda slot gorurse yuruyusu kesip ona dal
     "dalinca_hemen_sn": 10,       # yolda slota dalinca bu kadar sn yan isleri atla, dogrudan vur
     "guc_on_mesafe": 350,         # slottan once guclendirme yalniz ilk hedef bundan uzaksa (yaklasana kadar yakilir)
+    "derinlik_sirala": True,      # hedefleri ekran uzakligi yerine kamera derinligine gore (gercek yakinlik) sirala
+    "derinlik_ufuk": 227,         # derinlik modeli: govde boyu ~ (y + ufuk)
+    "derinlik_carpan": 1.7,       # karakter yaninda dikey 1 px ~ bu kadar yatay px yol
     "yakin_saldir": True,         # dibime gelen yaratiga (seviye/ad filtresine bakmadan) canim dusmeden hemen vur
     "yakin_saldir_piksel": 190,   # 'dibimde' sayilan uzaklik (karakter merkezinden)
     "ince_vurus": True,           # 1 piksellik can dususunu de vurus say; menzil disindaki hedefe bosa sallamadan yaklas
@@ -315,6 +318,15 @@ def _dx_kare(x, y, w, hh):
 
 
 _son_kare = [None]
+
+
+def dunya_uzak(x, y, kx, ky, ufuk=227.0, carpan=1.7):
+    """Ekran noktasinin karaktere 'dunyada' uzakligi (karakter derinliginde piksel birimi). Kamera egik oldugu
+    icin ekranda yukaridaki (uzaktaki) yaratigin 1 pikseli yandakinden cok daha fazla yol demek:
+    derinlik ~ 1/(y + ufuk) (otomatik etiketlerde govde boyu = 0.11*(y+227)'den), dikey 1 px ~ carpan yatay px."""
+    d = (ky + ufuk) / max(30.0, y + ufuk)
+    return math.hypot((x - kx) * d, carpan * (ky + ufuk) * (d - 1.0))
+
 _ZAMAN_YOL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "zamanlar.json")
 
 
@@ -1265,7 +1277,8 @@ def calistir(ayar, sablon):
                     continue
             elif sev > ust_sev or (alt_sev is not None and sev < alt_sev):
                 continue
-            liste.append((uzak, t))
+            liste.append((dunya_uzak(t[0], t[1] + 45, kx, ky, ayar["derinlik_ufuk"], ayar["derinlik_carpan"])
+                          if ayar["derinlik_sirala"] else uzak, t))
         return [t for _, t in sorted(liste, key=lambda s: s[0])]
 
     def statu_gelistir(k):
@@ -4783,7 +4796,8 @@ def calistir(ayar, sablon):
                 if sev is not None and (not benim_sev or abs(sev - benim_sev) <= 15):
                     sev_gorulen.append((time.time(), sev))
                     del sev_gorulen[:-80]
-                uzak = math.hypot(t[0] - karakter[0], t[1] - karakter[1])
+                uzak = (dunya_uzak(t[0], t[1] + 45, karakter[0], karakter[1], ayar["derinlik_ufuk"], ayar["derinlik_carpan"])
+                        if ayar["derinlik_sirala"] else math.hypot(t[0] - karakter[0], t[1] - karakter[1]))
                 if sev is None:
                     if 0 < seviye_hanesi(kare, t) <= len(str(ust)):
                         sirali.append(((0, int(uzak // ayar["yakinlik_halkasi_piksel"]), -yog(t), 0, uzak), t))  # okunamadi
@@ -4821,7 +4835,7 @@ def calistir(ayar, sablon):
             if ayar["dusuk_seviye_kesme"] and benim_sev and can > 0.6 and not saldiri_altinda():    # vurmayan dusuk seviyeliye oyalanma
                 saldiran = [t for t in saldiran
                             if (yaratik_seviyesi(kare, t) or 99) >= benim_sev - ayar["seviye_alt_fark"]]
-            saldiran.sort(key=lambda t: math.hypot(t[0] - karakter[0], t[1] - karakter[1]))
+            saldiran.sort(key=lambda t: dunya_uzak(t[0], t[1] + 45, karakter[0], karakter[1], ayar["derinlik_ufuk"], ayar["derinlik_carpan"]))
             yaratik = saldiran + [t for t in yaratik if t not in saldiran]
             # gorevin istedigi yaratik ekrandaysa (adi okunur) slot sartina bakilmadan en basa
             aranan_adlar = (list(ayar["aranan_yaratiklar"]) + (aranan_durum if ayar["aranan_oncelik"] else [])
