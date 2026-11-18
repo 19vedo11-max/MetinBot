@@ -52,7 +52,7 @@ VARSAYILAN = {
     "ilk_vurus_bekleme_sn": 7,    # hedefe tikladiktan sonra ilk vurus icin en cok bu kadar bekle
     "takilma_sn": 1.2, 
     "takilma_esik": 1.2,          # mini harita 1 sn icinde bundan az degisirse karakter yerinde sayiyor           # sahne bu kadar sure hic degismezse karakter engele takilmis sayilir
-    "hizli_engel": True,          # savas disi yuruyuste 0.8 sn kipirdamazsa beklemeden bos yone 1 adim yan cik
+    "hizli_engel": False,          # savas disi yuruyuste 0.8 sn kipirdamazsa beklemeden bos yone 1 adim yan cik
     "su_kacin": True,             # ekranda nehir/gol (mavi-turkuaz zemin) varsa o yone tiklama
     "engel_hafiza": True,         # takildigi yeri engeller.json'a yaz; alan/gezin noktasi secerken oralardan kac
     "durgun_esik": 1.0,           # iki kare arasi ortalama fark bunun altindaysa "duruyor"
