@@ -47,6 +47,7 @@ VARSAYILAN = {
     "derinlik_sirala": True,      # hedefleri ekran uzakligi yerine kamera derinligine gore (gercek yakinlik) sirala
     "derinlik_ufuk": 227,         # derinlik modeli: govde boyu ~ (y + ufuk)
     "derinlik_carpan": 1.7,       # karakter yaninda dikey 1 px ~ bu kadar yatay px yol
+    "grup_sonu_guc": True,        # grup bitince bekleme suresi dolan hava kilici/ofke'yi hemen yak
     "yakin_saldir": True,         # dibime gelen yaratiga (seviye/ad filtresine bakmadan) canim dusmeden hemen vur
     "yakin_saldir_piksel": 190,   # 'dibimde' sayilan uzaklik (karakter merkezinden)
     "ince_vurus": True,           # 1 piksellik can dususunu de vurus say; menzil disindaki hedefe bosa sallamadan yaklas
@@ -2841,6 +2842,23 @@ def calistir(ayar, sablon):
     ulasilamayan = 0
     guc = {"hedef": None, "son": 0.0, "eksik": 0}
 
+    guc_tus_son = {}      # guclendirme tusu -> son basilma ani (hava kilici / ofke bekleme suresi takibi)
+
+    def grup_sonu_guclendir():
+        """Grup bitince: bekleme suresi dolan guclendirmeyi (hava kilici, ofke) hemen yak - sonraki slota kilicsiz girme."""
+        if not ayar["grup_sonu_guc"] or not ayar["sureli_tuslar"]:
+            return
+        hazir_ = [t for t in ayar["sureli_tuslar"] if time.time() - guc_tus_son.get(t["tus"], 0) >= t["aralik_sn"]]
+        if not hazir_ or can_orani(kare_al(h)) < ayar["guc_can_esigi"]:
+            return
+        birak()
+        for t in hazir_:
+            pydirectinput.press(t["tus"])
+            guc_tus_son[t["tus"]] = time.time()
+            time.sleep(0.5)
+        guc["son"], guc["eksik"] = time.time(), 0
+        print(f"{time.strftime('%H:%M:%S')}  grup sonu: guclendirme yakildi ({', '.join(t['tus'] for t in hazir_)})")
+
     def guclendir():
         su_an[0] = "guclendir"
         """Guclendirme tuslarina basar ve etki simgesi sayisini ogrenir."""
@@ -2850,6 +2868,7 @@ def calistir(ayar, sablon):
         once = etki_sayisi(k_g)
         for t in ayar["sureli_tuslar"]:
             pydirectinput.press(t["tus"])
+            guc_tus_son[t["tus"]] = time.time()
             time.sleep(0.55)
         time.sleep(0.4)
         sonra = etki_sayisi(kare_al(h))
@@ -5174,6 +5193,7 @@ def calistir(ayar, sablon):
             son_savas[0] = time.time()
             if not tas:
                 print(f"{time.strftime('%H:%M:%S')}  grup: {olduruldu} canavar kesildi")
+                grup_sonu_guclendir()                           # hava kilici dolduysa sonraki gruba girmeden yak
                 # grup bitti: can dolana kadar pot (vurulursa birak)
                 bas_d = time.time()
                 while time.time() - bas_d < 8 and durum["calis"] and not durum["duraklat"]:
