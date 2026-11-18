@@ -299,6 +299,30 @@ def _dx_kare(x, y, w, hh):
 
 
 _son_kare = [None]
+_ZAMAN_YOL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "zamanlar.json")
+
+
+def zaman_oku(ad, varsayilan=0.0):
+    """Bot yeniden acilsa da korunan zamanlar (gorev okuma vb.): her acilista bastan yapilmasin."""
+    try:
+        with open(_ZAMAN_YOL, encoding="utf-8") as f:
+            return float(json.load(f).get(ad, varsayilan))
+    except Exception:
+        return varsayilan
+
+
+def zaman_yaz(ad, deger):
+    try:
+        try:
+            with open(_ZAMAN_YOL, encoding="utf-8") as f:
+                z = json.load(f)
+        except Exception:
+            z = {}
+        z[ad] = deger
+        with open(_ZAMAN_YOL, "w", encoding="utf-8") as f:
+            json.dump(z, f)
+    except Exception:
+        pass
 
 
 def kare_al(h):
@@ -2063,7 +2087,7 @@ def calistir(ayar, sablon):
         pencereleri_kapat()
         return yazi
 
-    son_gorev_metni = [0.0]
+    son_gorev_metni = [zaman_oku("gorev_metni")]
 
     def gorev_metni_topla():
         su_an[0] = "gorev_metni_topla"
@@ -2281,6 +2305,7 @@ def calistir(ayar, sablon):
         print(f"{time.strftime('%H:%M:%S')}  gorevler: {yazi}")
         if ayar.get("gorev_metni_topla") and time.time() - son_gorev_metni[0] > 1800 and sakin_mi(kare_al(h)):
             son_gorev_metni[0] = time.time()
+            zaman_yaz("gorev_metni", son_gorev_metni[0])
             try:
                 gorev_metni_topla()
             except Exception:
@@ -2481,7 +2506,7 @@ def calistir(ayar, sablon):
     son_metin_tarama = 0.0
     metin_gorulen = []
     son_neden = [""]
-    son_npc_gorev = time.time() - 9999
+    son_npc_gorev = zaman_oku("npc_gorev", time.time() - 9999)   # yeniden acilista gorev okumasi bastan yapilmasin
     son_sayfa = 0.0
     son_kamera_uzak = 0.0
     son_kamera_egim = [0.0]
@@ -4211,6 +4236,7 @@ def calistir(ayar, sablon):
                     and time.time() - son_npc_gorev > (max(ayar["npc_gorev_araligi_sn"], ayar["gorev_av_okuma_sn"])
                                                    if not ayar["npc_gorevleri"] else ayar["npc_gorev_araligi_sn"])):
                 son_npc_gorev = time.time()
+                zaman_yaz("npc_gorev", son_npc_gorev)
                 try:
                     if npc_gorevi_yap():
                         continue
@@ -4520,7 +4546,7 @@ def calistir(ayar, sablon):
                 if guc["hedef"] is None:
                     sonuk_ = gecen_g > min(t["aralik_sn"] for t in ayar["sureli_tuslar"])
                 else:
-                    sonuk_ = etki_sayisi(kare) < guc["hedef"] and gecen_g > 8
+                    sonuk_ = etki_sayisi(kare) < guc["hedef"] and gecen_g > ayar["guclendirme_en_az_aralik_sn"]   # beceri bekleme suresinde basip durmasin
                 if sonuk_:
                     print(f"{time.strftime('%H:%M:%S')}  slottan once guclendirme")
                     guclendir()
