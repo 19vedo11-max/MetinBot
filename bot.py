@@ -1159,6 +1159,41 @@ def calistir(ayar, sablon):
         finally:
             pydirectinput.keyUp(ayar["kamera_tusu"])
 
+    _menzil_yol = os.path.join(KLASOR, "menzil.json")
+    try:
+        with open(_menzil_yol, encoding="utf-8") as _f:
+            menzil_ornek = list(json.load(_f))[-300:]
+    except Exception:
+        menzil_ornek = []
+    menzil_d = {"son": 0.0, "yaz": 0.0}
+
+    def menzil():
+        """Ogrenilen vurma mesafesi (piksel): vurus tutarken secim halkasinin karaktere uzakligi, %85'lik dilim."""
+        if len(menzil_ornek) < 15:
+            return 170.0
+        s_ = sorted(menzil_ornek)
+        return float(min(260, max(90, s_[int(len(s_) * 0.85)])))
+
+    def menzil_kaydet(k_, gen_, yuk_):
+        """Can dusurdugumuz anda hedefin uzakligini kaydet (saniyede en cok 1)."""
+        if time.time() - menzil_d["son"] < 1.0:
+            return
+        menzil_d["son"] = time.time()
+        halka_ = secim_halkasi(k_)
+        if not halka_:
+            return
+        menzil_ornek.append(round(math.hypot(halka_[0] - gen_ // 2, halka_[1] - int(yuk_ * 0.60)), 1))
+        del menzil_ornek[:-300]
+        if len(menzil_ornek) % 25 == 0:
+            print(f"{time.strftime('%H:%M:%S')}  menzil: ogrenilen vurma mesafesi {menzil():.0f} px ({len(menzil_ornek)} ornek)")
+        if time.time() - menzil_d["yaz"] > 60:
+            menzil_d["yaz"] = time.time()
+            try:
+                with open(_menzil_yol, "w", encoding="utf-8") as _f:
+                    json.dump(menzil_ornek, _f)
+            except Exception:
+                pass
+
     def vurus_sabri(k_, gen_, yuk_, son_degisim_):
         """Hedefin cani dusmezse kac sn beklensin: hedef menzil disindaysa (secim halkasi karakterden uzak)
         bosuna sallamasin - hemen yaklassin; yakinsa guclu yaratik olabilir - biraz daha sabret."""
@@ -1167,9 +1202,9 @@ def calistir(ayar, sablon):
         if time.time() - son_degisim_ < 0.9:
             return 2.5
         halka_ = secim_halkasi(k_)
-        if halka_ and math.hypot(halka_[0] - gen_ // 2, halka_[1] - int(yuk_ * 0.60)) > 170:
-            return 0.9                                  # uzakta: bosa vuruyor, hemen yuru
-        return 3.5 if halka_ else 2.5
+        if halka_ and math.hypot(halka_[0] - gen_ // 2, halka_[1] - int(yuk_ * 0.60)) > menzil() * 1.15:
+            return 0.7                                  # ogrenilen vurma mesafesinin disinda: bosa vuruyor, hemen yuru
+        return 2.0 if halka_ else 2.5                   # menzilde ama can dusmuyor (yanlis yone bakiyor olabilir): 2 sn sonra tikla
 
     def kacin(hx, hy, neden=""):
         su_an[0] = "kacin"
@@ -5072,6 +5107,7 @@ def calistir(ayar, sablon):
                         son_can, son_degisim = hc, time.time()
                         son_hasar = time.time()
                         yaklasma = 0
+                        menzil_kaydet(k2, gen, yuk)             # vurus tuttu: bu uzaklik vurma mesafesinde
                     elif time.time() - son_degisim > vurus_sabri(k2, gen, yuk, son_degisim):   # vuramiyor: tusu birak, yaratiga yuru
                         yaklasma += 1
                         if yaklasma > (1 if ayar['hizli_vazgec'] else 2):   # uc (hizli: iki) denemede de vuramadi: ulasilamiyor
