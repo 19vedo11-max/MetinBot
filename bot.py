@@ -168,6 +168,9 @@ VARSAYILAN = {
     "akilli_yan_kacis": True,     # takilinca iki yandan (sag/sol) yaratigi az olana kac (eski: hep ayni yana)
     "kacinilan_yaratiklar": ["boss", "patron", "lider", "reis", "kral"],   # adinda bunlar gecen yaratiga (ve yanindakilere) dalma
     "patron_atla_sn": 30,
+    "bolge_ogren": True,          # mini haritadan bolge haritasi (mozaik) cikar, konumunu bil, takildigi yerleri hatirla
+    "bolge_ogren_harita": "Bakra",
+    "bolge_engel_suz": True,      # bilinen engelin ardindaki hedefleri secme (hepsi oyleyse secer)
     "metin_ust_fark": 5,          # metinler.json'a gore seviyesi (benim + bu) ustundeki metin taslarina vurma (None = sinir yok)
     "patronlardan_kacin": True,   # patronlar.json'daki patronlara (adlarindan) ve yanlarindakilere dalma
     "vurus_bekle_saldirida_sn": 3.0,  # vurulurken secili hedefe bu kadar sn isabet yoksa beklemeyi kes (0 = kapali; eski: 10-25 sn bekliyordu)
@@ -1379,6 +1382,13 @@ def calistir(ayar, sablon):
         boy = math.hypot(dx, dy) or 1.0
         atla.append((time.time(), hx, hy))
         del atla[:-12]
+        if ogren is not None and "takildi" in neden:          # bolge ogrenme: takildigim yeri haritaya isle
+            try:
+                n_e = ogren.engel_ekle(math.atan2(hy - ky, hx - kx))
+                if n_e:
+                    print(f"{time.strftime('%H:%M:%S')}  bolge: engel kaydedildi ({n_e}. kez bu noktada)")
+            except Exception:
+                pass
         if ayar["yon_kara_liste"] and boy > 80:               # dag/engel yonu: o yondeki uzak hedeflere de gitme
             yon_atla.append((time.time(), math.atan2(hy - ky, hx - kx), boy))
             del yon_atla[:-8]
@@ -3011,7 +3021,11 @@ def calistir(ayar, sablon):
 
     def yururken_isler():
         """Karakter yururken yapilabilen isler (tus basmak yuruyusu kesmiyor): kamera acisini burada duzelt ki
-        savas araliklarinda ayrica durup beklenmesin."""
+        savas araliklarinda ayrica durup beklenmesin. Bolge ogrenmeye de kare verir."""
+        try:
+            bolge_besle(kare_al(h))
+        except Exception:
+            pass
         if (ayar["yururken_kamera"] and ayar["kamera_egim_t_sn"]
                 and time.time() - son_kamera_egim[0] > ayar["kamera_egim_aralik_sn"] and not saldiri_altinda()):
             kamera_egim_ayarla()
@@ -3041,6 +3055,33 @@ def calistir(ayar, sablon):
     kacmama_son = []              # 'vuruluyorum, kacmiyor' anlari: tekrar ederse kacisa izin
     patron_yer = []               # (zaman, x, y): kacinilan (patron) adli etiketler
     _patron_d = {"t": 0.0, "adlar": []}
+    ogren = None                                        # bolge ogrenme: mini haritadan mozaik + konum + engel hafizasi
+    if ayar["bolge_ogren"]:
+        try:
+            from harita_ogren import HaritaOgren
+            ogren = HaritaOgren(ayar["bolge_ogren_harita"])
+            print(f"bolge ogrenme acik: {ayar['bolge_ogren_harita']} mozaigi"
+                  + (f", {len(ogren.engeller)} engel" if getattr(ogren, "engeller", None) is not None else ""))
+        except Exception as e_o:
+            print("bolge ogrenme acilamadi:", e_o)
+            ogren = None
+    ogren_d = {"besle": 0.0, "kaydet": time.time(), "hata": 0.0, "suz_log": 0.0}
+
+    def bolge_besle(k_b):
+        """~0.4 sn'de bir mini harita kirpintisini bolge ogrenmeye ver (8 ms); 30 sn'de bir kaydet."""
+        if ogren is None or time.time() - ogren_d["besle"] < 0.4:
+            return
+        ogren_d["besle"] = time.time()
+        try:
+            ogren.besle(cv2.cvtColor(np.ascontiguousarray(k_b[:200, -200:]), cv2.COLOR_RGB2BGR), time.time())
+            if time.time() - ogren_d["kaydet"] > 30:
+                ogren_d["kaydet"] = time.time()
+                ogren.kaydet()
+        except Exception as e_b:
+            if time.time() - ogren_d["hata"] > 300:
+                ogren_d["hata"] = time.time()
+                print("bolge ogrenme hatasi:", e_b)
+
     _metin_d = {"t": 0.0, "liste": []}
     metin_agir_log = [0.0]
 
@@ -4911,6 +4952,7 @@ def calistir(ayar, sablon):
             ox, oy, gen, yuk = istemci_kutusu(h)
             su_an[0] = "ana dongu (hedef ariyor)"
             ox_son[0], ox_son[1] = ox, oy
+            bolge_besle(kare)
             if time.time() - son_damga_bakis > 5:
                 son_damga_bakis = time.time()
                 if kod_damgasi() != ilk_damga and kod_saglam():
@@ -5427,6 +5469,16 @@ def calistir(ayar, sablon):
                 else:
                     sirali.append(((1, int(uzak // ayar["yakinlik_halkasi_piksel"]), -yog(t), -sev, uzak), t))
             yaratik = [t for _, t in sorted(sirali, key=lambda s: s[0])]
+            if ogren is not None and ayar["bolge_engel_suz"] and yaratik:   # bilinen engelin ardindakileri secme
+                try:
+                    _yo = [t for t in yaratik if not ogren.hedef_engelli_mi(t[0] - karakter[0], t[1] + 45 - karakter[1])]
+                except Exception:
+                    _yo = yaratik
+                if _yo and len(_yo) < len(yaratik):
+                    if time.time() - ogren_d["suz_log"] > 30:
+                        ogren_d["suz_log"] = time.time()
+                        print(f"{time.strftime('%H:%M:%S')}  bolge: {len(yaratik) - len(_yo)} hedef bilinen engelin ardinda - atlandi")
+                    yaratik = _yo
             if patron_yer:                                        # patron (kacinilan ad) etiketinin yanindakileri secme
                 patron_yer[:] = [p_ for p_ in patron_yer if time.time() - p_[0] < ayar["patron_atla_sn"]]
                 yaratik = [t for t in yaratik if not any(math.hypot(t[0] - px_, t[1] - py_) < 110 for _, px_, py_ in patron_yer)]
