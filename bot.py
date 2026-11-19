@@ -41,7 +41,8 @@ VARSAYILAN = {
     "esya_yaricapi_piksel": 650,
     "en_cok_esya": 10,            # bir toplama turunda en cok kac esyaya tiklansin
     "alan_bos_sn": 10,            # alan modunda bu kadar sn slot kesilmezse kisa yuruyusleri beklemeden alana don
-    "alana_donerken_dal": True,   # alana donerken yolda slot gorurse yuruyusu kesip ona dal
+    "alana_donerken_dal": True,
+    "yolda_slot_en_az": 3,        # yururken (alana donus dahil) bu kadar yaratik gorunce yuruyusu kesip vur   # alana donerken yolda slot gorurse yuruyusu kesip ona dal
     "dalinca_hemen_sn": 10,       # yolda slota dalinca bu kadar sn yan isleri atla, dogrudan vur
     "guc_on_mesafe": 350,         # slottan once guclendirme yalniz ilk hedef bundan uzaksa (yaklasana kadar yakilir)
     "derinlik_sirala": True,      # hedefleri ekran uzakligi yerine kamera derinligine gore (gercek yakinlik) sirala
@@ -3812,10 +3813,10 @@ def calistir(ayar, sablon):
             if saldiri_altinda():
                 print("   git: yolda saldiri - kesmeye donuluyor")
                 return False
-            if time.time() - bas_ > 3 and (not alan_aktif() or ayar["alana_donerken_dal"]):   # yolda slot: dur, kes
+            if time.time() - bas_ > 1.5 and (not alan_aktif() or ayar["alana_donerken_dal"]):   # yolda slot: dur, kes
                 yk_, gn_ = kf_.shape[:2]
                 et_ = [t for t in kirmizi_etiketler(kf_) if math.hypot(t[0] - gn_ // 2, t[1] - yk_ * 0.58) < 450]
-                if len(et_) >= ayar["slot_en_az"]:
+                if len(et_) >= ayar["yolda_slot_en_az"]:
                     print(f"{time.strftime('%H:%M:%S')}  git: yolda slot goruldu ({len(et_)}) - kesmeye donuluyor")
                     hemen_savas[0] = time.time()
                     return True
