@@ -48,6 +48,7 @@ VARSAYILAN = {
     "derinlik_ufuk": 227,         # derinlik modeli: govde boyu ~ (y + ufuk)
     "derinlik_carpan": 1.7,       # karakter yaninda dikey 1 px ~ bu kadar yatay px yol
     "grup_sonu_guc": True,        # grup bitince bekleme suresi dolan hava kilici/ofke'yi hemen yak
+    "uzak_saldirgana_don": True,  # vuruluyor ama yakinda yaratik yoksa (uzaktan ok) 650 px'e kadar en yakina don
     "yakin_saldir": True,         # dibime gelen yaratiga (seviye/ad filtresine bakmadan) canim dusmeden hemen vur
     "yakin_saldir_piksel": 190,   # 'dibimde' sayilan uzaklik (karakter merkezinden)
     "ince_vurus": True,           # 1 piksellik can dususunu de vurus say; menzil disindaki hedefe bosa sallamadan yaklas
@@ -322,6 +323,12 @@ def _dx_kare(x, y, w, hh):
 _son_kare = [None]
 # Genel gorunum haritasi (M) kirpintisi: kapat dugmesine gore. 2026-11-19 olculdu (eski 254x317 sol 65 px'i kesiyordu)
 HX0, HY0, HW, HH = -307, 16, 316, 318
+
+
+def dunya_xy(x, y, kx, ky, ufuk=227.0, carpan=1.7):
+    """Ekran noktasinin karaktere gore 'dunya' koordinati (karakter derinliginde piksel birimi)."""
+    d = (ky + ufuk) / max(30.0, y + ufuk)
+    return (x - kx) * d, carpan * (ky + ufuk) * (d - 1.0)
 
 
 def dunya_uzak(x, y, kx, ky, ufuk=227.0, carpan=1.7):
@@ -4978,8 +4985,16 @@ def calistir(ayar, sablon):
             if ayar["sadece_slot"] and bos_tur < ayar["tekli_bekleme_turu"]:
                 tum = kirmizi_etiketler(kare)
                 uye = set()
+                if ayar["derinlik_sirala"]:
+                    dw_ = {(int(t[0]), int(t[1])): dunya_xy(t[0], t[1] + 45, karakter[0], karakter[1],
+                                                            ayar["derinlik_ufuk"], ayar["derinlik_carpan"]) for t in tum}
                 for t in tum:
-                    komsu = sum(1 for u in tum if math.hypot(t[0] - u[0], t[1] - u[1]) < ayar["slot_yaricapi_piksel"])
+                    if ayar["derinlik_sirala"]:                   # ayni grup: gercek (dunya) mesafede yakin
+                        a_ = dw_[(int(t[0]), int(t[1]))]
+                        komsu = sum(1 for u in tum if math.hypot(a_[0] - dw_[(int(u[0]), int(u[1]))][0],
+                                                                 a_[1] - dw_[(int(u[0]), int(u[1]))][1]) < ayar["slot_yaricapi_piksel"] * 1.3)
+                    else:
+                        komsu = sum(1 for u in tum if math.hypot(t[0] - u[0], t[1] - u[1]) < ayar["slot_yaricapi_piksel"])
                     if komsu >= ayar["slot_en_az"]:
                         uye.add((int(t[0]), int(t[1])))
                 dipte = {(int(t[0]), int(t[1])) for t in tum
@@ -5036,6 +5051,11 @@ def calistir(ayar, sablon):
                 yakin_ = sorted((t for t in kirmizi_etiketler(kare)
                                  if math.hypot(t[0] - karakter[0], t[1] + 45 - karakter[1]) < ayar["savunma_yaricapi_piksel"]),
                                 key=lambda t: math.hypot(t[0] - karakter[0], t[1] + 45 - karakter[1]))
+                if not yakin_ and saldiri_altinda() and ayar["uzak_saldirgana_don"]:
+                    yakin_ = sorted((t for t in kirmizi_etiketler(kare)            # okcu/buyucu uzaktan vuruyor olabilir
+                                     if math.hypot(t[0] - karakter[0], t[1] + 45 - karakter[1]) < 650),
+                                    key=lambda t: dunya_uzak(t[0], t[1] + 45, karakter[0], karakter[1],
+                                                             ayar["derinlik_ufuk"], ayar["derinlik_carpan"]))[:3]
                 if yakin_:
                     if su_an[0] != "savunma":
                         print(f"{time.strftime('%H:%M:%S')}  hasar aliyorum - yanimdaki {len(yakin_)} yaratiga donuluyor")
@@ -5173,6 +5193,7 @@ def calistir(ayar, sablon):
             son_hasar = time.time()
             slot_atla = []                  # bu slotta ulasilamayan/vurulamayan yaratiklar (zaman, x, y): 20 sn secilmez
             yolo_deneme = [0]               # bu slotta sekil modeliyle (etiketsiz) yaratiga gidis sayisi
+            dib_gecis = [0.0]               # dibimdeki saldirgana son gecis ani
             pydirectinput.keyDown(ayar["saldiri_tusu"])
             saldiri_basili = True
             su_an[0] = "slot kesiyor"
@@ -5270,6 +5291,23 @@ def calistir(ayar, sablon):
                         son_can, son_degisim, son_hasar = 2.0, time.time(), time.time()
                 else:
                     bos = 0
+                    # secili hedef uzakta (menzil disi) ama dibimdeki biri bana vuruyor: once ona don
+                    if (ayar["yakin_saldir"] and time.time() - son_hasar > 1.0 and time.time() - dib_gecis[0] > 2.0
+                            and saldiri_altinda()):
+                        halka_d = secim_halkasi(k2)
+                        if not halka_d or math.hypot(halka_d[0] - gen // 2, halka_d[1] - int(yuk * 0.60)) > menzil() * 1.15:
+                            dib_d = sorted((t for t in kirmizi_etiketler(k2)
+                                            if math.hypot(t[0] - gen // 2, t[1] + 45 - int(yuk * 0.58)) < ayar["yakin_saldir_piksel"]),
+                                           key=lambda t: math.hypot(t[0] - gen // 2, t[1] + 45 - int(yuk * 0.58)))
+                            if dib_d:
+                                dib_gecis[0] = time.time()
+                                birak()
+                                print(f"{time.strftime('%H:%M:%S')}  slot ici: dibimdeki saldirgana donuldu")
+                                if sec(dib_d[0][0], dib_d[0][1]):
+                                    pydirectinput.keyDown(ayar["saldiri_tusu"])
+                                    saldiri_basili = True
+                                    son_can, son_degisim = 2.0, time.time()
+                                continue
                     if oto["bas"] is not None:
                         oto["bas"] = None
                         oto["tuttu"] += 1
