@@ -169,7 +169,10 @@ VARSAYILAN = {
     "kamera_izlegi": True,        # kamera hareketleri ayri izlekte, savas/yuruyusle AYNI ANDA (tiklama aninda bekler)
     "kamera_izlek_sn": 3.0,       # bu aralikla sirayla saga/sola kisa bakis
     "kamera_zoom_aralik_sn": 12,
-    "kamera_uzak_kal": True,      # bosta/ararken/takilinca kamera uzakta kalir, hedef secilince yakina doner  # hedef aranirken en sik bu aralikla uzaklas-yakinlas
+    "kamera_uzak_kal": True,
+    "bosta_bakis_sn": 3.5,        # bu kadar sn ne vurus ne yuruyus yoksa kamera uzaklasip etrafa doner (0 = kapali)
+    "bosta_donus_sn": 0.5,
+    "bosta_hareket_px": 0.8,      # bolge haritasinda son 2 sn'de bu kadar yer degisimi = yuruyor        # bosta bakista kameranin donus suresi (bir yon; sonraki seferde oteki)      # bosta/ararken/takilinca kamera uzakta kalir, hedef secilince yakina doner  # hedef aranirken en sik bu aralikla uzaklas-yakinlas
     "yururken_bakis_sn": 3.0,     # yururken bu aralikla sirayla saga/sola kisa bakis (0 = kapali)
     "kamera_zoom_tara_sn": 0.5,  # hedef ararken etrafa bakmadan once bu kadar uzaklas, sonra ayni sure yakinlas (0 = kapali)
     "zoom_uzak_tusu": "f",
@@ -4998,8 +5001,41 @@ def calistir(ayar, sablon):
         yakinlasma. Pencere/menu islerinde (envanter, satici, harita, olum...) hic dokunmaz; tiklama aninda bekler."""
         yon_ = [ayar["kamera_tusu"]]
         son_bakis = 0.0
+        bos_d = {"mh": None, "hc": None, "aktif": time.time(), "bakis": 0.0}
         while durum["calis"]:
             time.sleep(0.3)
+            try:                                          # bosta mi? (yurumuyor + vurmuyor)
+                if (ayar["bosta_bakis_sn"] and not durum["duraklat"] and not durum.get("yazi")
+                        and win32gui.GetForegroundWindow() == h and su_an[0] in KAMERA_SERBEST and not olum_pencere["acik"]):
+                    k_b = kare_al(h)
+                    hc_b = hedef_cani(k_b)
+                    kn_ = ogren.konum() if ogren is not None else None      # bolge haritasindaki konum (mini haritadan)
+                    mh_b = (kn_[0], kn_[1]) if kn_ and kn_[2] >= 0.3 else None
+                    if mh_b is None:                     # konum yoksa yurumeyi bilemeyiz: bosta sayma
+                        bos_d["aktif"] = time.time()
+                    gecmis_b = bos_d.setdefault("gecmis", [])
+                    if mh_b is not None:
+                        gecmis_b.append((time.time(), mh_b))
+                        gecmis_b[:] = [g for g in gecmis_b if time.time() - g[0] < 2.0]
+                    yuruyor_b = (mh_b is not None and any(math.hypot(mh_b[0] - g[1][0], mh_b[1] - g[1][1]) > ayar["bosta_hareket_px"]
+                                                          for g in gecmis_b))   # son 2 sn'de yer degistirdi mi
+                    vuruyor_b = bos_d["hc"] is not None and hc_b < bos_d["hc"] - 0.005
+                    bos_d["mh"], bos_d["hc"] = mh_b, hc_b
+                    if yuruyor_b or vuruyor_b:
+                        bos_d["aktif"] = time.time()
+                    elif (time.time() - bos_d["aktif"] > ayar["bosta_bakis_sn"]
+                          and time.time() - bos_d["bakis"] > ayar["bosta_bakis_sn"] and not saldiri_altinda()):
+                        bos_d["bakis"] = bos_d["aktif"] = time.time()
+                        zoom_uzak()                       # genis gor
+                        with tik_kilit:
+                            yon_[0] = ayar.get("kamera_ters_tusu", "q") if yon_[0] == ayar["kamera_tusu"] else ayar["kamera_tusu"]
+                            pydirectinput.keyDown(yon_[0])  # bir taraf; sonraki seferde oteki taraf
+                            time.sleep(ayar["bosta_donus_sn"])
+                            pydirectinput.keyUp(yon_[0])
+                else:
+                    bos_d["aktif"] = time.time()
+            except Exception:
+                pass
             try:
                 if time.time() - son_bakis < max(0.5, ayar["kamera_izlek_sn"]):
                     raise StopIteration                  # bakis zamani degil: yalniz zoom durumuna bak
