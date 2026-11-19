@@ -58,6 +58,7 @@ VARSAYILAN = {
     "hizli_vazgec": True,         # ulasilamayan hedefte bekleme kisalt + atla suresini uzat
     "hizli_vazgec_atla_sn": 45,   # ulasilamayan hedef (ayni nokta) bu kadar sn secilmez (eski: 12)
     "gorev_av_okuma_sn": 900,     # yalniz av gorevi icin gorev listesini bu aralikla oku (0 = npc_gorev_araligi_sn)
+    "kalabalikta_engel_sayma": True,  # "sure doldu" ulasilamamasi yaninda >=3 yaratik varken "25 sn'de 3. kez, engel var: baska yere" kacisini tetiklemesin (11-20: saldiri altinda 6 yaratigi birakip gidiyordu)
     "ilk_vurus_bekleme_sn": 7,    # hedefe tikladiktan sonra ilk vurus icin en cok bu kadar bekle
     "takilma_sn": 1.2, 
     "takilma_esik": 1.2,          # mini harita 1 sn icinde bundan az degisirse karakter yerinde sayiyor           # sahne bu kadar sure hic degismezse karakter engele takilmis sayilir
@@ -1528,7 +1529,8 @@ def calistir(ayar, sablon):
         diger_ = [t for t in kirmizi_etiketler(k) if math.hypot(t[0] - hx, t[1] - hy) > 60
                   and math.hypot(t[0] - kx, t[1] - ky) < 450]
         son_atla_ = [z for z, _, _ in atla if time.time() - z < 25]
-        if len(son_atla_) >= 3:                               # ust uste ulasilamiyor (cit, pazar, ev): buradan ayril
+        kalabalik_ = ayar["kalabalikta_engel_sayma"] and "sure doldu" in neden and len(diger_) >= 3   # engel degil, kalabalik
+        if len(son_atla_) >= 3 and not kalabalik_:                               # ust uste ulasilamiyor (cit, pazar, ev): buradan ayril
             print(f"{time.strftime('%H:%M:%S')}  hedefe ulasilamadi [{neden}] - 25 sn'de {len(son_atla_)}. kez, engel var: baska yere")
             atla.clear()
             try:
