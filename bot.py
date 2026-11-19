@@ -1327,7 +1327,9 @@ def calistir(ayar, sablon):
         if ayar["yon_kara_liste"] and boy > 80:               # dag/engel yonu: o yondeki uzak hedeflere de gitme
             yon_atla.append((time.time(), math.atan2(hy - ky, hx - kx), boy))
             del yon_atla[:-8]
-        if ayar["vurulurken_kacma"] and saldiri_altinda():      # yaratiklar vururken kosma (gecemez, olur): yerinde savas
+        kacmama_son[:] = [z for z in kacmama_son if time.time() - z < 20]
+        if ayar["vurulurken_kacma"] and saldiri_altinda() and len(kacmama_son) < 3:   # yaratiklar vururken kosma: yerinde savas
+            kacmama_son.append(time.time())                    # (20 sn'de 3 kez ise yaramadiysa - uzaktan vuran var - normal kacis)
             print(f"{time.strftime('%H:%M:%S')}  hedefe ulasilamadi [{neden}] - vuruluyorum, kacmiyor: yanimdakilere donuluyor")
             return
         diger_ = [t for t in kirmizi_etiketler(k) if math.hypot(t[0] - hx, t[1] - hy) > 60
@@ -2966,6 +2968,7 @@ def calistir(ayar, sablon):
     atla = []                     # ulasilamayan hedefler (zaman, x, y): kisa sure secilmez
     son_slot_bitis = [0.0]        # slot arasi olcumu
     slot_aralari = []
+    kacmama_son = []              # 'vuruluyorum, kacmiyor' anlari: tekrar ederse kacisa izin
     yon_atla = []                 # takilinan yonler (zaman, aci, uzaklik): dagin ardindakilere de kosma
     alan_don = [False]
     dusuk_gezin, dusuk_izin = [], [0.0]
