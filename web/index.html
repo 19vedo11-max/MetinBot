@@ -17,7 +17,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--lake);color:var(--pirinc)}
-body{font:16px/1.5 "Alegreya Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;
+body{font:15px/1.4 "Alegreya Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Cpath d='M4 44V4h40v32H16V16h16v8' fill='none' stroke='%23b08a4a' stroke-opacity='.07' stroke-width='2'/%3E%3C/svg%3E"),
     radial-gradient(1000px 500px at 15% -10%, #2c1710 0%, transparent 60%),
@@ -25,7 +25,8 @@ body{font:16px/1.5 "Alegreya Sans",system-ui,sans-serif;-webkit-font-smoothing:a
 h1,h2,h3{font-family:Cinzel,Georgia,"Times New Roman",serif;font-weight:600;letter-spacing:.03em}
 button,input,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--bronz-acik);outline-offset:2px}
-.kap{max-width:1240px;margin:0 auto;padding:22px 20px 110px}
+.kap>*,.ana-alan>*{min-width:0}
+.kap{padding:10px 14px 110px;display:flex;flex-direction:column;gap:10px}
 
 /* Metin2 penceresi */
 .pen{position:relative;background:var(--lake2);border:1px solid var(--bronz);border-radius:3px;
@@ -44,95 +45,118 @@ button,input,select{font:inherit;color:inherit}
   background:linear-gradient(180deg,var(--bas1),var(--bas2));border-bottom:1px solid var(--bronz);
   box-shadow:inset 0 1px 0 #d9b46a44;text-shadow:0 1px 0 #000}
 .bs::before,.bs::after{content:"\25C6";color:var(--bronz-acik);font-size:.6rem;margin:0 .7em;vertical-align:.15em}
-.ic{padding:16px 18px}
-h3{font-size:.85rem;font-weight:600;color:var(--bronz-acik);margin:1rem 0 .3rem;
+.ic{padding:10px 14px}
+h3{font-size:.8rem;font-weight:600;color:var(--bronz-acik);margin:.8rem 0 .3rem;
   padding-bottom:3px;border-bottom:1px solid var(--cizgi);letter-spacing:.05em}
 h3:first-child{margin-top:0}
 
-.ust{display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;margin-bottom:22px}
-.muhur{width:96px;height:96px;background:radial-gradient(circle at 35% 30%,#3a120c,#1a0a07);color:var(--pirinc);
+/* ust serit */
+.ust{display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:center;background:var(--lake2);
+  border:1px solid var(--bronz);border-radius:3px;padding:7px 12px;box-shadow:0 0 0 1px #000,0 6px 18px #0008}
+.muhur{width:54px;height:54px;background:radial-gradient(circle at 35% 30%,#3a120c,#1a0a07);color:var(--pirinc);
   border-radius:50%;display:grid;place-items:center;position:relative;
-  box-shadow:inset 0 0 0 4px #1a0a07,inset 0 0 0 5px var(--bronz),0 0 0 2px var(--bronz),0 6px 20px #000a}
-.muhur b{font-family:Cinzel,serif;font-size:2.6rem;line-height:1;font-weight:700;margin-top:10px}
-.muhur small{position:absolute;top:13px;left:0;right:0;text-align:center;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--bronz-acik)}
-.kim h1{margin:0;font-size:2.1rem;line-height:1.05;display:flex;align-items:center;gap:12px;flex-wrap:wrap;text-shadow:0 2px 0 #000}
-.imza{font-family:Cinzel,serif;font-size:.7rem;letter-spacing:.1em;background:var(--zincifre);color:#fbe9df;padding:3px 8px;border-radius:2px;
+  box-shadow:inset 0 0 0 3px #1a0a07,inset 0 0 0 4px var(--bronz),0 0 0 1px var(--bronz)}
+.muhur b{font-family:Cinzel,serif;font-size:1.5rem;line-height:1;font-weight:700;margin-top:8px}
+.muhur small{position:absolute;top:7px;left:0;right:0;text-align:center;font-size:.45rem;letter-spacing:.1em;text-transform:uppercase;color:var(--bronz-acik)}
+.kim h1{margin:0;font-size:1.45rem;line-height:1.05;display:flex;align-items:center;gap:10px;flex-wrap:wrap;text-shadow:0 2px 0 #000}
+.imza{font-family:Cinzel,serif;font-size:.6rem;letter-spacing:.1em;background:var(--zincifre);color:#fbe9df;padding:2px 6px;border-radius:2px;
   transform:rotate(-4deg);box-shadow:inset 0 0 0 1px #e7826a88,0 2px 6px #000a;text-shadow:none;font-weight:700}
-.kim .durum{display:flex;align-items:center;gap:10px;margin-top:6px;color:var(--soluk)}
-.isik{width:10px;height:10px;border-radius:50%;background:var(--sonuk);flex:none}
+.kim .durum{display:flex;align-items:center;gap:8px;margin-top:3px;color:var(--soluk);font-size:.92rem}
+.isik{width:9px;height:9px;border-radius:50%;background:var(--sonuk);flex:none}
 .isik.acik{background:var(--yesim);box-shadow:0 0 0 0 #5fae8c88;animation:nabiz 2.4s infinite}
 .isik.bekle{background:var(--bronz-acik)}
-@keyframes nabiz{70%{box-shadow:0 0 0 10px #5fae8c00}100%{box-shadow:0 0 0 0 #5fae8c00}}
-.dugmeler{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@keyframes nabiz{70%{box-shadow:0 0 0 8px #5fae8c00}100%{box-shadow:0 0 0 0 #5fae8c00}}
+.dugmeler{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .d{border:1px solid #9a9aa0;border-top-color:#c4c4c8;border-bottom-color:#2a2a2e;background:linear-gradient(180deg,var(--tas1),var(--tas2));
-  padding:8px 16px;border-radius:3px;cursor:pointer;color:#ece6d6;text-shadow:0 1px 0 #000;transition:filter .15s,box-shadow .15s;
+  padding:6px 13px;border-radius:3px;cursor:pointer;color:#ece6d6;text-shadow:0 1px 0 #000;transition:filter .15s,box-shadow .15s;
   box-shadow:inset 0 1px 0 #ffffff22,0 1px 2px #000a}
 .d:hover{filter:brightness(1.25);box-shadow:inset 0 1px 0 #ffffff44,0 0 8px #d9b46a55}
 .d:active{filter:brightness(.9)}
 .d.ana{border-color:var(--bronz-acik);background:linear-gradient(180deg,#7a5d33,#4a3519);color:#fff3d4}
 .d.tehlike{background:linear-gradient(180deg,#8a2418,#4a110a);border-color:#c0584a;border-bottom-color:#2a0a06}
 .d.tehlike:hover{box-shadow:inset 0 1px 0 #ffffff33,0 0 10px #c4462f88}
-.d.kucuk{padding:4px 12px;font-size:.9rem;flex:none}
+.d.kucuk{padding:3px 11px;font-size:.88rem;flex:none}
 
-.serit{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;margin-bottom:18px}
-.serit>*,.izgara>*{min-width:0}
-.tecrube .sayi{font-family:Cinzel,serif;font-size:2.5rem;line-height:1.1;color:var(--bronz-acik)}
-.tecrube .alt{color:var(--soluk);font-size:.95rem;margin-top:4px}
-.grafik{width:100%;height:110px;margin-top:8px;display:block}
-.sayilar{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--cizgi)}
-.sayilar div{background:var(--lake2);padding:14px 16px}
-.sayilar b{display:block;font-family:Cinzel,serif;font-size:1.7rem;line-height:1.2}
-.sayilar span{color:var(--soluk);font-size:.9rem}
-.olum b{color:#e98a74}
+/* ozet satiri */
+.ozs{grid-column:1/-1;display:flex;align-items:center;gap:6px 16px;flex-wrap:wrap;border-top:1px solid var(--cizgi);padding-top:6px;min-width:0}
+.ozs .expsaat{font-family:Cinzel,serif;font-size:1.2rem;line-height:1.1;color:var(--bronz-acik);white-space:nowrap}
+.ozs .expalt{color:var(--soluk);font-size:.88rem;flex:1 1 220px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grafik{width:150px;height:28px;display:block;flex:none}
+.s30{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:baseline;color:var(--soluk);font-size:.88rem}
+.s30 b{font-family:Cinzel,serif;font-size:1.05rem;color:var(--pirinc);margin-right:3px}
+.s30 .olum b{color:#e98a74}
+.s30 em{font-style:normal;color:var(--sonuk);margin-right:2px}
 
-.izgara{align-items:start;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
-.genis{grid-column:1/-1}
-.plan{display:grid;gap:6px}
-.plan label{display:grid;grid-template-columns:18px 1fr;gap:12px;padding:9px 12px;border-radius:3px;cursor:pointer;border:1px solid transparent}
-.plan label:hover{background:var(--lake3)}
-.plan input{accent-color:var(--bronz);margin-top:4px}
-.plan label:has(input:checked){border-color:var(--bronz);background:#b08a4a18}
-.plan small,.anahtar small,.satir small{display:block;color:var(--soluk);line-height:1.3}
-.anahtar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #4a3a2c66;cursor:pointer}
-.anahtar:last-child{border-bottom:0}
-.anahtar.kilit{opacity:.55;cursor:not-allowed}
-.sw{appearance:none;width:42px;height:22px;border-radius:3px;background:#0c0806;border:1px solid var(--cizgi);position:relative;cursor:pointer;flex:none;margin:0}
-.sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:2px;background:linear-gradient(180deg,#8a8a8e,#4a4a4e);transition:transform .15s}
-.sw:checked{background:#1d3a2c;border-color:var(--yesim)}
-.sw:checked::after{transform:translateX(20px);background:linear-gradient(180deg,#d9b46a,#8a6a30)}
-.kaydir{padding:7px 0}
-.kaydir div{display:flex;justify-content:space-between;gap:10px;color:var(--soluk)}
-.kaydir div b{color:var(--pirinc);font-weight:700;white-space:nowrap}
-input[type=range]{width:100%;accent-color:var(--bronz)}
-select,.ara{background:#0c0806;border:1px solid var(--cizgi);border-radius:3px;padding:7px 10px;color:var(--pirinc);width:100%}
-.satir{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0}
+/* akordeon */
+.acc+.acc{border-top:1px solid var(--cizgi)}
+.ah{display:flex;align-items:center;gap:8px;width:100%;border:0;background:transparent;text-align:left;cursor:pointer;
+  padding:6px 12px;min-height:32px;color:var(--pirinc)}
+.ah:hover{background:var(--lake3)}
+.ah .ok{width:1em;flex:none;color:var(--bronz-acik);text-align:center}
+.ah .ok::before{content:"\25B8"}
+.acc.acik>.ah .ok::before{content:"\25BE"}
+.ah .at{font-family:Cinzel,Georgia,serif;font-weight:600;letter-spacing:.04em;font-size:.9rem;white-space:nowrap}
+.ah .oz{margin-left:auto;color:var(--soluk);font-size:.86rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+.acc.acik>.ah{background:linear-gradient(180deg,var(--bas1),var(--bas2));box-shadow:inset 0 1px 0 #d9b46a44;border-bottom:1px solid var(--bronz)}
+.acc.acik>.ah .at{color:var(--bronz-acik)}
+.ag{display:none}
+.acc.acik>.ag{display:block}
+.ag.ic{padding:6px 14px 10px}
+
+.satir{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 0}
 .satir>div,.satir>p{min-width:0}
-.ozet{color:var(--soluk);font-size:.92rem;margin:.2rem 0 .5rem;overflow-wrap:anywhere}
+.satir select{width:auto;min-width:130px}
+.ozet{color:var(--soluk);font-size:.88rem;margin:.1rem 0 .4rem;overflow-wrap:anywhere}
+.satir small,.plan small,.anahtar small{display:block;color:var(--soluk);line-height:1.25;font-size:.84rem}
+.plan{display:grid;gap:2px}
+.plan label{display:grid;grid-template-columns:16px minmax(0,1fr);gap:10px;padding:5px 8px;border-radius:3px;cursor:pointer;border:1px solid transparent;align-items:center}
+.plan label:hover{background:var(--lake3)}
+.plan input{accent-color:var(--bronz);margin:0}
+.plan label:has(input:checked){border-color:var(--bronz);background:#b08a4a18}
+.plan b{font-weight:700}
+.plan label>span{min-width:0}
+.plan small,.anahtar small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.anahtar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:3px 0;border-bottom:1px solid #4a3a2c66;cursor:pointer}
+.anahtar:last-child{border-bottom:0}
+.anahtar>div{min-width:0;flex:1}
+.anahtar.kilit{opacity:.55;cursor:not-allowed}
+.sw{appearance:none;width:38px;height:20px;border-radius:3px;background:#0c0806;border:1px solid var(--cizgi);position:relative;cursor:pointer;flex:none;margin:0}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:2px;background:linear-gradient(180deg,#8a8a8e,#4a4a4e);transition:transform .15s}
+.sw:checked{background:#1d3a2c;border-color:var(--yesim)}
+.sw:checked::after{transform:translateX(18px);background:linear-gradient(180deg,#d9b46a,#8a6a30)}
+.kaydir{padding:2px 0}
+.kaydir div{display:flex;justify-content:space-between;gap:10px;color:var(--soluk);font-size:.92rem;line-height:1.2}
+.kaydir div b{color:var(--pirinc);font-weight:700;white-space:nowrap}
+input[type=range]{width:100%;accent-color:var(--bronz);margin:2px 0 0;height:16px}
+select,.ara,input[type=text],input[type=number]{background:#0c0806;border:1px solid var(--cizgi);border-radius:3px;padding:4px 8px;color:var(--pirinc);width:100%}
+.alt-ayrac{border-top:1px solid var(--cizgi);margin-top:6px;padding-top:6px}
 
-.harita-ust{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-.sekme{display:flex;gap:6px;flex-wrap:wrap}
-.sekme button{border:1px solid var(--cizgi);background:#0c0806;padding:4px 12px;border-radius:3px;cursor:pointer;color:var(--soluk)}
+/* harita */
+.sekme{display:flex;gap:5px;flex-wrap:wrap}
+.sekme button{border:1px solid var(--cizgi);background:#0c0806;padding:3px 11px;border-radius:3px;cursor:pointer;color:var(--soluk)}
 .sekme button[aria-pressed=true]{color:var(--pirinc);border-color:var(--bronz);background:#3a120c}
+.harita-ust{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.hw{display:grid;place-items:center;min-height:0}
 .harita-alan{position:relative;width:min(100%,508px);aspect-ratio:254/317;margin:0 auto;border:1px solid var(--bronz);
   overflow:hidden;touch-action:none;cursor:crosshair;background:var(--lake3)}
 .harita-alan img{width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none}
 .harita-alan svg{position:absolute;inset:0;width:100%;height:100%}
-.ipucu{color:var(--soluk);font-size:.92rem;margin:.6rem auto 0;max-width:508px}
+.ipucu{color:var(--soluk);font-size:.86rem;margin:.4rem 0 0}
 .mod{display:flex;border:1px solid var(--cizgi);border-radius:3px;overflow:hidden}
-.mod button{background:#0c0806;border:0;padding:5px 14px;cursor:pointer;color:var(--soluk)}
+.mod button{background:#0c0806;border:0;padding:3px 12px;cursor:pointer;color:var(--soluk)}
 .mod button[aria-pressed=true]{background:#5a1e14;color:var(--pirinc)}
 
-.gunluk{font:12.5px/1.55 "Cascadia Mono",Consolas,monospace;max-height:360px;overflow:auto;background:#0c0806;border:1px solid var(--cizgi);padding:10px 12px;color:#cfc2b1}
+.gunluk{font:12px/1.5 "Cascadia Mono",Consolas,monospace;max-height:320px;overflow:auto;background:#0c0806;border:1px solid var(--cizgi);padding:8px 10px;color:#cfc2b1}
 .gunluk div{white-space:pre-wrap;word-break:break-word}
 .gunluk .k{color:#ec8e78}.gunluk .y{color:#8fd1b2}.gunluk .b{color:var(--bronz-acik)}.gunluk .s{color:#7b6c62}
-.rapor{white-space:pre-wrap;color:#d9cdbb;font:inherit;font-size:.95rem;margin:0}
+.rapor{white-space:pre-wrap;color:#d9cdbb;font:inherit;font-size:.9rem;margin:0}
 .ekran{width:100%;display:block;border:1px solid var(--bronz);min-height:60px;background:var(--lake3)}
 .bos{color:var(--soluk)}
 
 dialog{padding:0;border:0;background:none;color:var(--pirinc);max-width:min(760px,96vw);width:100%;max-height:92vh;overflow:visible}
 dialog::backdrop{background:#000a}
 dialog .pen{display:flex;flex-direction:column;max-height:88vh}
-dialog .ic{overflow:auto;flex:1;min-height:0}
+dialog .ic{overflow:auto;flex:1;min-height:0;padding:14px 18px}
 .liste{display:grid;gap:2px;margin-top:8px}
 .liste button{display:grid;grid-template-columns:22px 1fr auto;gap:8px;text-align:left;background:none;border:1px solid transparent;
   padding:6px 8px;cursor:pointer;border-radius:3px;color:inherit}
@@ -141,22 +165,51 @@ dialog .ic{overflow:auto;flex:1;min-height:0}
 .liste small{grid-column:2/4;color:var(--soluk);line-height:1.25}
 .liste i{font-style:normal;color:var(--bronz-acik)}
 .altsrt{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--cizgi)}
+dialog .satir{padding:6px 0}
 
 .bildirim{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);opacity:0;background:#3a120c;color:var(--pirinc);
   border:1px solid var(--bronz-acik);padding:10px 18px;border-radius:3px;transition:all .25s;z-index:50;pointer-events:none;max-width:90vw}
 .bildirim.gor{opacity:1;transform:translateX(-50%) translateY(0)}
 
-@media (max-width:860px){
-  .serit,.izgara{grid-template-columns:minmax(0,1fr)}
-  .tecrube .sayi{font-size:2rem}
-  .ust{grid-template-columns:auto 1fr;gap:14px}
+/* TELEFON: tek sutun, kaydirma serbest */
+.akor{overflow:hidden}
+.orta,.sag{display:flex;flex-direction:column;gap:12px}
+.pen.hep .gunluk{max-height:300px}
+@media (max-width:999px){
+  .ust{grid-template-columns:auto 1fr}
   .dugmeler{grid-column:1/-1;justify-content:stretch;position:fixed;left:0;right:0;bottom:0;padding:8px 10px calc(8px + env(safe-area-inset-bottom));
     background:#120c0af2;border-top:1px solid var(--bronz);z-index:40;flex-wrap:nowrap;gap:6px}
   .dugmeler .d{flex:1;min-width:0;padding:11px 2px;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .muhur{width:76px;height:76px}.muhur b{font-size:2rem;margin-top:8px}.muhur small{top:10px;font-size:.5rem}
-  .kim h1{font-size:1.5rem}
-  .kap{padding:16px 14px 100px}
+  .ozs .expalt{white-space:normal;flex-basis:100%}
+  .plan small,.anahtar small{white-space:normal}
+  .ah{min-height:44px}
+  .ana-alan{display:flex;flex-direction:column;gap:12px}
   .bildirim{bottom:76px}
+}
+/* MASAUSTU: tek ekran, sayfa kaydirma yok */
+@media (min-width:1000px){
+  html,body{height:100%;overflow:hidden}
+  .kap{height:100vh;padding:10px 14px 12px}
+  .ana-alan{flex:1;min-height:0;display:grid;grid-template-columns:clamp(380px,27vw,520px) minmax(0,1fr) minmax(0,1fr);gap:14px}
+  .ana-alan>*{min-height:0}
+  .akor{display:flex;flex-direction:column}
+  .akor .acc.acik{flex:1;min-height:0;display:flex;flex-direction:column}
+  .akor .acc.acik>.ag{flex:1;min-height:0;overflow:auto;display:block}
+  .orta,.sag{display:flex;flex-direction:column;gap:14px;min-height:0}
+  .sag{display:grid;grid-template-rows:minmax(0,1fr) minmax(0,1fr)}
+  .pen.hep{display:flex;flex-direction:column;min-height:0}
+  .pen.hep>.ah{pointer-events:none;justify-content:center;background:linear-gradient(180deg,var(--bas1),var(--bas2));border-bottom:1px solid var(--bronz);
+    box-shadow:inset 0 1px 0 #d9b46a44;min-height:32px;padding:5px 12px}
+  .pen.hep>.ah .ok{display:none}
+  .pen.hep>.ah .at{color:var(--pirinc)}
+  .pen.hep>.ah .at::before,.pen.hep>.ah .at::after{content:"\25C6";color:var(--bronz-acik);font-size:.55rem;margin:0 .7em;vertical-align:.15em}
+  .pen.hep>.ag{display:flex!important;flex-direction:column;flex:1;min-height:0}
+  .orta{display:flex}
+  .orta .hep{flex:1}
+  .orta .hw{flex:1}
+  .orta .harita-alan{height:100%;width:auto;max-width:100%}
+  .pen.hep .gunluk{flex:1;min-height:0;max-height:none}
+  .pen.hep .ekran{flex:1 1 0;min-height:0;object-fit:contain;height:0}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -175,96 +228,140 @@ dialog .ic{overflow:auto;flex:1;min-height:0}
       <button class="d" data-komut="koy2">2. köye ışınlan</button>
       <button class="d tehlike" data-komut="kapat">Botu kapat</button>
     </nav>
+    <div class="ozs">
+      <span class="expsaat" id="expSaat">–</span>
+      <span class="expalt" id="expAlt">Saatlik tecrübe; ilk ölçüm bot açıldıktan yaklaşık 20 dk sonra gelir.</span>
+      <svg class="grafik" id="expGrafik" viewBox="0 0 600 110" preserveAspectRatio="none" role="img" aria-label="Saatlik tecrübe grafiği"></svg>
+      <div class="s30" title="Son 30 dakika">
+        <span><em>son 30 dk</em></span>
+        <span><b id="kesilen">–</b>kesilen</span>
+        <span class="olum"><b id="olum">–</b>ölüm</span>
+        <span><b id="slot">–</b>slot</span>
+        <span><b id="yerDeg">–</b>yer değiştirme</span>
+      </div>
+    </div>
   </header>
 
-  <section class="serit">
-    <div class="pen"><h2 class="bs">Tecrübe</h2><div class="ic tecrube">
-      <div class="sayi" id="expSaat">–</div>
-      <div class="alt" id="expAlt">Saatlik tecrübe; ilk ölçüm bot açıldıktan yaklaşık 20 dk sonra gelir.</div>
-      <svg class="grafik" id="expGrafik" viewBox="0 0 600 110" preserveAspectRatio="none" role="img" aria-label="Saatlik tecrübe grafiği"></svg>
-    </div></div>
-    <div class="pen"><h2 class="bs">Son 30 dakika</h2><div class="sayilar">
-      <div><b id="kesilen">–</b><span>kesilen yaratık</span></div>
-      <div class="olum"><b id="olum">–</b><span>ölüm</span></div>
-      <div><b id="slot">–</b><span>slot</span></div>
-      <div><b id="yerDeg">–</b><span>yer değiştirme</span></div>
-    </div></div>
-  </section>
-
-  <div class="izgara">
-    <section class="pen"><h2 class="bs">Ne yapsın</h2><div class="ic">
-      <div class="plan" id="plan"></div>
-      <div class="satir" style="margin-top:10px;border-top:1px solid var(--cizgi);padding-top:12px">
-        <div><b>Otomatik toplama</b><small id="topSat">Bot yalnız Z'ye basar; karakteri sen oynarsın.</small></div>
-        <button class="d kucuk" id="topDugme">Aç</button>
-      </div>
-    </div></section>
-
-    <section class="pen"><h2 class="bs">Yanında</h2><div class="ic">
-      <p class="ozet" id="yanNot">Kasılırken bunlardan hangilerini de yapsın:</p>
-      <div id="yanAnahtar"></div>
-      <h3>Genel</h3>
-      <div id="anahtarlar"></div>
-      <p class="ozet" style="margin-top:.6rem">Beceri sırası (ekrandan tıklamalı seçim) burada yok; eski panelden (panel.py) ayarlanır.</p>
-    </div></section>
-
-    <section class="pen"><h2 class="bs">Beceriler</h2><div class="ic">
-      <p class="ozet" id="beceriOzet"></p>
-      <div class="satir"><span></span><button class="d kucuk" id="beceriDugme">Beceri ayarları…</button></div>
-    </div></section>
-
-    <section class="pen"><h2 class="bs">Av hedefi</h2><div class="ic">
-      <h3>Eşya avı</h3>
-      <div class="satir"><p class="ozet" id="esyaOzet" style="margin:0"></p><button class="d kucuk" id="esyaDugme">Eşya seç…</button></div>
-      <h3>Yalnız şu canavarlar</h3>
-      <div class="satir"><p class="ozet" id="hedefOzet" style="margin:0"></p><button class="d kucuk" id="hedefDugme">Canavar seç…</button></div>
-      <h3>Seviye puanı</h3>
-      <p class="ozet">Seviye atlayınca puanlar hangi özelliğe gitsin. “Dağıtma” seçilirse puan verilmez.</p>
-      <select id="statu" aria-label="Puan dağıtımı"></select>
-      <h3>Pot boyu ve paket</h3>
-      <p class="ozet">Kırmızı ya da mavi, hangisi önce biterse satıcıdan ikisinden de bu boy ve paketle alınır.</p>
-      <div class="satir"><label for="potBoy">Boy</label><select id="potBoy"><option value="kucuk">Küçük</option><option value="orta">Orta</option><option value="buyuk">Büyük</option></select></div>
-      <div class="satir"><label for="potPaket">Paket</label><select id="potPaket"><option value="20">20'lik</option><option value="200">200'lük</option></select></div>
-    </div></section>
-
-    <section class="pen"><h2 class="bs">Kare paylaş</h2><div class="ic">
-      <p class="ozet">Oynarken kaydedilen ekran karelerinden günde en çok N tanesi bu klasöre kopyalanır; klasör Vedat'ın paylaştığı OneDrive klasörü olmalı. Kareler ekranının görüntüsüdür (sohbet, adlar dahil); istemiyorsan boş bırak.</p>
-      <input type="text" id="kpKlasor" placeholder="Klasör yolu (boş = kapalı)" aria-label="Paylaşım klasörü" style="width:100%;margin-bottom:.4rem">
-      <input type="text" id="kpAd" placeholder="Takma adın" aria-label="Takma ad" style="width:100%;margin-bottom:.4rem">
-      <input type="number" id="kpSayi" min="0" max="2000" placeholder="Günlük kare sayısı" aria-label="Günlük kare sayısı" style="width:100%;margin-bottom:.4rem">
-      <div class="satir"><span></span><button class="d kucuk" id="kpKaydet">Kaydet</button></div>
-    </div></section>
-
-    <section class="pen"><h2 class="bs">Sınırlar</h2><div class="ic" id="kaydirlar"></div></section>
-
-    <section class="pen genis"><h2 class="bs">Harita</h2><div class="ic">
-      <div class="harita-ust">
-        <div class="sekme" id="sekmeler"></div>
-        <div class="mod" role="group" aria-label="Haritaya dokununca">
-          <button id="modGit" aria-pressed="true">Oraya git</button>
-          <button id="modAlan" aria-pressed="false">Alan çiz</button>
+  <div class="ana-alan">
+    <aside class="pen akor" id="akor">
+      <section class="acc" data-g="sol" data-k="mod">
+        <button class="ah" aria-expanded="false" aria-controls="ag_mod"><span class="ok" aria-hidden="true"></span><span class="at">Ne yapsın</span><span class="oz" id="oz_mod"></span></button>
+        <div class="ag ic" id="ag_mod">
+          <div class="plan" id="plan"></div>
+          <div class="alt-ayrac" id="anMod"></div>
+          <div class="satir alt-ayrac">
+            <div><b>Otomatik toplama</b><small id="topSat">Bot yalnız Z'ye basar; karakteri sen oynarsın.</small></div>
+            <button class="d kucuk" id="topDugme">Aç</button>
+          </div>
         </div>
-      </div>
-      <div class="harita-alan" id="haritaAlan">
-        <img id="haritaResim" alt="Bölge haritası">
-        <svg id="haritaSvg" viewBox="0 0 254 317" preserveAspectRatio="none"></svg>
-      </div>
-      <p class="ipucu">Oraya git: dokunduğun yere karakter yürür. Alan çiz: basılı tutup sürükle, bot o dairenin içinde kasar.</p>
-      <label class="anahtar" style="max-width:508px;margin:8px auto 0">
-        <div><b>Çizdiğim alanda kal</b><small>Kapalıyken bot bölgeyi kendisi seçer; çizim saklı kalır.</small></div>
-        <input type="checkbox" class="sw" id="alanKullan">
-      </label>
-    </div></section>
+      </section>
 
-    <section class="pen"><h2 class="bs">Bot ne yapıyor</h2><div class="ic">
-      <div class="gunluk" id="gunluk"></div>
-    </div></section>
+      <section class="acc" data-g="sol" data-k="savas">
+        <button class="ah" aria-expanded="false" aria-controls="ag_savas"><span class="ok" aria-hidden="true"></span><span class="at">Savaş</span><span class="oz" id="oz_savas"></span></button>
+        <div class="ag ic" id="ag_savas">
+          <div id="anSavas"></div>
+          <div class="alt-ayrac" id="kSavas"></div>
+        </div>
+      </section>
 
-    <section class="pen"><h2 class="bs">Ekran</h2><div class="ic">
-      <img class="ekran" id="ekran" alt="Oyundan son kare (40 sn'de bir)">
-      <h3 style="margin-top:1.1rem">Gece raporu</h3>
-      <pre class="rapor" id="rapor"><span class="bos">Henüz rapor yok; ilk rapor 30 dk sonra yazılır.</span></pre>
-    </div></section>
+      <section class="acc" data-g="sol" data-k="pot">
+        <button class="ah" aria-expanded="false" aria-controls="ag_pot"><span class="ok" aria-hidden="true"></span><span class="at">Pot ve iksir</span><span class="oz" id="oz_pot"></span></button>
+        <div class="ag ic" id="ag_pot">
+          <div id="anPot"></div>
+          <div class="alt-ayrac" id="kPot1"></div>
+          <p class="ozet" style="margin:.4rem 0 .1rem" title="Kırmızı ya da mavi, hangisi önce biterse satıcıdan ikisinden de bu boy ve paketle alınır.">Satıcıdan alırken: kırmızı ya da mavi hangisi önce biterse ikisinden de bu boy ve paketle alınır.</p>
+          <div class="satir"><label for="potBoy">Boy</label><select id="potBoy"><option value="kucuk">Küçük</option><option value="orta">Orta</option><option value="buyuk">Büyük</option></select></div>
+          <div class="satir"><label for="potPaket">Paket</label><select id="potPaket"><option value="20">20'lik</option><option value="200">200'lük</option></select></div>
+          <div id="kPot2"></div>
+        </div>
+      </section>
+
+      <section class="acc" data-g="sol" data-k="gorev">
+        <button class="ah" aria-expanded="false" aria-controls="ag_gorev"><span class="ok" aria-hidden="true"></span><span class="at">Görevler</span><span class="oz" id="oz_gorev"></span></button>
+        <div class="ag ic" id="ag_gorev">
+          <p class="ozet" id="yanNot">Kasılırken bunlardan hangilerini de yapsın:</p>
+          <div id="yanAnahtar"></div>
+        </div>
+      </section>
+
+      <section class="acc" data-g="sol" data-k="hedef">
+        <button class="ah" aria-expanded="false" aria-controls="ag_hedef"><span class="ok" aria-hidden="true"></span><span class="at">Hedef</span><span class="oz" id="oz_hedef"></span></button>
+        <div class="ag ic" id="ag_hedef">
+          <h3>Eşya avı</h3>
+          <div class="satir"><p class="ozet" id="esyaOzet" style="margin:0"></p><button class="d kucuk" id="esyaDugme">Eşya seç…</button></div>
+          <h3>Yalnız şu canavarlar</h3>
+          <div class="satir"><p class="ozet" id="hedefOzet" style="margin:0"></p><button class="d kucuk" id="hedefDugme">Canavar seç…</button></div>
+          <h3>Seviye puanı</h3>
+          <p class="ozet">Seviye atlayınca puanlar hangi özelliğe gitsin. “Dağıtma” seçilirse puan verilmez.</p>
+          <select id="statu" aria-label="Puan dağıtımı"></select>
+        </div>
+      </section>
+
+      <section class="acc" data-g="sol" data-k="beceri">
+        <button class="ah" aria-expanded="false" aria-controls="ag_beceri"><span class="ok" aria-hidden="true"></span><span class="at">Beceriler</span><span class="oz" id="oz_beceri"></span></button>
+        <div class="ag ic" id="ag_beceri">
+          <p class="ozet" id="beceriOzet"></p>
+          <div class="satir"><span></span><button class="d kucuk" id="beceriDugme">Beceri ayarları…</button></div>
+          <div id="anBeceri" class="alt-ayrac"></div>
+          <p class="ozet" style="margin-top:.4rem">Beceri sırası (ekrandan tıklamalı seçim) burada yok; eski panelden (panel.py) ayarlanır.</p>
+        </div>
+      </section>
+
+      <section class="acc" data-g="sol" data-k="kare">
+        <button class="ah" aria-expanded="false" aria-controls="ag_kare"><span class="ok" aria-hidden="true"></span><span class="at">Kare paylaş</span><span class="oz" id="oz_kare"></span></button>
+        <div class="ag ic" id="ag_kare">
+          <p class="ozet">Oynarken kaydedilen ekran karelerinden günde en çok N tanesi bu klasöre kopyalanır; klasör Vedat'ın paylaştığı OneDrive klasörü olmalı. Kareler ekranının görüntüsüdür (sohbet, adlar dahil); istemiyorsan boş bırak.</p>
+          <input type="text" id="kpKlasor" placeholder="Klasör yolu (boş = kapalı)" aria-label="Paylaşım klasörü" style="width:100%;margin-bottom:.3rem">
+          <input type="text" id="kpAd" placeholder="Takma adın" aria-label="Takma ad" style="width:100%;margin-bottom:.3rem">
+          <input type="number" id="kpSayi" min="0" max="2000" placeholder="Günlük kare sayısı" aria-label="Günlük kare sayısı" style="width:100%;margin-bottom:.3rem">
+          <div class="satir"><span></span><button class="d kucuk" id="kpKaydet">Kaydet</button></div>
+        </div>
+      </section>
+
+      <section class="acc" data-g="sol" data-k="rapor">
+        <button class="ah" aria-expanded="false" aria-controls="ag_rapor"><span class="ok" aria-hidden="true"></span><span class="at">Gece raporu</span><span class="oz" id="oz_rapor"></span></button>
+        <div class="ag ic" id="ag_rapor">
+          <pre class="rapor" id="rapor"><span class="bos">Henüz rapor yok; ilk rapor 30 dk sonra yazılır.</span></pre>
+        </div>
+      </section>
+    </aside>
+
+    <div class="orta">
+      <section class="pen hep acc" data-g="orta" data-k="harita">
+        <button class="ah" aria-expanded="false" aria-controls="ag_harita"><span class="ok" aria-hidden="true"></span><span class="at">Harita</span><span class="oz"></span></button>
+        <div class="ag ic" id="ag_harita">
+          <div class="harita-ust">
+            <div class="sekme" id="sekmeler"></div>
+            <div class="mod" role="group" aria-label="Haritaya dokununca">
+              <button id="modGit" aria-pressed="true">Oraya git</button>
+              <button id="modAlan" aria-pressed="false">Alan çiz</button>
+            </div>
+          </div>
+          <div class="hw">
+            <div class="harita-alan" id="haritaAlan">
+              <img id="haritaResim" alt="Bölge haritası">
+              <svg id="haritaSvg" viewBox="0 0 254 317" preserveAspectRatio="none"></svg>
+            </div>
+          </div>
+          <p class="ipucu">Oraya git: dokunduğun yere yürür. Alan çiz: basılı tutup sürükle, bot o dairenin içinde kasar.</p>
+          <label class="anahtar" title="Kapalıyken bot bölgeyi kendisi seçer; çizim saklı kalır.">
+            <div><b>Çizdiğim alanda kal</b><small>Kapalıyken bot bölgeyi kendisi seçer; çizim saklı kalır.</small></div>
+            <input type="checkbox" class="sw" id="alanKullan">
+          </label>
+        </div>
+      </section>
+    </div>
+
+    <div class="sag">
+      <section class="pen hep acc" data-g="orta" data-k="bot">
+        <button class="ah" aria-expanded="false" aria-controls="ag_bot"><span class="ok" aria-hidden="true"></span><span class="at">Bot ne yapıyor</span><span class="oz"></span></button>
+        <div class="ag ic" id="ag_bot"><div class="gunluk" id="gunluk"></div></div>
+      </section>
+      <section class="pen hep acc" data-g="orta" data-k="ekran">
+        <button class="ah" aria-expanded="false" aria-controls="ag_ekran"><span class="ok" aria-hidden="true"></span><span class="at">Ekran</span><span class="oz"></span></button>
+        <div class="ag ic" id="ag_ekran"><img class="ekran" id="ekran" alt="Oyundan son kare (40 sn'de bir)"></div>
+      </section>
+    </div>
   </div>
 </div>
 
@@ -299,7 +396,7 @@ const ANAHTARLAR=[
   ["sadece_slot","Yalnız slot kes","Tek gezen yaratığa gitmez, kalabalık gruba gider."],
   ["esyaya_tikla","Yere düşen eşyaları topla","Düşen eşyaya tıklayıp alır."],
   ["pot_yuvasi_doldur","Pot yuvasını doldur","Hızlı çubuktaki pot bitince envanterden koyar."],
-  ["pot_satin_al","Pot bitince satıcıdan al","Envanterde kırmızı pot kalmayınca köydeki Satıcı'ya gidip aşağıdaki kadar paket alır."],
+  ["pot_satin_al","Pot bitince satıcıdan al","Kırmızı ya da mavi pot (hangisi önce) bitince köydeki Satıcı'ya gidip ikisinden de seçilen boy ve paketle alır."],
   ["beceri_puani_dagit","Beceri puanlarını dağıt","Eski panelde seçtiğin sıraya göre puan verir."],
   ["olunce_yeniden_basla","Ölünce kendisi kalksın","Burada yeniden başla'ya basar."],
   ["yeniden_baglan","Atılınca yeniden bağlan","Giriş ekranında kayıtlı hesapla girer."],
@@ -317,6 +414,14 @@ const KAYDIRLAR=[
   ["pot_al_mavi_paket","Kaç paket mavi pot alsın",0,10,1,v=>`${v} paket`],
 ];
 const TUM=[...YANINDA,...ANAHTARLAR];
+const GR_SAVAS=["metin_kes","dusuk_seviye_kesme","sadece_slot","esyaya_tikla"];
+const GR_MOD=["olunce_yeniden_basla","yeniden_baglan"];
+const GR_POT=["pot_yuvasi_doldur","pot_satin_al"];
+const GR_BEC=["beceri_puani_dagit"];
+const KS_SAVAS=["seviye_ust_fark","seviye_alt_fark","toplanacak_grup","slot_en_az","savunma_can_esigi"];
+const KS_POT1=["can_esigi","mana_esigi"], KS_POT2=["pot_al_kirmizi_paket","pot_al_mavi_paket"];
+const BOY={kucuk:"Küçük",orta:"Orta",buyuk:"Büyük"};
+const bul=(l)=>l.map(k=>ANAHTARLAR.find(x=>x[0]===k));
 const PLAN_DURUM={level:"level kasıyor",metin:"metin kesiyor",gorev:"önce görevler",yalniz_gorev:"yalnız görev yapıyor",toplama:"yalnız topluyor",ozel:"özel ayarlarla"};
 
 function ciz(){
@@ -339,7 +444,7 @@ function ciz(){
   if(exp.length>1){const m=Math.max(...exp.map(x=>x.s))||1, p=exp.map((x,i)=>`${(i/(exp.length-1)*600).toFixed(1)},${(105-x.s/m*95).toFixed(1)}`).join(" ");
     g.innerHTML=`<defs><linearGradient id="dg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#c9974a" stop-opacity=".35"/><stop offset="1" stop-color="#c9974a" stop-opacity="0"/></linearGradient></defs>
       <polygon fill="url(#dg)" points="0,110 ${p} 600,110"/><polyline fill="none" stroke="#e2b56c" stroke-width="2" vector-effect="non-scaling-stroke" points="${p}"/>`}
-  else g.innerHTML=`<text x="0" y="70" fill="#7b6c62" font-size="14">Grafik iki ölçümden sonra çizilir.</text>`;
+  else g.innerHTML="";
 
   const s30=D.son30;
   if(s30){$("#slot").textContent=s30.slot;$("#kesilen").textContent=s30.kesilen;$("#olum").textContent=s30.olum;$("#yerDeg").textContent=s30.yer_degistirme}
@@ -368,21 +473,49 @@ function ciz(){
     return `<div class="${k}">${esc(s)}</div>`}).join("");
   if(altta)gl.scrollTop=gl.scrollHeight;
   if(!seciliHarita&&D.haritalar.length){seciliHarita=(a.kasilma_alani&&alanSekme(a.kasilma_alani))||D.haritalar[0];haritaSekme()}
+  ozetler(a,c);
   alanCiz();
 }
 
+function ozetler(a,c){
+  const set=(id,t)=>{const e=document.getElementById(id); if(e)e.textContent=t};
+  const hepsi=a.profil==="gorev", ho=a.sadece_hedefler||[];
+  const say=(l)=>l.filter(k=>a[k]).length+"/"+l.length+" açık";
+  const pr=(D.profiller||[]).find(p=>p.ad===a.profil), pk=+(a.pot_paket||200);
+  set("oz_mod",pr?pr.etiket:(a.profil||""));
+  set("oz_savas",say(GR_SAVAS)+" · +"+a.seviye_ust_fark+" / −"+a.seviye_alt_fark);
+  set("oz_pot",(BOY[a.pot_boy||"kucuk"]||a.pot_boy)+", "+pk+"'"+(pk===20?"lik":"lük")+", "+(a.pot_al_kirmizi_paket??"?")+"+"+(a.pot_al_mavi_paket??"?")+" paket");
+  set("oz_gorev",hepsi?"4/4 açık":say(YANINDA.map(x=>x[0])));
+  set("oz_hedef",(a.esya_avi||"eşya kapalı")+" · "+(ho.length?ho.length+" canavar":"tüm canavarlar"));
+  set("oz_beceri",(a.sinif||"?")+" / "+(a.beceri_grubu||"?"));
+  set("oz_kare",a.kare_paylas_klasoru?"açık · "+(a.kare_paylas_gunluk??200)+"/gün":"kapalı");
+  set("oz_rapor",D.son_rapor?"var":"yok");
+}
+function accKur(){
+  const AKS="metinbot_acik_bolum";
+  const oku=()=>{try{const v=localStorage.getItem(AKS);return v===null?"mod":v}catch(e){return "mod"}};
+  const yaz=v=>{try{localStorage.setItem(AKS,v)}catch(e){}};
+  const hepsi=[...document.querySelectorAll(".acc")], sol=hepsi.filter(x=>x.dataset.g==="sol");
+  const ayar=(el,ac)=>{el.classList.toggle("acik",ac);el.querySelector(".ah").setAttribute("aria-expanded",ac?"true":"false")};
+  let o=oku(); if(o&&!sol.some(x=>x.dataset.k===o))o="mod";
+  sol.forEach(x=>ayar(x,x.dataset.k===o));
+  hepsi.forEach(el=>el.querySelector(".ah").addEventListener("click",()=>{
+    if(el.dataset.g==="sol"){const ac=!el.classList.contains("acik");sol.forEach(x=>ayar(x,x===el&&ac));yaz(ac?el.dataset.k:"")}
+    else ayar(el,!el.classList.contains("acik"))}));
+}
 function kur(){
-  $("#plan").innerHTML=D.profiller.map(p=>`<label><input type="radio" name="plan" value="${esc(p.ad)}"><span><b>${esc(p.etiket)}</b><small>${esc(p.aciklama)}</small></span></label>`).join("");
+  $("#plan").innerHTML=D.profiller.map(p=>`<label title="${esc(p.aciklama)}"><input type="radio" name="plan" value="${esc(p.ad)}"><span><b>${esc(p.etiket)}</b><small>${esc(p.aciklama)}</small></span></label>`).join("");
   $("#plan").addEventListener("change",e=>ayarYaz({profil:e.target.value}));
-  const an=l=>l.map(([k,e,a])=>`<label class="anahtar"><div><b>${e}</b><small>${a}</small></div><input type="checkbox" class="sw" id="a_${k}"></label>`).join("");
-  $("#yanAnahtar").innerHTML=an(YANINDA); $("#anahtarlar").innerHTML=an(ANAHTARLAR);
+  const an=l=>l.map(([k,e,a])=>`<label class="anahtar" title="${a}"><div><b>${e}</b><small>${a}</small></div><input type="checkbox" class="sw" id="a_${k}"></label>`).join("");
+  $("#yanAnahtar").innerHTML=an(YANINDA); $("#anSavas").innerHTML=an(bul(GR_SAVAS)); $("#anMod").innerHTML=an(bul(GR_MOD)); $("#anPot").innerHTML=an(bul(GR_POT)); $("#anBeceri").innerHTML=an(bul(GR_BEC));
   TUM.forEach(([k])=>$("#a_"+k).addEventListener("change",e=>ayarYaz({[k]:e.target.checked})));
   $("#statu").innerHTML=STATULER.map(([k,e])=>`<option value="${k}">${e}</option>`).join("");
   $("#statu").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({statu:e.target.value})});
   $("#potBoy").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({pot_boy:e.target.value})});
   $("#potPaket").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({pot_paket:+e.target.value})});
   $("#topDugme").onclick=topla; $("#esyaDugme").onclick=esyaPenceresi; $("#beceriDugme").onclick=beceriPenceresi; $("#kpKaydet").onclick=()=>ayarYaz({kare_paylas_klasoru:$("#kpKlasor").value.trim(),kare_paylas_adi:$("#kpAd").value.trim(),kare_paylas_gunluk:Math.max(0,parseInt($("#kpSayi").value)||0)}); $("#hedefDugme").onclick=canavarPenceresi;
-  $("#kaydirlar").innerHTML=KAYDIRLAR.map(([k,e,mn,mx,ad])=>`<div class="kaydir"><div><span>${e}</span><b id="v_${k}"></b></div><input type="range" id="r_${k}" min="${mn}" max="${mx}" step="${ad}" aria-label="${e}"></div>`).join("");
+  const kd=l=>l.map(k=>KAYDIRLAR.find(x=>x[0]===k)).map(([k,e,mn,mx,ad])=>`<div class="kaydir"><div><span>${e}</span><b id="v_${k}"></b></div><input type="range" id="r_${k}" min="${mn}" max="${mx}" step="${ad}" aria-label="${e}"></div>`).join("");
+  $("#kSavas").innerHTML=kd(KS_SAVAS); $("#kPot1").innerHTML=kd(KS_POT1); $("#kPot2").innerHTML=kd(KS_POT2);
   KAYDIRLAR.forEach(([k,,,,ad,f])=>{const i=$("#r_"+k);
     i.addEventListener("input",()=>{dokunuldu=Date.now();$("#v_"+k).textContent=f(+i.value,D.canli.seviye)});
     i.addEventListener("change",()=>ayarYaz({[k]:ad<1?+(+i.value).toFixed(2):+i.value}))});
@@ -548,7 +681,7 @@ async function yenile(){
   catch(e){$("#durum").textContent="Panel sunucusu kapalı: bilgisayarda Web-Panel.bat'ı aç.";$("#isik").className="isik"}
 }
 function ekranYenile(){$("#ekran").src=api("/api/ekran?t="+Date.now())}
-yenile();setInterval(yenile,2500);ekranYenile();setInterval(ekranYenile,20000);
+accKur();yenile();setInterval(yenile,2500);ekranYenile();setInterval(ekranYenile,20000);
 </script>
 </body>
 </html>

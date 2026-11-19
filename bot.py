@@ -165,6 +165,7 @@ VARSAYILAN = {
     "kamera_ters_tusu": "q",
     "kamera_durt_sn": 0.15,       # slot icinde yaratik kaybolunca kamerayi bu kadar sn dondur (yarim aci; eski 0.3)
     "yururken_kamera": True,
+    "kamera_ana_dongu_kat": 3,    # yururken duzeltme acikken slot sonu (duran) duzeltme bu kat seyrek
     "vurulurken_kacma": True,     # ulasilamayan hedefte bile vuruluyorsam kosup kacma: yanimdakilere don
     "slot_sart_yakin_istisna": 350,   # bu (dunya) mesafedeki yaratik slot sartina bakilmadan kesilir
     "yon_kara_liste": True,       # takildigim yondeki (dag/engel ardindaki) diger hedeflere de bir sure gitme
@@ -4713,6 +4714,7 @@ def calistir(ayar, sablon):
 
             # kamera egimi: duzenli olarak yatay aciya getir (G tepeye diker, T yataylastirir)
             if (ayar["kamera_egim_t_sn"] and time.time() - son_kamera_egim[0] > ayar["kamera_egim_aralik_sn"]
+                    * (ayar["kamera_ana_dongu_kat"] if ayar["yururken_kamera"] else 1)   # yururken zaten duzeltiliyor: slot sonu 2 sn bekletme
                     and (sakin_mi(kare) or (not tehdit and not saldiri_altinda() and time.time() - son_savas[0] > 1.5))
                     and not (ayar["kamera_hedef_varken_yok"] and kirmizi_etiketler(kare))):
                 # ekranda yaratik varken (sirada hedef var) kamerayla oyalanma: yalniz hedef ararken duzelt
