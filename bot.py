@@ -3077,9 +3077,20 @@ def calistir(ayar, sablon):
     except Exception:
         pass
 
+    exp_toplam_sev = {}           # seviye -> exp + kalan (sabit olmali; ornek Lv25 1.077.000, Lv26 1.237.000)
+
     def exp_kaydet(sev_, exp_, gerekli_):
-        """Okunan (seviye, exp, gerekli) kaydedilir; ilk okumadan bu yana saatlik tecrube hesaplanir."""
+        """Okunan (seviye, exp, kalan) kaydedilir; ilk okumadan bu yana saatlik tecrube hesaplanir.
+        exp + kalan her seviyede sabittir: tutmayan okuma (OCR hatasi, or. 363.645 -> 3.645) atlanir."""
         simdi_ = time.time()
+        top_ = exp_ + gerekli_
+        bilinen_ = exp_toplam_sev.get(sev_)
+        if bilinen_ is None:
+            if exp_olcum and exp_olcum[-1][1] == sev_ and exp_olcum[-1][2] + exp_olcum[-1][3] == top_:
+                exp_toplam_sev[sev_] = top_                 # iki okuma ayni toplamda: seviye toplami bu
+        elif abs(top_ - bilinen_) > bilinen_ * 0.01:
+            print(f"{time.strftime('%H:%M:%S')}  tecrube: okuma tutarsiz ({exp_:,} + {gerekli_:,} != {bilinen_:,}) - atlandi")
+            return
         if exp_olcum:
             t0, s0, e0, g0 = exp_olcum[-1]
             if sev_ == s0:
