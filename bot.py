@@ -170,6 +170,7 @@ VARSAYILAN = {
     "kacinilan_yaratiklar": ["boss", "patron", "lider", "reis", "kral"],   # adinda bunlar gecen yaratiga (ve yanindakilere) dalma
     "patron_atla_sn": 30,
     "takildi_dk": 20,             # bu kadar dk oldurme/exp artisi yoksa ekran + log kaydet, telefona haber ver (0 = kapali)
+    "hemen_olum_sn": 60,          # onceki olumden bu kadar sn icinde yine olurse 'Sehirde' diril (ayni kalabaliga dirilmesin)
     "olum_mola_sayisi": 4,        # dalma_olum_sn (10 dk) icinde bu kadar olumde sehirde dirilip mola ver (0 = kapali)
     "olum_mola_dk": 10,
     "pot_kapali_dk": 120,         # 2 satici gezisi bos donerse pot alma bu kadar dk kapali (+ bildirim)
@@ -3371,6 +3372,10 @@ def calistir(ayar, sablon):
         if len(olum_sayac["zamanlar"]) >= 2:                   # 2. olumden itibaren: guclu yaratiklardan uzak dur
             olum_sayac["temkin_bitis"] = simdi + ayar["temkin_dk"] * 60
         sehirde_ = len(olum_sayac["zamanlar"]) >= ayar["olum_dongusu_sayisi"]
+        onceki_ = [z for z in olum_sayac["zamanlar"][:-1] if simdi - z < ayar["hemen_olum_sn"]]
+        if ayar["hemen_olum_sn"] and onceki_ and not sehirde_:      # dirilir dirilmez yine oldu: ayni yerde dirilme
+            sehirde_ = True
+            print(f"{time.strftime('%H:%M:%S')}  {ayar['hemen_olum_sn']} sn icinde ikinci olum - bu sefer sehirde dirilinecek")
         if ayar["olum_mola_sayisi"] and len(kisa_) >= ayar["olum_mola_sayisi"] and simdi > olum_sayac.get("mola_bitis", 0):
             olum_sayac["mola_bitis"] = simdi + ayar["olum_mola_dk"] * 60      # olum serisi: sehirde dirilip mola
             sehirde_ = True
