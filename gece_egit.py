@@ -36,6 +36,7 @@ EN_COK_YENI = 400         # bir calismada en cok bu kadar yeni kare isaretlenir 
 EN_COK_SET = 6000         # set6 bunu asarsa en eski egitim kareleri cikarilir
 ESIK_KONTROL = 0.35       # yeni karelerde mAP50 bunun altindaysa Vedat'tan kontrol iste
 TUR = 25
+TAM_SAAT = 3.2            # temel .pt kayipsa sureli tam egitim (04:00 baslangicla ~07:40'ta biter)
 EN_COK_ARKADAS = 400      # bir gecede arkadas karelerinden en cok bu kadar (kendi kotasindan ayri)
 EK_KAYNAKLAR = [os.path.join(os.environ["OneDrive"], "MetinBot-Kareler")] if os.environ.get("OneDrive") else []
 
@@ -122,8 +123,9 @@ def baska_egitim_var():
 
 def map50(model, yaml_):
     from ultralytics import YOLO
-    r = YOLO(model).val(data=yaml_, imgsz=960, batch=8, device=0, workers=2, verbose=False, plots=False,
-                        project=os.path.join(KLASOR, "runs"), name="gece_val", exist_ok=True)
+    onnx_ = str(model).endswith(".onnx")       # onnx GPU'da istenirse ultralytics onnxruntime-gpu kurmaya kalkar: CPU'da olc
+    r = YOLO(model).val(data=yaml_, imgsz=960, batch=1 if onnx_ else 8, device="cpu" if onnx_ else 0, workers=2,
+                        verbose=False, plots=False, project=os.path.join(KLASOR, "runs"), name="gece_val", exist_ok=True)
     return float(r.box.map50)
 
 
@@ -213,11 +215,17 @@ def calis():
     from ultralytics import YOLO
     yaml_ = os.path.join(SET6, "veri.yaml")
     onceki = os.path.join(KLASOR, "runs", "yaratik", "weights", "best.pt")
-    if not os.path.exists(onceki):
+    tur_ = dict(epochs=TUR, patience=8)
+    baslangic = onceki
+    if not os.path.exists(onceki):              # temel kayip: en yeni adaydan (model/aday_*.pt) sureli tam egitim
         onceki = "yolo11n.pt"
-    YOLO(onceki).train(data=yaml_, imgsz=960, epochs=TUR, batch=8, device=0, workers=2, patience=8,
-                       project=os.path.join(KLASOR, "runs"), name="gece", exist_ok=True, fliplr=0.5, mosaic=1.0,
-                       verbose=False, plots=False)
+        adaylar = sorted(glob.glob(os.path.join(KLASOR, "model", "aday_*.pt")), key=os.path.getmtime)
+        baslangic = adaylar[-1] if adaylar else "yolo11n.pt"
+        tur_ = dict(epochs=200, patience=30, time=TAM_SAAT)
+        yaz(f"temel agirlik yok: {os.path.basename(baslangic)}'den {TAM_SAAT} saatlik tam egitim")
+    YOLO(baslangic).train(data=yaml_, imgsz=960, batch=8, device=0, workers=2,
+                          project=os.path.join(KLASOR, "runs"), name="gece", exist_ok=True, fliplr=0.5, mosaic=1.0,
+                          verbose=False, plots=False, **tur_)
     yeni_m = os.path.join(KLASOR, "runs", "gece", "weights", "best.pt")
 
     # 3) karsilastir (ayni dogrulama kumesi) ve yeni karelerde ayri olc
@@ -229,7 +237,13 @@ def calis():
         f.write(f"path: {SET6}\ntrain: images/train\nval: {yeni_liste}\nnames:\n"
                 + "".join(f"  {j}: {n}\n" for j, n in enumerate(Y.SINIFLAR6)))
     kullanilan = os.path.join(KLASOR, "model", "yaratik.onnx")           # temel .pt yoksa botun kullandigi modelle kiyasla
-    eski_tum = map50(onceki if onceki != "yolo11n.pt" else kullanilan, yaml_) if (onceki != "yolo11n.pt" or os.path.exists(kullanilan)) else 0.0
+    try:
+        eski_tum = map50(onceki if onceki != "yolo11n.pt" else kullanilan, yaml_) if (onceki != "yolo11n.pt" or os.path.exists(kullanilan)) else 0.0
+    except Exception as e_k:                    # kiyas olculemezse yerlestirme; yeni modeli aday olarak sakla
+        aday_ = os.path.join(KLASOR, "model", f"aday_{dt.datetime.now():%Y%m%d_%H%M}.pt")
+        shutil.copy(yeni_m, aday_)
+        yaz(f"eski model olculemedi ({e_k}) - yeni model yerlestirilmedi, aday: {os.path.basename(aday_)}")
+        eski_tum = 9.9
     yeni_tum = map50(yeni_m, yaml_)
     yeni_yeni = map50(yeni_m, yaml_yeni)
     if yeni_tum >= eski_tum - 0.01:

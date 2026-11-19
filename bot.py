@@ -246,6 +246,7 @@ VARSAYILAN = {
     "yolo_kullan": True,         # sekil modeli (sekil.py) yardimci: etiketsiz yaratik + oyuncu korumasi
     "yolo_esik": 0.45,           # yaratik kutusu min skoru
     "yolo_slot": True,           # slot icinde etiket yoksa YOLO yaratik kutusuna vur
+    "sekil_engel_sayma": True,   # YOLO (etiketsiz) hedefe ulasilamazsa "engel var: baska yere" kacisina sayma (11-20: 8 ulasilamamanin 7si sekil hedefiydi, bolgeden cikariyordu)
     "yolo_oyuncu_koru": True,    # etiketin govdesi YOLO oyuncu ise hedef alma
     "sadece_hedefler": [],        # doluysa yalniz adi bunlara tutan canavarlar kesilir (or. "Kotu Siyah Firtina Okcusu")
     "pot_satin_al": True,         # can potu bitince koydeki Saticidan al (20'lik kucuk iksir paketleri)
@@ -6270,6 +6271,7 @@ def calistir(ayar, sablon):
             yerinde_bas = [0.0]             # vurulup etiket goremeden yerinde vurmaya baslama ani
             slot_atla = []                  # bu slotta ulasilamayan/vurulamayan yaratiklar (zaman, x, y): 20 sn secilmez
             yolo_deneme = [0]               # bu slotta sekil modeliyle (etiketsiz) yaratiga gidis sayisi
+            sekil_hedef = [None]            # su anki hedef sekil modelinden geldiyse noktasi
             dib_gecis = [0.0]               # dibimdeki saldirgana son gecis ani
             saldiri_bas()
             saldiri_basili = True
@@ -6332,6 +6334,7 @@ def calistir(ayar, sablon):
                                 yolo_deneme[0] += 1
                                 print(f"{time.strftime('%H:%M:%S')}  sekil: etiketsiz yaratik - vuruluyor")
                                 yakin = [(yx_, yy_)]
+                                sekil_hedef[0] = (yx_, yy_)
                                 slot_atla.append((time.time(), yx_, yy_))   # ulasilsa da ulasilamasa da ayni noktaya bir daha degil
                     if not yakin:
                         bos += 1
@@ -6371,6 +6374,11 @@ def calistir(ayar, sablon):
                                     print(f"{time.strftime('%H:%M:%S')}  slot ici: ulasilamayan yaratik atlandi - gruptakilere devam")
                                     saldiri_bas()
                                     saldiri_basili = True
+                                    continue
+                                if ayar.get("sekil_engel_sayma", True) and sekil_hedef[0] == (yakin[0][0], yakin[0][1]):
+                                    sekil_hedef[0] = None       # sekil hedefi (yanlis kutu olabilir): engel sayma, yalniz atla
+                                    yaklasma = 0
+                                    print(f"{time.strftime('%H:%M:%S')}  sekil: etiketsiz hedefe ulasilamadi - atlandi (engel sayilmadi)")
                                     continue
                                 kacin(yakin[0][0], yakin[0][1], "slot ici yeni hedef")
                                 break
