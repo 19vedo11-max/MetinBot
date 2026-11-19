@@ -165,6 +165,7 @@ VARSAYILAN = {
     "kamera_ters_tusu": "q",
     "kamera_durt_sn": 0.15,       # slot icinde yaratik kaybolunca kamerayi bu kadar sn dondur (yarim aci; eski 0.3)
     "yururken_kamera": True,
+    "akilli_yan_kacis": True,     # takilinca iki yandan (sag/sol) yaratigi az olana kac (eski: hep ayni yana)
     "kacinilan_yaratiklar": ["boss", "patron", "lider", "reis", "kral"],   # adinda bunlar gecen yaratiga (ve yanindakilere) dalma
     "patron_atla_sn": 30,
     "patronlardan_kacin": True,   # patronlar.json'daki patronlara (adlarindan) ve yanlarindakilere dalma
@@ -215,7 +216,7 @@ VARSAYILAN = {
     "pot_sira_kirmizi": ["kucuk", "orta", "buyuk"],   # yuva bosalinca envanterden bu sirayla kirmizi pot konur; hicbiri yoksa satin al
     "pot_sira_mavi": ["kucuk", "orta", "buyuk"],
     "pot_env_esik": 0.12,
-    "pot_yuva_iz": True,
+    "pot_yuva_iz": False,
     "pot_yuva_tekrar_sn": 90,     # yuvaya konamazsa bu kadar sn sonra yeniden dene (eski 600)
     "pot_yoksa_dalma": True,      # 1 (can potu) bos ve konamiyorsa kalabaliga dalma, temkinli (yalniz kolay yaratik)          # tani: pot yuvaya konurken adim adim ekran kaydet
     "pot_boy": "kucuk",           # kucuk / orta / buyuk iksir (sablon/dukkan_<renk>_<boy><paket>.png)
@@ -1252,7 +1253,12 @@ def calistir(ayar, sablon):
                             hedef_aci = math.atan2(dy, dx)
                             engel_ = [(x, y + 45) for x, y, *_ in kirmizi_etiketler(k)
                                       if math.hypot(x - hx, y + 45 - hy) > 40]          # hedefin kendisi engel degil
-                            tikla(*bos_yon(k, hedef_aci + math.pi / 2, 170, 110, engel_))   # bos yana kac
+                            if ayar["akilli_yan_kacis"]:            # iki yandan kalabaligi az olana kac
+                                adaylar_ = [bos_yon(k, hedef_aci + y_ * math.pi / 2, 170, 110, engel_) for y_ in (1, -1)]
+                                tikla(*min(adaylar_, key=lambda n_: sum(1 for ex_, ey_ in engel_
+                                                                        if math.hypot(ex_ - n_[0], ey_ - n_[1]) < 160)))
+                            else:
+                                tikla(*bos_yon(k, hedef_aci + math.pi / 2, 170, 110, engel_))   # bos yana kac
                             time.sleep(1.1)
                             if nokta:
                                 tikla(*nokta)                   # hedefe yeniden yuru

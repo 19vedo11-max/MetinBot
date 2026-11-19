@@ -6,8 +6,8 @@
   "esyaya_tikla": true,
   "esya_yaricapi_piksel": 420,
   "en_cok_esya": 10,
-  "ilk_vurus_bekleme_sn": 5,
-  "takilma_sn": 1.2,
+  "ilk_vurus_bekleme_sn": 3.5,
+  "takilma_sn": 0.9,
   "takilma_esik": 1.2,
   "durgun_esik": 1.0,
   "kamera_donus_sn": 0.2,
@@ -193,5 +193,6 @@
   "pot_paket": 200,
   "pot_boy": "kucuk",
   "dalma_olum_sayisi": 3,
-  "dalma_olum_sn": 600
+  "dalma_olum_sn": 600,
+  "pot_yuva_iz": false
 }
