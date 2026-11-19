@@ -213,6 +213,7 @@ dialog .satir{padding:6px 0}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .sira{display:flex;gap:4px;flex:1;min-width:0;justify-content:flex-end}.sira select{flex:1;min-width:0;max-width:7.5rem;font-size:.82rem;padding:2px 4px}
+.patronlar{list-style:none;margin:.4rem 0 0;padding:0;display:grid;gap:4px}.patronlar li{display:flex;gap:8px;align-items:center;padding:3px 4px;border-bottom:1px solid rgba(200,160,90,.15)}.patronlar img,.patronlar .yer{width:34px;height:34px;object-fit:contain;flex:none;background:rgba(0,0,0,.35);border-radius:3px}.patronlar b{display:block;font-size:.88rem}.patronlar small{opacity:.8;font-size:.76rem}.patronlar .bos{opacity:.7;border:0}
 </style>
 </head>
 <body>
@@ -319,6 +320,14 @@ dialog .satir{padding:6px 0}
           <input type="text" id="kpAd" placeholder="Takma adın" aria-label="Takma ad" style="width:100%;margin-bottom:.3rem">
           <input type="number" id="kpSayi" min="0" max="2000" placeholder="Günlük kare sayısı" aria-label="Günlük kare sayısı" style="width:100%;margin-bottom:.3rem">
           <div class="satir"><span></span><button class="d kucuk" id="kpKaydet">Kaydet</button></div>
+        </div>
+      </section>
+
+      <section class="acc" data-g="sol" data-k="patron">
+        <button class="ah" aria-expanded="false" aria-controls="ag_patron"><span class="ok" aria-hidden="true"></span><span class="at">Patronlar</span><span class="oz" id="oz_patron"></span></button>
+        <div class="ag ic" id="ag_patron">
+          <label class="anahtar"><div><b>Patronlardan kaçın</b><small>Adı aşağıdaki listede olan yaratığa ve yanındakilere dalmaz.</small></div><input type="checkbox" class="sw" id="patronKacin"></label>
+          <ul class="patronlar" id="patronListe"><li class="bos">Liste yükleniyor…</li></ul>
         </div>
       </section>
 
@@ -463,6 +472,7 @@ function ciz(){
     $("#statu").value=a.statu==null?"str":a.statu;
     $("#potBoy").value=a.pot_boy||"kucuk"; $("#potPaket").value=String(a.pot_paket||200);
     siraGoster("siraKirmizi",a.pot_sira_kirmizi); siraGoster("siraMavi",a.pot_sira_mavi);
+    if(document.activeElement!==$("#patronKacin"))$("#patronKacin").checked=a.patronlardan_kacin!==false;
     KAYDIRLAR.forEach(([k,,,,,f])=>{const i=$("#r_"+k); if(i&&a[k]!=null){i.value=a[k];$("#v_"+k).textContent=f(+a[k],c.seviye)}});
     $("#alanKullan").checked=!!a.alan_kullan;
   }
@@ -518,6 +528,8 @@ function kur(){
   $("#statu").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({statu:e.target.value})});
   $("#potBoy").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({pot_boy:e.target.value})});
   siraKur("siraKirmizi","pot_sira_kirmizi"); siraKur("siraMavi","pot_sira_mavi");
+  $("#patronKacin").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({patronlardan_kacin:e.target.checked})});
+  patronYukle();
   $("#potPaket").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({pot_paket:+e.target.value})});
   $("#topDugme").onclick=topla; $("#esyaDugme").onclick=esyaPenceresi; $("#beceriDugme").onclick=beceriPenceresi; $("#kpKaydet").onclick=()=>ayarYaz({kare_paylas_klasoru:$("#kpKlasor").value.trim(),kare_paylas_adi:$("#kpAd").value.trim(),kare_paylas_gunluk:Math.max(0,parseInt($("#kpSayi").value)||0)}); $("#hedefDugme").onclick=canavarPenceresi;
   const kd=l=>l.map(k=>KAYDIRLAR.find(x=>x[0]===k)).map(([k,e,mn,mx,ad])=>`<div class="kaydir"><div><span>${e}</span><b id="v_${k}"></b></div><input type="range" id="r_${k}" min="${mn}" max="${mx}" step="${ad}" aria-label="${e}"></div>`).join("");
@@ -703,6 +715,18 @@ function siraGoster(id,l){
   const k=document.getElementById(id); if(!k)return;
   l=Array.isArray(l)&&l.length?l:["kucuk","orta","buyuk"];
   k.querySelectorAll("select").forEach((s,i)=>{if(document.activeElement!==s)s.value=l[i]||""});
+}
+
+async function patronYukle(){
+  let P=[];
+  try{P=(await (await fetch(api("/api/patronlar"),{cache:"no-store"})).json()).patronlar||[]}catch(e){}
+  const ul=$("#patronListe"); if(!ul)return;
+  $("#oz_patron").textContent=P.length?P.length+" patron":"liste yok";
+  if(!P.length){ul.innerHTML='<li class="bos">Liste henüz yok.</li>';return}
+  ul.innerHTML=P.map(p=>{
+    const ad=esc(p.ad_tr||p.ad_en||"?"), g=p.gorsel?esc(String(p.gorsel).split(/[\/]/).pop()):"";
+    const img=g?`<img src="${api("/patron/"+encodeURIComponent(g))}" alt="" loading="lazy">`:'<span class="yer"></span>';
+    return `<li title="${esc(p.kaynak||"")}">${img}<div><b>${ad}</b><small>${p.seviye?"Lv "+esc(String(p.seviye)):""}${p.harita?" · "+esc(p.harita):""}${p.tur&&p.tur!=="patron"?" · "+esc(p.tur):""}</small></div></li>`}).join("");
 }
 </script>
 </body>

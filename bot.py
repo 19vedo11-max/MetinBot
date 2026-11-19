@@ -167,6 +167,7 @@ VARSAYILAN = {
     "yururken_kamera": True,
     "kacinilan_yaratiklar": ["boss", "patron", "lider", "reis", "kral"],   # adinda bunlar gecen yaratiga (ve yanindakilere) dalma
     "patron_atla_sn": 30,
+    "patronlardan_kacin": True,   # patronlar.json'daki patronlara (adlarindan) ve yanlarindakilere dalma
     "vurus_bekle_saldirida_sn": 3.0,  # vurulurken secili hedefe bu kadar sn isabet yoksa beklemeyi kes (0 = kapali; eski: 10-25 sn bekliyordu)
     "iksir_bekle_en_cok_sn": 600,  # etkisi suren iksir icin envanteri en gec bu kadar sn'de bir ac (eski 300; her acis 4-9 sn)
     "kamera_ana_dongu_kat": 3,    # yururken duzeltme acikken slot sonu (duran) duzeltme bu kat seyrek
@@ -2989,6 +2990,24 @@ def calistir(ayar, sablon):
     slot_aralari = []
     kacmama_son = []              # 'vuruluyorum, kacmiyor' anlari: tekrar ederse kacisa izin
     patron_yer = []               # (zaman, x, y): kacinilan (patron) adli etiketler
+    _patron_d = {"t": 0.0, "adlar": []}
+
+    def patron_adlari():
+        """patronlar.json'daki patron adlari (sade); dosya degisince yeniden okunur."""
+        yol_ = os.path.join(KLASOR, "patronlar.json")
+        try:
+            t_ = os.path.getmtime(yol_)
+        except OSError:
+            return []
+        if t_ != _patron_d["t"]:
+            try:
+                v_ = json.load(open(yol_, encoding="utf-8")).get("patronlar", [])
+                _patron_d["adlar"] = sorted({oku.sade(a_) for p_ in v_ for a_ in (p_.get("ad_tr"), p_.get("ad_en"))
+                                             if a_ and len(oku.sade(a_)) >= 4})
+            except Exception as e_p:
+                print("patronlar.json okunamadi:", e_p)
+            _patron_d["t"] = t_
+        return _patron_d["adlar"]
     patron_log = [0.0]
     yon_atla = []                 # takilinan yonler (zaman, aci, uzaklik): dagin ardindakilere de kosma
     alan_don = [False]
@@ -5244,7 +5263,7 @@ def calistir(ayar, sablon):
             # gorevin istedigi yaratik ekrandaysa (adi okunur) slot sartina bakilmadan en basa
             aranan_adlar = (list(ayar["aranan_yaratiklar"]) + (aranan_durum if ayar["aranan_oncelik"] else [])
                             + (av_aranan if ayar["av_gorevi"] else []) + esya_hedef)
-            kacinilan_ = [oku.sade(a_) for a_ in ayar["kacinilan_yaratiklar"]]
+            kacinilan_ = [oku.sade(a_) for a_ in ayar["kacinilan_yaratiklar"]] + (patron_adlari() if ayar["patronlardan_kacin"] else [])
             if (aranan_adlar or kacinilan_) and not tehdit and time.time() - son_aranan_tarama > ayar["aranan_tarama_sn"]:
                 tum_k = kirmizi_etiketler(kare)
                 if tum_k:
