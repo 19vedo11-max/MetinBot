@@ -187,5 +187,6 @@
   "hizli_engel": false,
   "yolo_slot": true,
   "engel_hafiza": false,
-  "kamera_egim_aralik_sn": 90
+  "kamera_egim_aralik_sn": 90,
+  "alan_bos_sn": 25
 }

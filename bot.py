@@ -2262,6 +2262,8 @@ def calistir(ayar, sablon):
             print("engel hafiza yazilamadi:", e_w)
         print(f"{time.strftime('%H:%M:%S')}  engel hafiza: kaydedildi {ad_} ({x_}, {y_}) sayi={sayi_} [{neden}] - harita okuma {time.time() - t0_:.1f} sn")
 
+    alan_yolsuz = []      # bu oturumda 'YURUYEMEDI' denen alan noktalari (oran)
+
     def alan_noktasi():
         """Cizilen kasilma alaninin icinde rastgele bir nokta (oran olarak); kayitli engel noktalarindan uzak."""
         a_ = ayar["kasilma_alani"]
@@ -2271,6 +2273,8 @@ def calistir(ayar, sablon):
             if 0.02 < x_ < 0.98 and 0.02 < y_ < 0.98:
                 if engel_yakin(a_.get("harita", ""), x_, y_):
                     continue
+                if any(math.hypot(x_ - bx_, y_ - by_) < 0.008 for bx_, by_ in alan_yolsuz):
+                    continue                                # buraya daha once yuruyemedi (harita kenari / ucurum)
                 return round(x_, 4), round(y_, 4)
         return a_["x"], a_["y"]
 
@@ -2284,6 +2288,7 @@ def calistir(ayar, sablon):
                 if harita_git(ayar["kasilma_alani"].get("harita", ""), x_, y_):
                     alan_mola[1] = 0
                     return
+                alan_yolsuz.append((x_, y_))                    # yuruyemedi: bu noktayi bir daha secme
             except Exception as e_a:
                 print("alan:", e_a)
                 pydirectinput.press("esc")
