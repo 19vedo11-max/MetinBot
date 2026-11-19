@@ -10,7 +10,7 @@
   "takilma_sn": 1.2,
   "takilma_esik": 1.2,
   "durgun_esik": 1.0,
-  "kamera_donus_sn": 0.4,
+  "kamera_donus_sn": 0.2,
   "can_potu_tusu": "1",
   "can_esigi": 0.85,
   "mana_potu_tusu": "2",
@@ -188,5 +188,6 @@
   "yolo_slot": true,
   "engel_hafiza": false,
   "kamera_egim_aralik_sn": 35,
-  "alan_bos_sn": 25
+  "alan_bos_sn": 25,
+  "etrafa_bakma_sn": 1.25
 }

@@ -163,6 +163,8 @@ VARSAYILAN = {
     "etiket_alti_piksel": 45,     # isim yazisinin kac piksel altina tiklansin
     "kamera_tusu": "e",           # hedef yokken kamerayi dondurur
     "kamera_ters_tusu": "q",
+    "kamera_durt_sn": 0.15,       # slot icinde yaratik kaybolunca kamerayi bu kadar sn dondur (yarim aci; eski 0.3)
+    "yururken_kamera": True,      # kamera acisini yururken duzelt (savas araliginda durmasin)
     "kamera_hedef_varken_yok": True,   # ekranda yaratik etiketi varken kamera acisini duzeltme (slot sonrasi bekleme olmasin)      # ters yone dondurme (yaratiklar soldaysa Q); bos = yalniz E
     "kamera_egim_t_sn": 0.55,     # G ile tepeye dikip T'ye bu kadar basili tut (yatay aci); 0 = kameraya dokunma
     "kamera_egim_aralik_sn": 180,
@@ -328,13 +330,47 @@ _son_kare = [None]
 HX0, HY0, HW, HH = -307, 16, 316, 318
 
 
+_derinlik = {"ufuk": None, "oto": True, "n": 0}   # yaratik govde boylarindan canli olculen ufuk
+
+
+def derinlik_guncelle(kutular):
+    """Sekil modelinin yaratik kutularindan kamera ufkunu olc: govde boyu ~ (alt_y - ufuk_y). Kamera
+    egimi degistikce (yatay/tepeden) uzaklik hesabi buna uysun."""
+    try:
+        yk = [(float(k[5]), float(k[5]) - float(k[3])) for k in kutular if k[0] == "yaratik" and k[1] >= 0.5]
+        if len(yk) < 4:
+            return
+        ys = np.array([a for a, _ in yk]); hs = np.array([b for _, b in yk])
+        if ys.max() - ys.min() < 120:
+            return
+        m, c = np.polyfit(ys, hs, 1)
+        if m <= 0.02:
+            return
+        u = float(np.clip(c / m, -600.0, 1500.0))          # h = m*(y + u)  ->  u = c/m (ufuk_y = -u)
+        _derinlik["ufuk"] = u if _derinlik["ufuk"] is None else 0.9 * _derinlik["ufuk"] + 0.1 * u
+        _derinlik["n"] += 1
+        if _derinlik["n"] % 200 == 5:
+            print(f"{time.strftime('%H:%M:%S')}  derinlik: ufuk y={-_derinlik['ufuk']:.0f}, carpan "
+                  f"{float(np.clip(1340.0 / max(60.0, 644 + _derinlik['ufuk']), 1.0, 8.0)):.2f} (yaratik boylarindan)")
+    except Exception:
+        pass
+
+
 def dunya_xy(x, y, kx, ky, ufuk=227.0, carpan=1.7):
     """Ekran noktasinin karaktere gore 'dunya' koordinati (karakter derinliginde piksel birimi)."""
+    if _derinlik["oto"] and _derinlik["ufuk"] is not None and _derinlik["n"] >= 5:
+        ufuk = _derinlik["ufuk"]                          # canli olcum (kamera egimine gore)
+        carpan = float(np.clip(1340.0 / max(60.0, ky + ufuk), 1.0, 8.0))   # odak ~1340 px (tahmin)
     d = (ky + ufuk) / max(30.0, y + ufuk)
     return (x - kx) * d, carpan * (ky + ufuk) * (d - 1.0)
 
 
 def dunya_uzak(x, y, kx, ky, ufuk=227.0, carpan=1.7):
+    xw_, zw_ = dunya_xy(x, y, kx, ky, ufuk, carpan)
+    return math.hypot(xw_, zw_)
+
+
+def _dunya_uzak_eski(x, y, kx, ky, ufuk=227.0, carpan=1.7):
     """Ekran noktasinin karaktere 'dunyada' uzakligi (karakter derinliginde piksel birimi). Kamera egik oldugu
     icin ekranda yukaridaki (uzaktaki) yaratigin 1 pikseli yandakinden cok daha fazla yol demek:
     derinlik ~ 1/(y + ufuk) (otomatik etiketlerde govde boyu = 0.11*(y+227)'den), dikey 1 px ~ carpan yatay px."""
@@ -2168,6 +2204,7 @@ def calistir(ayar, sablon):
         hz_ = hizli_baslat(alan["aci"], (tx, ty))
         while time.time() - bas_ < (2.2 if ayar.get("hizli_engel", True) else 1.6) and durum["calis"] and not durum["duraklat"]:
             time.sleep(0.2)
+            yururken_isler()
             kf_ = kare_al(h)
             tum_ = kirmizi_etiketler(kf_)
             if ayar["sadece_hedefler"]:
@@ -2877,6 +2914,13 @@ def calistir(ayar, sablon):
     son_sayfa = 0.0
     son_kamera_uzak = 0.0
     son_kamera_egim = [0.0]
+
+    def yururken_isler():
+        """Karakter yururken yapilabilen isler (tus basmak yuruyusu kesmiyor): kamera acisini burada duzelt ki
+        savas araliklarinda ayrica durup beklenmesin."""
+        if (ayar["yururken_kamera"] and ayar["kamera_egim_t_sn"]
+                and time.time() - son_kamera_egim[0] > ayar["kamera_egim_aralik_sn"] and not saldiri_altinda()):
+            kamera_egim_ayarla()
 
     def kamera_egim_ayarla():
         son_kamera_egim[0] = time.time()
@@ -3815,6 +3859,7 @@ def calistir(ayar, sablon):
             if saldiri_altinda():
                 print("   git: yolda saldiri - kesmeye donuluyor")
                 return False
+            yururken_isler()                                   # yururken: kamera acisi vb. (yuruyus durmaz)
             if time.time() - bas_ > 1.5 and (not alan_aktif() or ayar["alana_donerken_dal"]):   # yolda slot: dur, kes
                 yk_, gn_ = kf_.shape[:2]
                 et_ = [t for t in kirmizi_etiketler(kf_) if math.hypot(t[0] - gn_ // 2, t[1] - yk_ * 0.58) < 450]
@@ -4324,6 +4369,7 @@ def calistir(ayar, sablon):
                     o_ = gpu_.oku()
                     if o_:
                         _yolo["kutular"], _yolo["t"], _yolo["ms"] = o_[0], time.time(), o_[1]
+                        derinlik_guncelle(o_[0])
                         _yolo["uc_ms"] = o_[2]
                         _yolo.setdefault("ist", []).append((o_[1], o_[2]))
                         if len(_yolo["ist"]) >= 150:
@@ -4363,6 +4409,7 @@ def calistir(ayar, sablon):
                             o2_ = gpu_aday_.oku()
                             if o2_:
                                 _yolo["kutular"], _yolo["t"], _yolo["ms"] = o2_[0], time.time(), o2_[1]
+                                derinlik_guncelle(o2_[0])
                                 _yolo["uc_ms"] = o2_[2]
                                 _yolo.setdefault("ist", []).append((o2_[1], o2_[2]))
                                 if len(_yolo["ist"]) >= 150:
@@ -4381,6 +4428,7 @@ def calistir(ayar, sablon):
                 kut_ = model_.tespit(k_, 0.25)
                 _yolo["ms"] = (time.time() - t0_) * 1000.0
                 _yolo["kutular"], _yolo["t"] = kut_, time.time()
+                derinlik_guncelle(kut_)
             except Exception as e_:
                 print("sekil izlegi:", e_)
                 time.sleep(2)
@@ -5132,6 +5180,23 @@ def calistir(ayar, sablon):
             alan["yerel"] = 0
             alan["mini"] = 0
 
+            # tani: en yakin yaratik yerine daha uzaktaki secildiyse nedenini logla (Vedat: "yakindaki yerine uzaktakine vuruyor")
+            try:
+                _du = lambda t: dunya_uzak(t[0], t[1] + 45, karakter[0], karakter[1], ayar["derinlik_ufuk"], ayar["derinlik_carpan"])
+                _tum = kirmizi_etiketler(kare)
+                if _tum and hedefler and not tas:
+                    _en = min(_tum, key=_du)
+                    if _du(hedefler[0]) > _du(_en) * 1.4 + 60:
+                        _sv = yaratik_seviyesi(kare, _en)
+                        _ye = sum(1 for u in _tum if math.hypot(u[0] - _en[0], u[1] - _en[1]) < ayar["slot_yaricapi_piksel"])
+                        _neden = ("seviye filtresi" if _sv is not None and benim_sev and (_sv < benim_sev - ayar["seviye_alt_fark"] or _sv > ust)
+                                  else "slot sarti (" + str(_ye) + " < " + str(ayar["slot_en_az"]) + ")" if ayar["sadece_slot"] and _ye < ayar["slot_en_az"]
+                                  else "atlandi/siralama")
+                        print(f"{time.strftime('%H:%M:%S')}  hedef secimi: uzaktaki secildi (secilen {_du(hedefler[0]):.0f}, "
+                              f"en yakin {_du(_en):.0f} Lv {_sv}) - neden: {_neden}")
+            except Exception:
+                pass
+
             # 0) slota girmeden once: hava kilici / ofke sonmusse once yak (savas ortasinda yakilmaz)
             if (ayar["sureli_tuslar"] and can_orani(kare) >= ayar["guc_can_esigi"] and not saldiri_altinda()
                     and not tehdit and su_an[0] != "savunma"            # yaratik dibindeyken durup guclendirme yakma
@@ -5243,7 +5308,7 @@ def calistir(ayar, sablon):
                             birak()
                             tus_k = kamera_yonu(k2)                 # yaratiklar hangi yandaysa o yone (Q/E)
                             pydirectinput.keyDown(tus_k)
-                            time.sleep(0.3)
+                            time.sleep(ayar["kamera_durt_sn"])
                             pydirectinput.keyUp(tus_k)
                         k2b = kare_al(h)
                         yakin = yakindakiler(k2b, 9999, 0, ayar["spot_yaricapi_piksel"] + 260, alt_s)
