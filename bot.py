@@ -185,7 +185,8 @@ VARSAYILAN = {
     "burada_tutmazsa_sehirde": True,   # 'Burada yeniden basla' 25 sn tutmazsa 'Sehirde'ye gec (kalabaliktan da cikar)
     "bolge_ogren": True,          # mini haritadan bolge haritasi (mozaik) cikar, konumunu bil, takildigi yerleri hatirla
     "bolge_ogren_harita": "Bakra",
-    "bolge_kayip_sifirla_sn": 120,   # bu kadar sn konum bulunamazsa mozaigi yedekleyip bastan ogren
+    "bolge_kayip_sifirla_sn": 120,
+    "bolge_buyuk_px": 40000,      # bundan buyuk (ogrenilmis) mozaik 10 kat daha gec sifirlanir (koy/satici gezisinde silinmesin)   # bu kadar sn konum bulunamazsa mozaigi yedekleyip bastan ogren
     "bolge_engel_suz": True,      # bilinen engelin ardindaki hedefleri secme (hepsi oyleyse secer)
     "metin_ust_fark": 5,          # metinler.json'a gore seviyesi (benim + bu) ustundeki metin taslarina vurma (None = sinir yok)
     "patronlardan_kacin": True,   # patronlar.json'daki patronlara (adlarindan) ve yanlarindakilere dalma
@@ -3197,7 +3198,8 @@ def calistir(ayar, sablon):
             r_b = ogren.besle(cv2.cvtColor(np.ascontiguousarray(k_b[:200, -200:]), cv2.COLOR_RGB2BGR), time.time())
             if r_b and r_b.get("durum") == "kayip":
                 ogren_d["kayip"] = ogren_d.get("kayip") or time.time()
-                if time.time() - ogren_d["kayip"] > ayar["bolge_kayip_sifirla_sn"]:
+                buyuk_ = float((ogren.say > 0).sum()) > ayar["bolge_buyuk_px"] if hasattr(ogren, "say") else False
+                if time.time() - ogren_d["kayip"] > ayar["bolge_kayip_sifirla_sn"] * (10 if buyuk_ else 1):
                     import shutil, glob
                     from harita_ogren import HaritaOgren
                     hk_ = os.path.join(KLASOR, "goruntu", "haritalar")
@@ -3348,7 +3350,8 @@ def calistir(ayar, sablon):
 
     yol_ol = os.path.join(KLASOR, "sablon", "burada_basla.png")
     olum_s = cv2.imread(yol_ol, cv2.IMREAD_GRAYSCALE) if os.path.exists(yol_ol) else None
-    olum_sayac = {"n": 0, "zamanlar": [], "temkin_bitis": 0.0}
+    olum_sayac = {"n": 0, "zamanlar": [], "temkin_bitis": 0.0,
+                  "mola_bitis": zaman_oku("mola_bitis"), "dalma_yok_bitis": zaman_oku("dalma_yok_bitis")}
     sehirden_cik = [False]
     olum_pencere = {"acik": False, "sehirde": False, "t": 0.0, "yeni": False, "yok": 0}   # sayilan olumun penceresi hala acik mi + verilen karar
     olum_kilit = threading.Lock()                                # ana dongu ve olum bekcisi ayni anda tiklamasin
@@ -3366,6 +3369,7 @@ def calistir(ayar, sablon):
         kisa_ = olum_sayac["dalma_z"]          # ayri liste: 'zamanlar' olum_dongusu_sn (180) ile kirpildigi icin 10 dk'yi goremiyordu
         if len(kisa_) >= ayar["dalma_olum_sayisi"] and simdi > olum_sayac.get("dalma_yok_bitis", 0):
             olum_sayac["dalma_yok_bitis"] = simdi + ayar["dalma_yok_dk"] * 60
+            zaman_yaz("dalma_yok_bitis", olum_sayac["dalma_yok_bitis"])
             bildir("olum", f"{len(kisa_)} olum {ayar['dalma_olum_sn'] // 60} dk icinde - kalabaliga dalmiyor")
             print(f"{time.strftime('%H:%M:%S')}  {len(kisa_)} olum {ayar['dalma_olum_sn']} sn icinde - "
                   f"{ayar['dalma_yok_dk']} dk kalabalik slotlara dalmiyor (yalniz tek/ikili yaratik)")
@@ -3378,6 +3382,7 @@ def calistir(ayar, sablon):
             print(f"{time.strftime('%H:%M:%S')}  {ayar['hemen_olum_sn']} sn icinde ikinci olum - bu sefer sehirde dirilinecek")
         if ayar["olum_mola_sayisi"] and len(kisa_) >= ayar["olum_mola_sayisi"] and simdi > olum_sayac.get("mola_bitis", 0):
             olum_sayac["mola_bitis"] = simdi + ayar["olum_mola_dk"] * 60      # olum serisi: sehirde dirilip mola
+            zaman_yaz("mola_bitis", olum_sayac["mola_bitis"])
             sehirde_ = True
             print(f"{time.strftime('%H:%M:%S')}  OLUM SERISI: {len(kisa_)} olum {ayar['dalma_olum_sn'] // 60} dk icinde - "
                   f"sehirde dirilip {ayar['olum_mola_dk']} dk mola")
@@ -5263,7 +5268,7 @@ def calistir(ayar, sablon):
                     yeni_surum_ilk[0] = time.time()
                     print(f"{time.strftime('%H:%M:%S')}  yeni surum var - sakin bir anda yuklenecek")
                 son_degisim_ = max(kod_damgasi()) if yeni_kod_ else 0
-                sakin_ = (not saldiri_altinda() and can_orani(kare) > 0.6
+                sakin_ = (time.time() > olum_sayac.get("mola_bitis", 0) and not saldiri_altinda() and can_orani(kare) > 0.6
                           and not any(math.hypot(t[0] - gen // 2, t[1] + 45 - int(yuk * 0.58)) < 300 for t in kirmizi_etiketler(kare)))
                 acil_ = istek.pop("yeniden_baslat", False)
                 if (acil_ or (yeni_kod_ and time.time() - son_degisim_ > ayar["surum_bekle_sn"]
