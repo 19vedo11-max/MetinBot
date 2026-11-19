@@ -246,6 +246,7 @@ VARSAYILAN = {
     "yolo_kullan": True,         # sekil modeli (sekil.py) yardimci: etiketsiz yaratik + oyuncu korumasi
     "yolo_esik": 0.45,           # yaratik kutusu min skoru
     "yolo_slot": True,           # slot icinde etiket yoksa YOLO yaratik kutusuna vur
+    "beceri_bos_bekle_dk": 20,   # beceri penceresi acildi ama 0 puan verilebildiyse (artilar siradaki becerilerde degil) simgeyle bu kadar dk tekrar acma; seviye atlayinca yine denenir (11-20: 10 dk'da 5 kez, 27 sn bosa)
     "sekil_engel_sayma": True,   # YOLO (etiketsiz) hedefe ulasilamazsa "engel var: baska yere" kacisina sayma (11-20: 8 ulasilamamanin 7si sekil hedefiydi, bolgeden cikariyordu)
     "yolo_oyuncu_koru": True,    # etiketin govdesi YOLO oyuncu ise hedef alma
     "sadece_hedefler": [],        # doluysa yalniz adi bunlara tutan canavarlar kesilir (or. "Kotu Siyah Firtina Okcusu")
@@ -3070,11 +3071,13 @@ def calistir(ayar, sablon):
         if dokunulan:
             print(f"{time.strftime('%H:%M:%S')}  beceri sirasi: {', '.join(dokunulan)}")
         print(f"{time.strftime('%H:%M:%S')}  beceri: {verilen} puan verildi (kalan arti: {len(liste)})")
+        beceri_bos[0] = time.time() if (verilen == 0 and liste) else 0.0     # verilemiyorsa simgeyle hemen tekrar acma
         pencereleri_kapat()
 
     egitim_gerek = bool(ayar["beceri_grubu"]) and kapat_s is not None and not durum_oku().get("egitmen_denendi")
     olum_deneme = 0
     beceri_gerek = False          # acilista degil, "beceri gelistir" simgesi gorununce
+    beceri_bos = [0.0]            # son denemede puan verilemediyse zamani
     yeniden_baslat = [False]
     sev_aday = [None, 0]
     son_c_seviye = [zaman_oku("c_seviye") if benim_sev else 0.0]   # yeniden acilista seviye biliniyorsa C penceresini hemen acma
@@ -5806,7 +5809,8 @@ def calistir(ayar, sablon):
             # beceri puani: sag altta "Becerileri Gelistir" simgesi gorununce dagit
             if statu_simge is not None and time.time() - son_beceri_simge > 30:
                 son_beceri_simge = time.time()
-                if simge_bul(kare[yuk - 200:, gen - 400:], statu_simge, 0.9) is not None:
+                if (simge_bul(kare[yuk - 200:, gen - 400:], statu_simge, 0.9) is not None
+                        and time.time() - beceri_bos[0] > ayar.get("beceri_bos_bekle_dk", 20) * 60):
                     beceri_gerek = True
 
             # statu puani: simge gorununce dagit

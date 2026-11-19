@@ -80,7 +80,7 @@
     }
   ],
   "sadece_slot": true,
-  "slot_en_az": 6,
+  "slot_en_az": 4,
   "slot_yaricapi_piksel": 200,
   "tekli_bekleme_turu": 10,
   "toplanacak_grup": 2,
