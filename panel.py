@@ -28,8 +28,8 @@ SAYILAR = [  # (anahtar, etiket, en az, en cok, adim, yuzde mi)
     ("seviye_alt_fark", "Benden en çok kaç seviye düşük (exp veren)", 0, 15, 1, False),
     ("slot_en_az", "Slot sayılması için en az yaratık", 2, 8, 1, False),
     ("toplanacak_grup", "Kesmeden önce toplanacak grup sayısı", 1, 5, 1, False),
-    ("pot_al_kirmizi_paket", "Kaç paket küçük kırmızı pot alsın (paket = 20)", 0, 10, 1, False),
-    ("pot_al_mavi_paket", "Kaç paket küçük mavi pot alsın (paket = 20)", 0, 10, 1, False),
+    ("pot_al_kirmizi_paket", "Kaç paket küçük kırmızı pot alsın (paket = 200)", 0, 10, 1, False),
+    ("pot_al_mavi_paket", "Kaç paket küçük mavi pot alsın (paket = 200)", 0, 10, 1, False),
 ]
 STATULER = [("str", "Güç (STR)"), ("vit", "Yaşam (VIT)"), ("dex", "Çeviklik (DEX)"), ("int", "Zekâ (INT)"), ("", "Dağıtma")]
 

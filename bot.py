@@ -164,7 +164,8 @@ VARSAYILAN = {
     "kamera_tusu": "e",           # hedef yokken kamerayi dondurur
     "kamera_ters_tusu": "q",
     "kamera_durt_sn": 0.15,       # slot icinde yaratik kaybolunca kamerayi bu kadar sn dondur (yarim aci; eski 0.3)
-    "yururken_kamera": True,      # kamera acisini yururken duzelt (savas araliginda durmasin)
+    "yururken_kamera": True,
+    "harita_otomatik_kaydet": True,   # taninmayan haritaya gelince haritayi kendisi kaydetsin (panelde alan cizilebilsin)      # kamera acisini yururken duzelt (savas araliginda durmasin)
     "kamera_hedef_varken_yok": True,   # ekranda yaratik etiketi varken kamera acisini duzeltme (slot sonrasi bekleme olmasin)      # ters yone dondurme (yaratiklar soldaysa Q); bos = yalniz E
     "kamera_egim_t_sn": 0.55,     # G ile tepeye dikip T'ye bu kadar basili tut (yatay aci); 0 = kameraya dokunma
     "kamera_egim_aralik_sn": 180,
@@ -199,7 +200,8 @@ VARSAYILAN = {
     "yolo_oyuncu_koru": True,    # etiketin govdesi YOLO oyuncu ise hedef alma
     "sadece_hedefler": [],        # doluysa yalniz adi bunlara tutan canavarlar kesilir (or. "Kotu Siyah Firtina Okcusu")
     "pot_satin_al": True,         # can potu bitince koydeki Saticidan al (20'lik kucuk iksir paketleri)
-    "pot_al_kirmizi_paket": 5,    # kac paket kucuk kirmizi (her biri 20 adet)
+    "pot_paket": 200,             # dukkandaki paket boyu: 20 ya da 200 (sablon/dukkan_kirmizi200.png)
+    "pot_al_kirmizi_paket": 5,    # kac paket kucuk kirmizi (her biri pot_paket adet)
     "pot_al_mavi_paket": 1,       # kac paket kucuk mavi
     "pot_yuvasi_doldur": False,    # 1/2 pot yuvasi bosalinca envanterden doldur (denemede yerlesmedi - kapali)
     "bos_tur_siniri": 40,         # bu kadar tur ust uste hedef yoksa dur
@@ -3837,6 +3839,11 @@ def calistir(ayar, sablon):
                 return False
             kd_, resim, x0_, y0_ = g_
             burasi = kayitli_harita_bul(resim)
+            if (burasi is None and ayar["harita_otomatik_kaydet"]
+                    and time.time() - zaman_oku("harita_oto") > 600):        # bilinmeyen harita: sakin anda kaydet
+                zaman_yaz("harita_oto", time.time())
+                istek["harita_kaydet"] = True
+                print(f"{time.strftime('%H:%M:%S')}  harita: kayitli degil - ilk sakin anda kaydedilecek")
             if ad and burasi and oku.sade(ad) != oku.sade(burasi):
                 print(f"{time.strftime('%H:%M:%S')}  git: hedef '{ad}' haritasinda, ben '{burasi}' haritasindayim - once oraya isinlan")
                 tikla(*kd_)
@@ -4044,7 +4051,7 @@ def calistir(ayar, sablon):
                 pydirectinput.moveTo(ox_son[0] + gn_ // 2, ox_son[1] + int(yk_ * 0.75))   # bilgi kutusu sonraki aramayi ortmesin
                 time.sleep(0.3)
                 alinan_ += 1
-                print(f"{time.strftime('%H:%M:%S')}  pot al: {ad_} 1 paket (20 adet) alindi")
+                print(f"{time.strftime('%H:%M:%S')}  pot al: {ad_} 1 paket alindi")
         return alinan_
 
     def satici_adla(k_):
@@ -4516,7 +4523,7 @@ def calistir(ayar, sablon):
                     pass
                 pot_alim[0] = time.time()
                 print(f"{time.strftime('%H:%M:%S')}  pot al: saticiya gidiliyor (toplama kipi)")
-                satici_test(al={"kirmizi20": ayar["pot_al_kirmizi_paket"], "mavi20": ayar["pot_al_mavi_paket"]})
+                satici_test(al={f"kirmizi{ayar['pot_paket']}": ayar["pot_al_kirmizi_paket"], f"mavi{ayar['pot_paket']}": ayar["pot_al_mavi_paket"]})
                 continue
             if time.time() - son_damga_bakis > 5:
                 son_damga_bakis = time.time()
@@ -4782,7 +4789,7 @@ def calistir(ayar, sablon):
                     pass
                 pot_alim[0] = time.time()
                 print(f"{time.strftime('%H:%M:%S')}  pot al: saticiya gidiliyor")
-                n_p = satici_test(al={"kirmizi20": ayar["pot_al_kirmizi_paket"], "mavi20": ayar["pot_al_mavi_paket"]})
+                n_p = satici_test(al={f"kirmizi{ayar['pot_paket']}": ayar["pot_al_kirmizi_paket"], f"mavi{ayar['pot_paket']}": ayar["pot_al_mavi_paket"]})
                 if n_p is None and not istek.pop("pot_koy_denendi", False):
                     print(f"{time.strftime('%H:%M:%S')}  pot al: bu haritada Satici bulunamadi - koye isinlanip yeniden denenecek")
                     istek["pot_koy_denendi"] = True

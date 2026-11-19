@@ -83,7 +83,7 @@
   "slot_en_az": 6,
   "slot_yaricapi_piksel": 200,
   "tekli_bekleme_turu": 10,
-  "toplanacak_grup": 2,
+  "toplanacak_grup": 1,
   "grup_ayrim_piksel": 230,
   "toplama_can_siniri": 0.6,
   "spot_ust_sure_sn": 120,
@@ -177,8 +177,8 @@
   "pot_yuvasi_doldur": true,
   "olum_dongusu_sn": 180,
   "pot_satin_al": true,
-  "pot_al_kirmizi_paket": 10,
-  "pot_al_mavi_paket": 10,
+  "pot_al_kirmizi_paket": 1,
+  "pot_al_mavi_paket": 1,
   "kare_paylas_klasoru": "",
   "kare_paylas_adi": "",
   "kare_paylas_gunluk": 200,
@@ -189,5 +189,6 @@
   "engel_hafiza": false,
   "kamera_egim_aralik_sn": 35,
   "alan_bos_sn": 25,
-  "etrafa_bakma_sn": 1.25
+  "etrafa_bakma_sn": 1.25,
+  "pot_paket": 200
 }
