@@ -3520,6 +3520,7 @@ def calistir(ayar, sablon):
                 if a_ == "kirmizi_pot":
                     pot_bitti[0] = 0.0
                 print(f"{time.strftime('%H:%M:%S')}  pot yuvasi: {a_} envanterden {1 if a_ == 'kirmizi_pot' else 2} numaraya kondu")
+                (pot_bitti if a_ == 'kirmizi_pot' else mavi_bitti)[0] = 0.0     # bulundu: 'bitti' yanlis alarmdi, tekrar satin almaya gitme
             else:
                 tikla(yer_[0], yer_[1])                              # olmadi: eldeki potu yerine geri birak
                 time.sleep(0.25)

@@ -191,5 +191,7 @@
   "alan_bos_sn": 25,
   "etrafa_bakma_sn": 1.25,
   "pot_paket": 200,
-  "pot_boy": "kucuk"
+  "pot_boy": "kucuk",
+  "dalma_olum_sayisi": 3,
+  "dalma_olum_sn": 600
 }
