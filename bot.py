@@ -3492,14 +3492,30 @@ def calistir(ayar, sablon):
         birak()
         acildi_ = False
         k_e = k
-        if any(esya_bul(k_e, pot_sab[a_]) is None for a_ in bos):
+        def _env_ara(k_a, a_a):                                  # hizli cubuk (alt 80 px) disinda: yalniz envanter
+            k_a = k_a.copy()
+            k_a[-80:] = 0
+            return esya_bul(k_a, pot_sab[a_a])
+        if any(_env_ara(k_e, a_) is None for a_ in bos):
             pydirectinput.press(ayar["envanter_tusu"])
             acildi_ = True
-            time.sleep(0.4)
+            time.sleep(0.5)
             k_e = kare_al(h)
+            if any(_env_ara(k_e, a_) is None for a_ in bos):     # envanter zaten acikti (dukkan sonrasi) ve kapattik: yeniden ac
+                pydirectinput.press(ayar["envanter_tusu"])
+                acildi_ = not acildi_
+                time.sleep(0.5)
+                k_e2 = kare_al(h)
+                if sum(_env_ara(k_e2, a_) is not None for a_ in bos) >= sum(_env_ara(k_e, a_) is not None for a_ in bos):
+                    k_e = k_e2
+                else:                                            # ikinci basis kapatti: geri ac
+                    pydirectinput.press(ayar["envanter_tusu"])
+                    acildi_ = not acildi_
+                    time.sleep(0.5)
+                    k_e = kare_al(h)
         yk_, gn_ = k_e.shape[:2]
         for a_ in bos:
-            yer_ = esya_bul(k_e, pot_sab[a_])
+            yer_ = _env_ara(k_e, a_)
             if yer_ is None:
                 print(f"{time.strftime('%H:%M:%S')}  pot yuvasi: {a_} bos ama envanterde (1. sayfa) {a_} yok")
                 if a_ == "kirmizi_pot":                              # can potu bitti: olum dongusune girmesin
@@ -4301,6 +4317,8 @@ def calistir(ayar, sablon):
                     istek["git"] = (kj_.get("harita", ""), float(kj_.get("x", 0.5)), float(kj_.get("y", 0.5)))
                 elif k_ == "harita_kaydet":
                     istek["harita_kaydet"] = True
+                elif k_ == "envanter_foto":
+                    istek["envanter_foto"] = True
                 elif k_ == "harita_buyuk_kaydet":
                     istek["harita_buyuk_kaydet"] = True
                 os.remove(yol_komut)
@@ -4814,6 +4832,23 @@ def calistir(ayar, sablon):
             if istek.get("harita_kaydet") and not tehdit:
                 istek.pop("harita_kaydet")
                 harita_kaydet()
+                continue
+            if istek.get("envanter_foto") and not tehdit:        # tani: envanteri ac, kaydet, potlari ara, kapat
+                istek.pop("envanter_foto")
+                birak()
+                k_ef = kare_al(h)
+                acik_ef = True                                      # hizli cubuktaki potlar da eslesiyor: her zaman ac
+                if acik_ef:
+                    pydirectinput.press(ayar["envanter_tusu"])
+                    time.sleep(0.7)
+                    k_ef = kare_al(h)
+                cv2.imwrite(os.path.join(KLASOR, "_gecici", "envanter_foto.png"), cv2.cvtColor(k_ef, cv2.COLOR_RGB2BGR))
+                for a_ in pot_sab:
+                    _ust = k_ef.copy(); _ust[-80:] = 0                  # hizli cubugu disarida birak: yalniz envanter
+                    print(f"{time.strftime('%H:%M:%S')}  envanter_foto: {a_} -> tum {esya_bul(k_ef, pot_sab[a_])} / envanterde {esya_bul(_ust, pot_sab[a_])}")
+                if acik_ef:
+                    pydirectinput.press(ayar["envanter_tusu"])
+                    time.sleep(0.2)
                 continue
             if istek.get("harita_buyuk_kaydet") and not tehdit:
                 istek.pop("harita_buyuk_kaydet")
