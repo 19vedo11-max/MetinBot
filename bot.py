@@ -165,6 +165,7 @@ VARSAYILAN = {
     "kamera_ters_tusu": "q",
     "kamera_durt_sn": 0.15,       # slot icinde yaratik kaybolunca kamerayi bu kadar sn dondur (yarim aci; eski 0.3)
     "yururken_kamera": True,
+    "vurus_bekle_saldirida_sn": 3.0,  # vurulurken secili hedefe bu kadar sn isabet yoksa beklemeyi kes (0 = kapali; eski: 10-25 sn bekliyordu)
     "iksir_bekle_en_cok_sn": 600,  # etkisi suren iksir icin envanteri en gec bu kadar sn'de bir ac (eski 300; her acis 4-9 sn)
     "kamera_ana_dongu_kat": 3,    # yururken duzeltme acikken slot sonu (duran) duzeltme bu kat seyrek
     "vurulurken_kacma": True,     # ulasilamayan hedefte bile vuruluyorsam kosup kacma: yanimdakilere don
@@ -1164,6 +1165,7 @@ def calistir(ayar, sablon):
         Mini harita 1 sn boyunca kaymiyorsa karakter takilmistir (agac, ev, slot): once yana kacip
         hedefe yeniden tiklar, yine takilirsa False doner."""
         ilk, bit = None, time.time() + sure_sn
+        bas_vb = time.time()
         gecmis, durgun_bas, kacis = [], None, 0
         while time.time() < bit and durum["calis"] and not durum["duraklat"]:
             k = kare_al(h)
@@ -1177,6 +1179,10 @@ def calistir(ayar, sablon):
             elif hc < ilk - 0.01:
                 return True
             simdi = time.time()
+            if (ayar["vurus_bekle_saldirida_sn"] and simdi - bas_vb > ayar["vurus_bekle_saldirida_sn"]
+                    and saldiri_altinda()):                 # baskalari vuruyor, secili hedefe isabet yok: bekleme, yanimdakine don
+                son_neden[0] = "vuruluyorum, isabet yok"
+                return False
             mh, kir = mini_harita(k)
             gecmis.append((simdi, mh, kir))
             eski = [g for g in gecmis if simdi - g[0] >= 1.0]
@@ -1187,7 +1193,7 @@ def calistir(ayar, sablon):
                 if fark < ayar["takilma_esik"]:
                     durgun_bas = durgun_bas or simdi
                     if simdi - durgun_bas > ayar["takilma_sn"]:
-                        if yana_kac and kacis < 1:
+                        if yana_kac and kacis < 1 and not (ayar["vurulurken_kacma"] and saldiri_altinda()):
                             kacis += 1
                             yuk_, gen_ = k.shape[:2]
                             kx, ky = gen_ // 2, int(yuk_ * 0.58)
