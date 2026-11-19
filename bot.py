@@ -208,6 +208,7 @@ VARSAYILAN = {
     "sadece_hedefler": [],        # doluysa yalniz adi bunlara tutan canavarlar kesilir (or. "Kotu Siyah Firtina Okcusu")
     "pot_satin_al": True,         # can potu bitince koydeki Saticidan al (20'lik kucuk iksir paketleri)
     "pot_yedek_20_paket": 5,      # 200'luk alinamazsa (para yetmez) yerine bu kadar 20'lik paket dene (0 = deneme)
+    "satici_ekranda_ara": True,   # satici ekrandaysa haritadan (NPC listesi) aramadan dogrudan ona git
     "pot_boy": "kucuk",           # kucuk / orta / buyuk iksir (sablon/dukkan_<renk>_<boy><paket>.png)
     "pot_paket": 200,             # dukkandaki paket boyu: 20 ya da 200 (sablon/dukkan_kirmizi200.png)
     "pot_al_kirmizi_paket": 5,    # kac paket kucuk kirmizi (her biri pot_paket adet)
@@ -3515,9 +3516,14 @@ def calistir(ayar, sablon):
             tikla(yer_[0], yer_[1])                                  # potu al (elde)
             time.sleep(0.25)
             tikla(gn_ // 2 + pot_yuva[a_], yk_ - 26)                  # yuvaya birak
-            time.sleep(0.35)
-            k_e = kare_al(h)
-            if yuva_dolu(k_e, a_):
+            konuldu_ = False
+            for _bk in (0.35, 0.5, 0.8):                             # simge gec beliriyor: erken 'olmadi' deyip geri tiklama
+                time.sleep(_bk)
+                k_e = kare_al(h)
+                if yuva_dolu(k_e, a_):
+                    konuldu_ = True
+                    break
+            if konuldu_:
                 if a_ == "kirmizi_pot":
                     pot_bitti[0] = 0.0
                 print(f"{time.strftime('%H:%M:%S')}  pot yuvasi: {a_} envanterden {1 if a_ == 'kirmizi_pot' else 2} numaraya kondu")
@@ -4172,7 +4178,10 @@ def calistir(ayar, sablon):
         """Saticiya yuru, adina tikla, acilan pencereyi kaydet ve oku; HICBIR SEY SATIN ALMA, Esc ile kapat."""
         su_an[0] = "satici_test"
         birak()
-        if not npc_ok_git("sat", "satici"):                    # zaten yanindaysak oyun 'varildi' demeyebilir:
+        _sy = satici_adla(kare_al(h)) if ayar["satici_ekranda_ara"] else None
+        if _sy:                                                 # satici zaten ekranda: haritadan aramaya gerek yok
+            print(f"   satici_test: satici ekranda ({_sy[0]},{_sy[1]}) - harita aramasi atlandi")
+        elif not npc_ok_git("sat", "satici"):                  # zaten yanindaysak oyun 'varildi' demeyebilir:
             print("   satici_test: varis mesaji yok - ekrandaki hedef okuna bakiliyor")   # ok gorunurse devam
         etiket = []
         geri_adim = False
