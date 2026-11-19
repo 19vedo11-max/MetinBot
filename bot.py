@@ -215,6 +215,9 @@ VARSAYILAN = {
     "pot_sira_kirmizi": ["kucuk", "orta", "buyuk"],   # yuva bosalinca envanterden bu sirayla kirmizi pot konur; hicbiri yoksa satin al
     "pot_sira_mavi": ["kucuk", "orta", "buyuk"],
     "pot_env_esik": 0.12,
+    "pot_yuva_iz": True,
+    "pot_yuva_tekrar_sn": 90,     # yuvaya konamazsa bu kadar sn sonra yeniden dene (eski 600)
+    "pot_yoksa_dalma": True,      # 1 (can potu) bos ve konamiyorsa kalabaliga dalma, temkinli (yalniz kolay yaratik)          # tani: pot yuvaya konurken adim adim ekran kaydet
     "pot_boy": "kucuk",           # kucuk / orta / buyuk iksir (sablon/dukkan_<renk>_<boy><paket>.png)
     "pot_paket": 200,             # dukkandaki paket boyu: 20 ya da 200 (sablon/dukkan_kirmizi200.png)
     "pot_al_kirmizi_paket": 5,    # kac paket kucuk kirmizi (her biri pot_paket adet)
@@ -3518,7 +3521,113 @@ def calistir(ayar, sablon):
     pot_alim = [0.0]    # son pot satin alma denemesi
 
     def pot_yuvasi_doldur(k):
-        """1/2 yuvasi bossa envanterden pot koyar. Bir sey yaptiysa True."""
+        """1/2 yuvasi bossa envanterden pot koyar. Bir sey yaptiysa True. Bu sirada Z/pot izlegi durur
+        (surukleme sirasinda basilan tus eldeki potu birakiyordu)."""
+        eski_ = durum.get("yazi")
+        try:
+            return _pot_yuvasi_doldur_ic(k)
+        finally:
+            durum["yazi"] = eski_
+
+    def pot_yuva_test(a_="kirmizi_pot"):
+        """Komut 'pot_yuva_test': envanterdeki potu 1 (ya da 2) yuvasina farkli fare yollariyla koymayi dener, ilk
+        tutan yolu ayar 'pot_yuva_yontem'e yazar. Her deneme sonrasi ekran goruntu/pot_test_<yontem>.png."""
+        import win32api
+        import win32con
+        su_an[0] = "pot yuvasi testi"
+        eski_y = durum.get("yazi")
+        durum["yazi"] = True
+        birak()
+        time.sleep(0.5)
+        k_ = kare_al(h)
+        yk_, gn_ = k_.shape[:2]
+        hx_, hy_ = gn_ // 2 + pot_yuva[a_], yk_ - 26
+
+        def env_bul():
+            k2_ = kare_al(h).copy()
+            k2_[-80:] = 0
+            renk_ = "kirmizi" if a_ == "kirmizi_pot" else "mavi"
+            for boy_ in ayar["pot_sira_" + renk_]:
+                sb_ = pot_env_sab.get((renk_, boy_))
+                if sb_ is not None:
+                    v_, _, y_, _ = cv2.minMaxLoc(cv2.matchTemplate(k2_, sb_, cv2.TM_SQDIFF_NORMED))
+                    if v_ <= ayar["pot_env_esik"]:
+                        return y_[0] + sb_.shape[1] // 2, y_[1] + sb_.shape[0] // 2
+            return None
+
+        def ekr(x, y):
+            return ox_son[0] + int(x), ox_son[1] + int(y)
+
+        def w32_tik(x, y, asagi=True, yukari=True):
+            win32api.SetCursorPos(ekr(x, y))
+            time.sleep(0.15)
+            if asagi:
+                win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0)
+            time.sleep(0.08)
+            if yukari:
+                win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0)
+
+        def y_hizli(p_):
+            tikla(*p_); time.sleep(0.3); tikla(hx_, hy_)
+
+        def y_yavas(p_):
+            yavas_tikla(*p_); time.sleep(0.4); yavas_tikla(hx_, hy_)
+
+        def y_w32_tik(p_):
+            w32_tik(*p_); time.sleep(0.4)
+            for i in range(1, 9):
+                win32api.SetCursorPos(ekr(p_[0] + (hx_ - p_[0]) * i / 8, p_[1] + (hy_ - p_[1]) * i / 8)); time.sleep(0.03)
+            time.sleep(0.2); w32_tik(hx_, hy_)
+
+        def y_w32_surukle(p_):
+            w32_tik(*p_, yukari=False); time.sleep(0.2)
+            for i in range(1, 13):
+                win32api.SetCursorPos(ekr(p_[0] + (hx_ - p_[0]) * i / 12, p_[1] + (hy_ - p_[1]) * i / 12)); time.sleep(0.03)
+            time.sleep(0.2); win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0)
+
+        def y_goreli(p_):                                        # goreli fare hareketi (DirectInput farkli okuyabilir)
+            yavas_tikla(*p_); time.sleep(0.3)
+            dx_, dy_ = (hx_ - p_[0]) / 10, (hy_ - p_[1]) / 10
+            for _ in range(10):
+                pydirectinput.moveRel(int(dx_), int(dy_), relative=True); time.sleep(0.04)
+            yavas_tikla(hx_, hy_)
+
+        yontemler = [("hizli", y_hizli), ("yavas", y_yavas), ("w32_tik", y_w32_tik),
+                     ("w32_surukle", y_w32_surukle), ("goreli", y_goreli)]
+        try:
+            if yuva_dolu(kare_al(h), a_):
+                print(f"{time.strftime('%H:%M:%S')}  pot_yuva_test: {a_} yuvasi zaten dolu - test icin bosalmasi gerekiyor")
+                return
+            pydirectinput.press(ayar["envanter_tusu"]); time.sleep(0.6)
+            if env_bul() is None:
+                pydirectinput.press(ayar["envanter_tusu"]); time.sleep(0.6)
+            for ad_y, f_y in yontemler:
+                p_ = env_bul()
+                if p_ is None:
+                    print(f"{time.strftime('%H:%M:%S')}  pot_yuva_test: envanterde pot bulunamadi - durdu")
+                    break
+                try:
+                    f_y(p_)
+                except Exception as e_y:
+                    print(f"   pot_yuva_test: {ad_y} hata: {e_y}")
+                pydirectinput.moveTo(*ekr(gn_ // 2, yk_ * 0.4))
+                time.sleep(0.8)
+                k3_ = kare_al(h)
+                Image.fromarray(k3_).save(os.path.join(KLASOR, "goruntu", f"pot_test_{ad_y}.png"))
+                tuttu_ = yuva_dolu(k3_, a_)
+                print(f"{time.strftime('%H:%M:%S')}  pot_yuva_test: yontem '{ad_y}' -> {'TUTTU' if tuttu_ else 'tutmadi'}")
+                if tuttu_:
+                    print(f"   pot_yuva_test: CALISAN YONTEM = {ad_y}")
+                    break
+                pydirectinput.press("esc"); time.sleep(0.3)      # elde kalan varsa birak
+                pydirectinput.press(ayar["envanter_tusu"]); time.sleep(0.5)
+                if env_bul() is None:
+                    pydirectinput.press(ayar["envanter_tusu"]); time.sleep(0.5)
+        finally:
+            pydirectinput.press(ayar["envanter_tusu"])
+            durum["yazi"] = eski_y
+
+    def _pot_yuvasi_doldur_ic(k):
         if (not ayar["pot_yuvasi_doldur"] or time.time() - pot_doldur_son[0] < 1.5 or not pot_sab
                 or time.time() - canli["baslangic"] < 15 or time.time() < pot_yasak[0]):
             return False
@@ -3534,7 +3643,9 @@ def calistir(ayar, sablon):
         for a_ in bos:
             pot_bos_say[a_] = 0
         su_an[0] = "pot yuvasi dolduruluyor"
+        durum["yazi"] = True                                     # Z/pot izlegi dursun
         birak()
+        time.sleep(0.3)
         acildi_ = False
         k_e = k
         def _env_ara(k_a, a_a):                                  # hizli cubuk (alt 80 px) disinda: yalniz envanter
@@ -3586,9 +3697,29 @@ def calistir(ayar, sablon):
                         print(f"{time.strftime('%H:%M:%S')}  MAVI POT BITTI - saticidan alinacak")
                     mavi_bitti[0] = time.time()
                 continue
-            tikla(yer_[0], yer_[1])                                  # potu al (elde)
+            def _iz(ad_iz):                                          # tani: adim adim ekran (goruntu/pot_adim_*.png)
+                if ayar["pot_yuva_iz"]:
+                    try:
+                        Image.fromarray(kare_al(h)).save(os.path.join(KLASOR, "goruntu", f"pot_adim_{ad_iz}.png"))
+                    except Exception:
+                        pass
+            _iz("0_once")
+            # gercek surukle-birak: potun ustunde bas, basili tutarak yuvaya tasi, orada birak (tikla-tikla tutmuyor)
+            hx_, hy_ = gn_ // 2 + pot_yuva[a_], yk_ - 26
+            pydirectinput.moveTo(ox_son[0] + int(yer_[0]), ox_son[1] + int(yer_[1]))
+            time.sleep(0.3)
+            pydirectinput.mouseDown()
+            time.sleep(0.2)
+            for _i in range(1, 9):
+                pydirectinput.moveTo(ox_son[0] + int(yer_[0] + (hx_ - yer_[0]) * _i / 8),
+                                     ox_son[1] + int(yer_[1] + (hy_ - yer_[1]) * _i / 8))
+                time.sleep(0.04)
+                if _i == 4:
+                    _iz("1_alindi")
             time.sleep(0.25)
-            tikla(gn_ // 2 + pot_yuva[a_], yk_ - 26)                  # yuvaya birak
+            pydirectinput.mouseUp()
+            time.sleep(0.1)
+            _iz("2_birakildi")
             pydirectinput.moveTo(ox_son[0] + gn_ // 2, ox_son[1] + int(yk_ * 0.4))   # imlec yuvayi ortmesin (yanlis 'olmadi')
             konuldu_ = False
             for _bk in (0.35, 0.5, 0.8):                             # simge gec beliriyor: erken 'olmadi' deyip geri tiklama
@@ -3605,15 +3736,17 @@ def calistir(ayar, sablon):
             else:
                 # olmadi: eldeki potu yerine geri birak. Elde yoksa bu tiklama potu ELE ALIR (sonra hicbir tiklama
                 # islemez - dirilme dugmesi dahil): birakinca yerinde mi bak, degilse bir kez daha tikla.
-                for _gb in range(2):
-                    tikla(yer_[0], yer_[1])
+                y2_ = _env_ara(kare_al(h), a_)
+                if not (y2_ and abs(y2_[0] - yer_[0]) < 20 and abs(y2_[1] - yer_[1]) < 20):   # pot yerinde yok: elde
+                    yavas_tikla(yer_[0], yer_[1])                    # tek tiklama (iki tiklama = cift tik = potu icer)
                     pydirectinput.moveTo(ox_son[0] + gn_ // 2, ox_son[1] + int(yk_ * 0.4))
-                    time.sleep(0.35)
-                    y2_ = _env_ara(kare_al(h), a_)
-                    if y2_ and abs(y2_[0] - yer_[0]) < 20 and abs(y2_[1] - yer_[1]) < 20:
-                        break
-                print(f"{time.strftime('%H:%M:%S')}  pot yuvasi: {a_} konamadi - geri birakildi; 10 dk denenmeyecek")
-                pot_yasak[0] = time.time() + 600
+                    time.sleep(0.3)
+                print(f"{time.strftime('%H:%M:%S')}  pot yuvasi: {a_} konamadi - geri birakildi; "
+                      f"{ayar['pot_yuva_tekrar_sn']} sn sonra yeniden")
+                pot_yasak[0] = time.time() + ayar["pot_yuva_tekrar_sn"]
+                if a_ == "kirmizi_pot" and ayar["pot_yoksa_dalma"]:   # can potu basilamiyor: kalabaliga dalma
+                    olum_sayac["dalma_yok_bitis"] = max(olum_sayac.get("dalma_yok_bitis", 0), time.time() + ayar["pot_yuva_tekrar_sn"] + 30)
+                    olum_sayac["temkin_bitis"] = max(olum_sayac["temkin_bitis"], time.time() + ayar["pot_yuva_tekrar_sn"] + 30)
         if acildi_:
             pydirectinput.press(ayar["envanter_tusu"])
             time.sleep(0.2)
@@ -4384,6 +4517,8 @@ def calistir(ayar, sablon):
                     istek["harita_kaydet"] = True
                 elif k_ == "envanter_foto":
                     istek["envanter_foto"] = True
+                elif k_ == "pot_yuva_test":
+                    istek["pot_yuva_test"] = True
                 elif k_ == "harita_buyuk_kaydet":
                     istek["harita_buyuk_kaydet"] = True
                 os.remove(yol_komut)
@@ -4897,6 +5032,13 @@ def calistir(ayar, sablon):
             if istek.get("harita_kaydet") and not tehdit:
                 istek.pop("harita_kaydet")
                 harita_kaydet()
+                continue
+            if istek.get("pot_yuva_test"):
+                istek.pop("pot_yuva_test")
+                try:
+                    pot_yuva_test()
+                except Exception as e_pt:
+                    print("pot_yuva_test hata:", e_pt)
                 continue
             if istek.get("envanter_foto") and not tehdit:        # tani: envanteri ac, kaydet, potlari ara, kapat
                 istek.pop("envanter_foto")
