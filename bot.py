@@ -162,7 +162,8 @@ VARSAYILAN = {
     "metin_kelimeleri": ["metin", "metni", "tasi", "metini"],  # metin tasi icin ust sinir
     "etiket_alti_piksel": 45,     # isim yazisinin kac piksel altina tiklansin
     "kamera_tusu": "e",           # hedef yokken kamerayi dondurur
-    "kamera_ters_tusu": "q",      # ters yone dondurme (yaratiklar soldaysa Q); bos = yalniz E
+    "kamera_ters_tusu": "q",
+    "kamera_hedef_varken_yok": True,   # ekranda yaratik etiketi varken kamera acisini duzeltme (slot sonrasi bekleme olmasin)      # ters yone dondurme (yaratiklar soldaysa Q); bos = yalniz E
     "kamera_egim_t_sn": 0.55,     # G ile tepeye dikip T'ye bu kadar basili tut (yatay aci); 0 = kameraya dokunma
     "kamera_egim_aralik_sn": 180,
     "kamera_uzak_tusu": "",       # bos: kameraya dokunma (F bu sunucuda kamerayi tepeye dikiyordu)      # kamerayi uzaklastirir (Metin2: R yakin, F uzak)
@@ -4635,7 +4636,9 @@ def calistir(ayar, sablon):
 
             # kamera egimi: duzenli olarak yatay aciya getir (G tepeye diker, T yataylastirir)
             if (ayar["kamera_egim_t_sn"] and time.time() - son_kamera_egim[0] > ayar["kamera_egim_aralik_sn"]
-                    and (sakin_mi(kare) or (not tehdit and not saldiri_altinda() and time.time() - son_savas[0] > 1.5))):
+                    and (sakin_mi(kare) or (not tehdit and not saldiri_altinda() and time.time() - son_savas[0] > 1.5))
+                    and not (ayar["kamera_hedef_varken_yok"] and kirmizi_etiketler(kare))):
+                # ekranda yaratik varken (sirada hedef var) kamerayla oyalanma: yalniz hedef ararken duzelt
                 # kalabalik bolgede tam sakin an az: dibimde yaratik yok ve vurulmuyorsam da duzelt
                 kamera_egim_ayarla()
                 continue
