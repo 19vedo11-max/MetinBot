@@ -170,6 +170,7 @@ VARSAYILAN = {
     "kamera_izlek_sn": 3.0,       # bu aralikla sirayla saga/sola kisa bakis
     "kamera_zoom_aralik_sn": 12,
     "kamera_uzak_kal": True,
+    "kamera_savasta_don": False,  # savas sirasinda da saga-sola bakis (kapali: grup erken bitiyordu)
     "bosta_bakis_sn": 3.5,        # bu kadar sn ne vurus ne yuruyus yoksa kamera uzaklasip etrafa doner (0 = kapali)
     "bosta_donus_sn": 0.5,
     "bosta_hareket_px": 0.8,      # bolge haritasinda son 2 sn'de bu kadar yer degisimi = yuruyor        # bosta bakista kameranin donus suresi (bir yon; sonraki seferde oteki)      # bosta/ararken/takilinca kamera uzakta kalir, hedef secilince yakina doner  # hedef aranirken en sik bu aralikla uzaklas-yakinlas
@@ -5006,8 +5007,10 @@ def calistir(ayar, sablon):
         zoom_uzak()
         zoom_yakin()
 
-    KAMERA_SERBEST = {"slot kesiyor", "savunma", "ana dongu (hedef ariyor)", "yuruyor (hedef ariyor)",
-                      "alan ici kisa yuruyus", "hedefe gidiyor", "vurus_bekle", "vuruluyor - vurani ariyor"}
+    KAMERA_SAVAS = {"slot kesiyor", "savunma", "hedefe gidiyor", "vurus_bekle", "vuruluyor - vurani ariyor"}
+    KAMERA_SERBEST = {"ana dongu (hedef ariyor)", "yuruyor (hedef ariyor)", "alan ici kisa yuruyus"} | (
+        KAMERA_SAVAS if _AYAR_REF.get("kamera_savasta_don") else set())
+    # savasta kamera donunce etiketler kayiyor, bot grubu bitti sanip slotu erken birakiyordu (22:26 sonrasi 0-3/grup)
     KAMERA_ZOOM = {"ana dongu (hedef ariyor)", "yuruyor (hedef ariyor)", "alan ici kisa yuruyus"}
     KAMERA_ZOOM_UZAK = KAMERA_ZOOM | {"kacin", "etrafa_bak"}          # bosta, ararken, takilinca: uzak kamera
     KAMERA_YAKIN = {"slot kesiyor", "savunma", "vurus_bekle", "vuruluyor - vurani ariyor"}
