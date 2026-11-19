@@ -168,6 +168,7 @@ VARSAYILAN = {
     "akilli_yan_kacis": True,     # takilinca iki yandan (sag/sol) yaratigi az olana kac (eski: hep ayni yana)
     "kacinilan_yaratiklar": ["boss", "patron", "lider", "reis", "kral"],   # adinda bunlar gecen yaratiga (ve yanindakilere) dalma
     "patron_atla_sn": 30,
+    "vurulurken_yerinde_sn": 1.5,  # vuruluyor ama etiket yokken en cok bu kadar yerinde vur, sonra kamerayi cevirip ara (eski ~4 sn)
     "bildirim": True,             # telefona bildirim (ntfy; konu .env NTFY_KONU): pot bitti, olum serisi, atilma, donma, seviye
     "donma_bekcisi": True,        # ana dongu donma_sn boyunca ekran okumazsa botu yeniden baslat (Bot-Baslat.bat acar)
     "donma_sn": 150,
@@ -5978,6 +5979,7 @@ def calistir(ayar, sablon):
             olduruldu, onceki_hc = 0, 0.0
             yaklasma = 0
             son_hasar = time.time()
+            yerinde_bas = [0.0]             # vurulup etiket goremeden yerinde vurmaya baslama ani
             slot_atla = []                  # bu slotta ulasilamayan/vurulamayan yaratiklar (zaman, x, y): 20 sn secilmez
             yolo_deneme = [0]               # bu slotta sekil modeliyle (etiketsiz) yaratiga gidis sayisi
             dib_gecis = [0.0]               # dibimdeki saldirgana son gecis ani
@@ -6045,12 +6047,25 @@ def calistir(ayar, sablon):
                                 slot_atla.append((time.time(), yx_, yy_))   # ulasilsa da ulasilamasa da ayni noktaya bir daha degil
                     if not yakin:
                         bos += 1
-                        if vuruluyor and bos < 25:  # vuruluyor ama etiket gorunmuyor: yerinde vurmaya devam
+                        if vuruluyor and bos == 1:
+                            yerinde_bas[0] = time.time()
+                        if vuruluyor and time.time() - yerinde_bas[0] < ayar["vurulurken_yerinde_sn"]:
+                            # vuruluyor ama etiket yok: kisa sure yerinde vur (vuran dibimdeyse isabet), sonra kamerayi
+                            # cevirip vurani ara - uzun sure havaya kilic sallama
                             if not saldiri_basili:
-                                saldiri_bas()
+                                pydirectinput.keyDown(ayar["saldiri_tusu"])
                                 saldiri_basili = True
                             time.sleep(0.12)
                             continue
+                        if vuruluyor and saldiri_basili and bos % 3 == 0:
+                            birak()
+                            saldiri_basili = False
+                            tus_v = kamera_yonu(k2)
+                            pydirectinput.keyDown(tus_v)
+                            time.sleep(ayar["kamera_durt_sn"] * 2)
+                            pydirectinput.keyUp(tus_v)
+                            if bos < 25:
+                                continue
                         if bos >= 2 and (tas or bos >= 6):
                             break                   # grup bitti (ya da ~2 sn aranip bulunamadi)
                         time.sleep(0.15)
