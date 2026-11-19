@@ -165,6 +165,8 @@ VARSAYILAN = {
     "kamera_ters_tusu": "q",
     "kamera_durt_sn": 0.15,       # slot icinde yaratik kaybolunca kamerayi bu kadar sn dondur (yarim aci; eski 0.3)
     "yururken_kamera": True,
+    "kacinilan_yaratiklar": ["boss", "patron", "lider", "reis", "kral"],   # adinda bunlar gecen yaratiga (ve yanindakilere) dalma
+    "patron_atla_sn": 30,
     "vurus_bekle_saldirida_sn": 3.0,  # vurulurken secili hedefe bu kadar sn isabet yoksa beklemeyi kes (0 = kapali; eski: 10-25 sn bekliyordu)
     "iksir_bekle_en_cok_sn": 600,  # etkisi suren iksir icin envanteri en gec bu kadar sn'de bir ac (eski 300; her acis 4-9 sn)
     "kamera_ana_dongu_kat": 3,    # yururken duzeltme acikken slot sonu (duran) duzeltme bu kat seyrek
@@ -2971,6 +2973,8 @@ def calistir(ayar, sablon):
     son_slot_bitis = [0.0]        # slot arasi olcumu
     slot_aralari = []
     kacmama_son = []              # 'vuruluyorum, kacmiyor' anlari: tekrar ederse kacisa izin
+    patron_yer = []               # (zaman, x, y): kacinilan (patron) adli etiketler
+    patron_log = [0.0]
     yon_atla = []                 # takilinan yonler (zaman, aci, uzaklik): dagin ardindakilere de kosma
     alan_don = [False]
     dusuk_gezin, dusuk_izin = [], [0.0]
@@ -5152,6 +5156,9 @@ def calistir(ayar, sablon):
                 else:
                     sirali.append(((1, int(uzak // ayar["yakinlik_halkasi_piksel"]), -yog(t), -sev, uzak), t))
             yaratik = [t for _, t in sorted(sirali, key=lambda s: s[0])]
+            if patron_yer:                                        # patron (kacinilan ad) etiketinin yanindakileri secme
+                patron_yer[:] = [p_ for p_ in patron_yer if time.time() - p_[0] < ayar["patron_atla_sn"]]
+                yaratik = [t for t in yaratik if not any(math.hypot(t[0] - px_, t[1] - py_) < 110 for _, px_, py_ in patron_yer)]
             if yon_atla and ayar["yon_kara_liste"]:                # takildigim yon (dag): o yondeki, oradan uzak hedefleri atla
                 def _yonde(t):
                     a_ = math.atan2(t[1] - karakter[1], t[0] - karakter[0])
@@ -5203,7 +5210,8 @@ def calistir(ayar, sablon):
             # gorevin istedigi yaratik ekrandaysa (adi okunur) slot sartina bakilmadan en basa
             aranan_adlar = (list(ayar["aranan_yaratiklar"]) + (aranan_durum if ayar["aranan_oncelik"] else [])
                             + (av_aranan if ayar["av_gorevi"] else []) + esya_hedef)
-            if aranan_adlar and not tehdit and time.time() - son_aranan_tarama > ayar["aranan_tarama_sn"]:
+            kacinilan_ = [oku.sade(a_) for a_ in ayar["kacinilan_yaratiklar"]]
+            if (aranan_adlar or kacinilan_) and not tehdit and time.time() - son_aranan_tarama > ayar["aranan_tarama_sn"]:
                 tum_k = kirmizi_etiketler(kare)
                 if tum_k:
                     son_aranan_tarama = time.time()
@@ -5213,6 +5221,15 @@ def calistir(ayar, sablon):
                         if len(ad_q.replace(" ", "")) >= 5:
                             ad_gorulen.append((time.time(), ad_q))
                             del ad_gorulen[:-60]
+                        if kacinilan_ and len(ad_q) >= 2 and any(k_ in ad_q or oku.benzer(ad_q, k_, 0.85) for k_ in kacinilan_):
+                            t_p = min(tum_k, key=lambda t: abs(t[1] - t[3] / 2 - q["y"]) * 4 + abs(t[0] - q["x"]))
+                            if abs(t_p[0] - q["x"]) < 200:
+                                patron_yer.append((time.time(), t_p[0], t_p[1]))
+                                del patron_yer[:-10]
+                                if time.time() - patron_log[0] > 20:
+                                    patron_log[0] = time.time()
+                                    print(f"{time.strftime('%H:%M:%S')}  patron goruldu: '{ad_q}' - ona ve yanindakilere dalinmiyor")
+                            continue
                         if not any(oku.benzer(q["yazi"], a_, 0.85) for a_ in aranan_adlar):
                             continue
                         if any(oku.benzer(q["yazi"], a_, 0.85) for a_ in av_aranan + esya_hedef):
