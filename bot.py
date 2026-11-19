@@ -6542,7 +6542,7 @@ def _disk_temizle():
         if os.path.isdir(rd_):
             alt_ = sorted((os.path.join(rd_, x) for x in os.listdir(rd_)), key=os.path.getmtime)
             for x in alt_[:-2]:
-                if os.path.isdir(x) and "gece" not in os.path.basename(x):
+                if os.path.isdir(x) and not any(k_ in os.path.basename(x) for k_ in ("gece", "yaratik")):  # yaratik = gece egitiminin temel agirligi
                     shutil.rmtree(x, ignore_errors=True)
         top_, kul_, bos_ = shutil.disk_usage(KLASOR)
         if kul_ / top_ > 0.90:

@@ -228,13 +228,16 @@ def calis():
     with open(yaml_yeni, "w", encoding="utf-8") as f:
         f.write(f"path: {SET6}\ntrain: images/train\nval: {yeni_liste}\nnames:\n"
                 + "".join(f"  {j}: {n}\n" for j, n in enumerate(Y.SINIFLAR6)))
-    eski_tum = map50(onceki, yaml_) if onceki != "yolo11n.pt" else 0.0
+    kullanilan = os.path.join(KLASOR, "model", "yaratik.onnx")           # temel .pt yoksa botun kullandigi modelle kiyasla
+    eski_tum = map50(onceki if onceki != "yolo11n.pt" else kullanilan, yaml_) if (onceki != "yolo11n.pt" or os.path.exists(kullanilan)) else 0.0
     yeni_tum = map50(yeni_m, yaml_)
     yeni_yeni = map50(yeni_m, yaml_yeni)
     if yeni_tum >= eski_tum - 0.01:
-        if os.path.exists(onceki):
-            shutil.copy(onceki, os.path.join(KLASOR, "runs", "yaratik", "weights", f"best_{dt.date.today():%Y%m%d}_once.pt"))
         os.makedirs(os.path.join(KLASOR, "runs", "yaratik", "weights"), exist_ok=True)
+        if onceki != "yolo11n.pt" and os.path.exists(onceki):
+            shutil.copy(onceki, os.path.join(KLASOR, "runs", "yaratik", "weights", f"best_{dt.date.today():%Y%m%d}_once.pt"))
+        if os.path.exists(kullanilan):                                      # bottaki onnx yedegi
+            shutil.copy(kullanilan, os.path.join(KLASOR, "model", f"yaratik_{dt.date.today():%Y%m%d}_once.onnx"))
         hedef_pt = os.path.join(KLASOR, "runs", "yaratik", "weights", "best.pt")
         shutil.copy(yeni_m, hedef_pt)
         yol = YOLO(hedef_pt).export(format="onnx", imgsz=960, dynamic=False)
