@@ -168,9 +168,10 @@ VARSAYILAN = {
     "yururken_kamera": True,
     "kamera_izlegi": True,        # kamera hareketleri ayri izlekte, savas/yuruyusle AYNI ANDA (tiklama aninda bekler)
     "kamera_izlek_sn": 3.0,       # bu aralikla sirayla saga/sola kisa bakis
-    "kamera_zoom_aralik_sn": 12,  # hedef aranirken en sik bu aralikla uzaklas-yakinlas
+    "kamera_zoom_aralik_sn": 12,
+    "kamera_uzak_kal": True,      # bosta/ararken/takilinca kamera uzakta kalir, hedef secilince yakina doner  # hedef aranirken en sik bu aralikla uzaklas-yakinlas
     "yururken_bakis_sn": 3.0,     # yururken bu aralikla sirayla saga/sola kisa bakis (0 = kapali)
-    "kamera_zoom_tara_sn": 0.35,  # hedef ararken etrafa bakmadan once bu kadar uzaklas, sonra ayni sure yakinlas (0 = kapali)
+    "kamera_zoom_tara_sn": 0.5,  # hedef ararken etrafa bakmadan once bu kadar uzaklas, sonra ayni sure yakinlas (0 = kapali)
     "zoom_uzak_tusu": "f",
     "zoom_yakin_tusu": "r",
     "akilli_yan_kacis": True,     # takilinca iki yandan (sag/sol) yaratigi az olana kac (eski: hep ayni yana)
@@ -1303,6 +1304,7 @@ def calistir(ayar, sablon):
         """Secili hedefe ilk vurus isabet edene (cani dusene) ya da hedef olene kadar bekler.
         Mini harita 1 sn boyunca kaymiyorsa karakter takilmistir (agac, ev, slot): once yana kacip
         hedefe yeniden tiklar, yine takilirsa False doner."""
+        zoom_yakin()                                     # hedef secildi: yakina don (secim kalir, menzil dogru olculur)
         ilk, bit = None, time.time() + sure_sn
         bas_vb = time.time()
         gecmis, durgun_bas, kacis = [], None, 0
@@ -1437,6 +1439,7 @@ def calistir(ayar, sablon):
         """Saldiri tusunu YALNIZ secili hedef menzile girince bas (uzaktayken basili tutmak karakteri durdurup
         havaya kilic sallatiyor). Hedefe tiklanmis olmali: karakter yururken secim halkasinin uzakligina bakar;
         halka yoksa / sure dolarsa yine basar (eski davranis)."""
+        zoom_yakin()                                     # uzak kamerada piksel mesafe kucuk gorunur: once yakina don
         if ayar["menzil_kapisi"]:
             bit_ = time.time() + (en_cok_sn if en_cok_sn is not None else ayar["menzil_bekle_sn"])
             while time.time() < bit_ and durum["calis"] and not durum["duraklat"]:
@@ -4962,18 +4965,45 @@ def calistir(ayar, sablon):
 
     threading.Thread(target=_uzaktan_dongu, daemon=True).start()
 
+    kamera_z = {"uzak": False, "t": 0.0}
+
+    def zoom_uzak():
+        """Kamerayi uzaklastir (bir kez): genis alan gorulsun. Zaten uzaktaysa bir sey yapma."""
+        if not ayar["kamera_uzak_kal"] or kamera_z["uzak"]:
+            return
+        with tik_kilit:
+            pydirectinput.keyDown(ayar["zoom_uzak_tusu"])
+            time.sleep(ayar["kamera_zoom_tara_sn"])
+            pydirectinput.keyUp(ayar["zoom_uzak_tusu"])
+        kamera_z["uzak"], kamera_z["t"] = True, time.time()
+
+    def zoom_yakin():
+        """Uzaklastirilmissa ayni sure yakinlas (vurma mesafesi piksel olcegi geri gelsin)."""
+        if not kamera_z["uzak"]:
+            return
+        with tik_kilit:
+            pydirectinput.keyDown(ayar["zoom_yakin_tusu"])
+            time.sleep(ayar["kamera_zoom_tara_sn"])
+            pydirectinput.keyUp(ayar["zoom_yakin_tusu"])
+        kamera_z["uzak"] = False
+
     KAMERA_SERBEST = {"slot kesiyor", "savunma", "ana dongu (hedef ariyor)", "yuruyor (hedef ariyor)",
                       "alan ici kisa yuruyus", "hedefe gidiyor", "vurus_bekle", "vuruluyor - vurani ariyor"}
     KAMERA_ZOOM = {"ana dongu (hedef ariyor)", "yuruyor (hedef ariyor)", "alan ici kisa yuruyus"}
+    KAMERA_ZOOM_UZAK = KAMERA_ZOOM | {"kacin", "etrafa_bak"}          # bosta, ararken, takilinca: uzak kamera
+    KAMERA_YAKIN = {"slot kesiyor", "savunma", "vurus_bekle", "vuruluyor - vurani ariyor"}
 
     def _kamera_izlegi():
         """Ana isle AYNI ANDA calisir: belirli aralikla sirayla saga/sola kisa bakis; hedef aranirken uzaklasip
         yakinlasma. Pencere/menu islerinde (envanter, satici, harita, olum...) hic dokunmaz; tiklama aninda bekler."""
         yon_ = [ayar["kamera_tusu"]]
-        son_z = 0.0
+        son_bakis = 0.0
         while durum["calis"]:
-            time.sleep(max(0.5, ayar["kamera_izlek_sn"]))
+            time.sleep(0.3)
             try:
+                if time.time() - son_bakis < max(0.5, ayar["kamera_izlek_sn"]):
+                    raise StopIteration                  # bakis zamani degil: yalniz zoom durumuna bak
+                son_bakis = time.time()
                 if (not ayar["kamera_izlegi"] or durum["duraklat"] or durum.get("yazi")
                         or win32gui.GetForegroundWindow() != h or su_an[0] not in KAMERA_SERBEST or olum_pencere["acik"]):
                     continue
@@ -4984,16 +5014,14 @@ def calistir(ayar, sablon):
                     pydirectinput.keyDown(yon_[0])
                     time.sleep(ayar["kamera_durt_sn"])
                     pydirectinput.keyUp(yon_[0])
-                    if (ayar["kamera_zoom_tara_sn"] and su_an[0] in KAMERA_ZOOM and not saldiri_altinda()
-                            and time.time() - son_z > ayar["kamera_zoom_aralik_sn"]):
-                        son_z = time.time()
-                        pydirectinput.keyDown(ayar["zoom_uzak_tusu"])
-                        time.sleep(ayar["kamera_zoom_tara_sn"])
-                        pydirectinput.keyUp(ayar["zoom_uzak_tusu"])
-                        time.sleep(0.6)                  # uzaktan bir bakis
-                        pydirectinput.keyDown(ayar["zoom_yakin_tusu"])
-                        time.sleep(ayar["kamera_zoom_tara_sn"])
-                        pydirectinput.keyUp(ayar["zoom_yakin_tusu"])
+            except (Exception, StopIteration):
+                pass
+            try:                                          # zoom durumu (kilit disinda: zoom_* kendi kilidini alir)
+                if ayar["kamera_uzak_kal"] and ayar["kamera_zoom_tara_sn"]:
+                    if su_an[0] in KAMERA_ZOOM_UZAK and not saldiri_altinda():
+                        zoom_uzak()
+                    elif su_an[0] in KAMERA_YAKIN and kamera_z["uzak"]:
+                        zoom_yakin()
             except Exception:
                 pass
 
@@ -6006,6 +6034,9 @@ def calistir(ayar, sablon):
                                     key=lambda t: dunya_uzak(t[0], t[1] + 45, karakter[0], karakter[1],
                                                              ayar["derinlik_ufuk"], ayar["derinlik_carpan"]))[:3]
                 if yakin_:
+                    if kamera_z["uzak"]:                 # savunmada yakin kamera (konumlar yeniden okunur)
+                        zoom_yakin()
+                        continue
                     if su_an[0] != "savunma":
                         print(f"{time.strftime('%H:%M:%S')}  hasar aliyorum - yanimdaki {len(yakin_)} yaratiga donuluyor")
                     su_an[0] = "savunma"
