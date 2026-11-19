@@ -37,7 +37,7 @@ AYAR_IZINLI = {
     "kare_paylas_klasoru", "kare_paylas_adi", "kare_paylas_gunluk",
     "profil", "alan_kullan", "av_gorevi", "gorev_parsomen", "aranan_oncelik", "npc_gorevleri",
     "dusuk_seviye_kesme", "sadece_slot", "esyaya_tikla", "olunce_yeniden_basla", "yeniden_baglan",
-    "beceri_puani_dagit", "pot_yuvasi_doldur", "metin_kes", "pot_satin_al", "pot_al_kirmizi_paket", "pot_al_mavi_paket", "pot_boy", "pot_paket",
+    "beceri_puani_dagit", "pot_yuvasi_doldur", "metin_kes", "pot_satin_al", "pot_al_kirmizi_paket", "pot_al_mavi_paket", "pot_boy", "pot_paket", "pot_sira_kirmizi", "pot_sira_mavi",
     "can_esigi", "mana_esigi", "seviye_ust_fark", "seviye_alt_fark", "slot_en_az", "savunma_can_esigi",
     "kasilma_alani", "toplanacak_grup", "statu", "esya_avi", "sadece_hedefler",
     "sinif", "beceri_grubu", "egitmen_anahtar", "sureli_tuslar", "saldiri_becerileri", "hamle_tusu", "saldiri_tusu",

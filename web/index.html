@@ -212,6 +212,7 @@ dialog .satir{padding:6px 0}
   .pen.hep .ekran{flex:1 1 0;min-height:0;object-fit:contain;height:0}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.sira{display:flex;gap:4px;flex:1;min-width:0;justify-content:flex-end}.sira select{flex:1;min-width:0;max-width:7.5rem;font-size:.82rem;padding:2px 4px}
 </style>
 </head>
 <body>
@@ -269,6 +270,9 @@ dialog .satir{padding:6px 0}
         <div class="ag ic" id="ag_pot">
           <div id="anPot"></div>
           <div class="alt-ayrac" id="kPot1"></div>
+          <p class="ozet" style="margin:.4rem 0 .1rem">Hızlı çubuktaki pot bitince envanterden bu sırayla konur; hiçbiri kalmayınca satıcıya gidilir.</p>
+          <div class="satir"><label>Kırmızı sırası</label><span class="sira" id="siraKirmizi"></span></div>
+          <div class="satir"><label>Mavi sırası</label><span class="sira" id="siraMavi"></span></div>
           <p class="ozet" style="margin:.4rem 0 .1rem" title="Kırmızı ya da mavi, hangisi önce biterse satıcıdan ikisinden de bu boy ve paketle alınır.">Satıcıdan alırken: kırmızı ya da mavi hangisi önce biterse ikisinden de bu boy ve paketle alınır.</p>
           <div class="satir"><label for="potBoy">Boy</label><select id="potBoy"><option value="kucuk">Küçük</option><option value="orta">Orta</option><option value="buyuk">Büyük</option></select></div>
           <div class="satir"><label for="potPaket">Paket</label><select id="potPaket"><option value="20">20'lik</option><option value="200">200'lük</option></select></div>
@@ -458,6 +462,7 @@ function ciz(){
     $("#yanNot").textContent=hepsi?"“Önce görevler” seçiliyken dördü de açık sayılır.":"Kasılırken bunlardan hangilerini de yapsın:";
     $("#statu").value=a.statu==null?"str":a.statu;
     $("#potBoy").value=a.pot_boy||"kucuk"; $("#potPaket").value=String(a.pot_paket||200);
+    siraGoster("siraKirmizi",a.pot_sira_kirmizi); siraGoster("siraMavi",a.pot_sira_mavi);
     KAYDIRLAR.forEach(([k,,,,,f])=>{const i=$("#r_"+k); if(i&&a[k]!=null){i.value=a[k];$("#v_"+k).textContent=f(+a[k],c.seviye)}});
     $("#alanKullan").checked=!!a.alan_kullan;
   }
@@ -497,7 +502,7 @@ function accKur(){
   const yaz=v=>{try{localStorage.setItem(AKS,v)}catch(e){}};
   const hepsi=[...document.querySelectorAll(".acc")], sol=hepsi.filter(x=>x.dataset.g==="sol");
   const ayar=(el,ac)=>{el.classList.toggle("acik",ac);el.querySelector(".ah").setAttribute("aria-expanded",ac?"true":"false")};
-  let o=oku(); if(o&&!sol.some(x=>x.dataset.k===o))o="mod";
+  let o=(location.hash.slice(1))||oku(); if(o&&!sol.some(x=>x.dataset.k===o))o="mod";
   sol.forEach(x=>ayar(x,x.dataset.k===o));
   hepsi.forEach(el=>el.querySelector(".ah").addEventListener("click",()=>{
     if(el.dataset.g==="sol"){const ac=!el.classList.contains("acik");sol.forEach(x=>ayar(x,x===el&&ac));yaz(ac?el.dataset.k:"")}
@@ -512,6 +517,7 @@ function kur(){
   $("#statu").innerHTML=STATULER.map(([k,e])=>`<option value="${k}">${e}</option>`).join("");
   $("#statu").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({statu:e.target.value})});
   $("#potBoy").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({pot_boy:e.target.value})});
+  siraKur("siraKirmizi","pot_sira_kirmizi"); siraKur("siraMavi","pot_sira_mavi");
   $("#potPaket").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({pot_paket:+e.target.value})});
   $("#topDugme").onclick=topla; $("#esyaDugme").onclick=esyaPenceresi; $("#beceriDugme").onclick=beceriPenceresi; $("#kpKaydet").onclick=()=>ayarYaz({kare_paylas_klasoru:$("#kpKlasor").value.trim(),kare_paylas_adi:$("#kpAd").value.trim(),kare_paylas_gunluk:Math.max(0,parseInt($("#kpSayi").value)||0)}); $("#hedefDugme").onclick=canavarPenceresi;
   const kd=l=>l.map(k=>KAYDIRLAR.find(x=>x[0]===k)).map(([k,e,mn,mx,ad])=>`<div class="kaydir"><div><span>${e}</span><b id="v_${k}"></b></div><input type="range" id="r_${k}" min="${mn}" max="${mx}" step="${ad}" aria-label="${e}"></div>`).join("");
@@ -682,6 +688,22 @@ async function yenile(){
 }
 function ekranYenile(){$("#ekran").src=api("/api/ekran?t="+Date.now())}
 accKur();yenile();setInterval(yenile,2500);ekranYenile();setInterval(ekranYenile,20000);
+
+const BOYLAR=[["kucuk","Küçük"],["orta","Orta"],["buyuk","Büyük"],["","—"]];
+function siraKur(id,anahtar){
+  const k=document.getElementById(id); if(!k)return;
+  k.innerHTML=[0,1,2].map(i=>`<select aria-label="${i+1}. sıra" data-i="${i}">${BOYLAR.map(([v,e])=>`<option value="${v}">${i+1}. ${e}</option>`).join("")}</select>`).join(" ");
+  k.querySelectorAll("select").forEach(s=>s.addEventListener("change",()=>{
+    dokunuldu=Date.now();
+    const l=[...k.querySelectorAll("select")].map(x=>x.value).filter((v,j,a)=>v&&a.indexOf(v)===j);
+    ayarYaz({[anahtar]:l});
+  }));
+}
+function siraGoster(id,l){
+  const k=document.getElementById(id); if(!k)return;
+  l=Array.isArray(l)&&l.length?l:["kucuk","orta","buyuk"];
+  k.querySelectorAll("select").forEach((s,i)=>{if(document.activeElement!==s)s.value=l[i]||""});
+}
 </script>
 </body>
 </html>

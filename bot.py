@@ -211,6 +211,9 @@ VARSAYILAN = {
     "pot_satin_al": True,         # can potu bitince koydeki Saticidan al (20'lik kucuk iksir paketleri)
     "pot_yedek_20_paket": 5,      # 200'luk alinamazsa (para yetmez) yerine bu kadar 20'lik paket dene (0 = deneme)
     "satici_ekranda_ara": True,   # satici ekrandaysa haritadan (NPC listesi) aramadan dogrudan ona git
+    "pot_sira_kirmizi": ["kucuk", "orta", "buyuk"],   # yuva bosalinca envanterden bu sirayla kirmizi pot konur; hicbiri yoksa satin al
+    "pot_sira_mavi": ["kucuk", "orta", "buyuk"],
+    "pot_env_esik": 0.12,
     "pot_boy": "kucuk",           # kucuk / orta / buyuk iksir (sablon/dukkan_<renk>_<boy><paket>.png)
     "pot_paket": 200,             # dukkandaki paket boyu: 20 ya da 200 (sablon/dukkan_kirmizi200.png)
     "pot_al_kirmizi_paket": 5,    # kac paket kucuk kirmizi (her biri pot_paket adet)
@@ -3454,6 +3457,13 @@ def calistir(ayar, sablon):
             time.sleep(0.3)
         pencereleri_kapat()
 
+    pot_env_sab = {}                                    # envanterde boy boy pot simgeleri (dukkan simgesinden kesildi)
+    pot_son_boy = {}
+    for _r in ("kirmizi", "mavi"):
+        for _b in ("kucuk", "orta", "buyuk"):
+            _y = os.path.join(KLASOR, "sablon", f"env_{_r}_{_b}.png")
+            if os.path.exists(_y):
+                pot_env_sab[(_r, _b)] = cv2.cvtColor(cv2.imread(_y), cv2.COLOR_BGR2RGB)
     pot_sab = {}
     for ad_p in ("kirmizi_pot", "mavi_pot"):
         yol_p = os.path.join(KLASOR, "sablon", ad_p + ".png")
@@ -3497,9 +3507,21 @@ def calistir(ayar, sablon):
         acildi_ = False
         k_e = k
         def _env_ara(k_a, a_a):                                  # hizli cubuk (alt 80 px) disinda: yalniz envanter
+            """Panelde secilen siraya gore (kucuk -> orta -> buyuk) ilk bulunan pot: (x, y) ya da None."""
             k_a = k_a.copy()
             k_a[-80:] = 0
-            return esya_bul(k_a, pot_sab[a_a])
+            renk_ = "kirmizi" if a_a == "kirmizi_pot" else "mavi"
+            for boy_ in ayar["pot_sira_" + renk_]:
+                sb_ = pot_env_sab.get((renk_, boy_))
+                if sb_ is None:
+                    continue
+                v_, _, yer_e, _ = cv2.minMaxLoc(cv2.matchTemplate(k_a, sb_, cv2.TM_SQDIFF_NORMED))
+                if v_ <= ayar["pot_env_esik"]:
+                    if pot_son_boy.get(a_a) != boy_:
+                        pot_son_boy[a_a] = boy_
+                        print(f"{time.strftime('%H:%M:%S')}  pot yuvasi: {renk_} icin envanterde '{boy_}' kullaniliyor")
+                    return yer_e[0] + sb_.shape[1] // 2, yer_e[1] + sb_.shape[0] // 2
+            return None
         if any(_env_ara(k_e, a_) is None for a_ in bos):
             pydirectinput.press(ayar["envanter_tusu"])
             acildi_ = True
