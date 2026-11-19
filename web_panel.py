@@ -123,7 +123,8 @@ def durum():
     d = kumanda.canli()
     a = dict(_varsayilan())
     a.update(kumanda.ayar_oku())
-    haritalar = sorted(f[:-4] for f in os.listdir(os.path.join(KLASOR, "goruntu", "haritalar")) if f.endswith(".png")) \
+    haritalar = sorted(f[:-4] for f in os.listdir(os.path.join(KLASOR, "goruntu", "haritalar"))
+                       if f.endswith(".png") and not f.startswith("mozaik_")) \
         if os.path.isdir(os.path.join(KLASOR, "goruntu", "haritalar")) else []
     try:
         panel_surum = os.path.getmtime(os.path.join(WEB, "index.html"))

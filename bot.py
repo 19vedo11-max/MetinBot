@@ -229,6 +229,9 @@ VARSAYILAN = {
     "pot_sira_kirmizi": ["kucuk", "orta", "buyuk"],   # yuva bosalinca envanterden bu sirayla kirmizi pot konur; hicbiri yoksa satin al
     "pot_sira_mavi": ["kucuk", "orta", "buyuk"],
     "pot_env_esik": 0.12,
+    "sablon_yukseklik": 1111,     # dukkan sablonlarinin kesildigi oyun penceresi yuksekligi (buyuk pencerede dikey olceklenir)
+    "dukkan_esik": 0.09,
+    "pot_yok_bekle_sn": 120,      # envanterde pot yoksa yuva doldurmayi bu kadar sn deneme (envanteri tekrar tekrar acmasin)
     "pot_yuva_iz": False,
     "pot_yuva_tekrar_sn": 90,     # yuvaya konamazsa bu kadar sn sonra yeniden dene (eski 600)
     "pot_yoksa_dalma": True,      # 1 (can potu) bos ve konamiyorsa kalabaliga dalma, temkinli (yalniz kolay yaratik)          # tani: pot yuvaya konurken adim adim ekran kaydet
@@ -3941,6 +3944,7 @@ def calistir(ayar, sablon):
                     if time.time() - mavi_bitti[0] > 300:
                         print(f"{time.strftime('%H:%M:%S')}  MAVI POT BITTI - saticidan alinacak")
                     mavi_bitti[0] = time.time()
+                pot_yasak[0] = max(pot_yasak[0], time.time() + ayar["pot_yok_bekle_sn"])   # envanter yok: her 10 sn'de acip bakma
                 continue
             def _iz(ad_iz):                                          # tani: adim adim ekran (goruntu/pot_adim_*.png)
                 if ayar["pot_yuva_iz"]:
@@ -4226,7 +4230,7 @@ def calistir(ayar, sablon):
         """Genel harita resmini kayitli haritalarla karsilastirir; en benzer kaydin adi (ya da None)."""
         en = None
         for f_ in os.listdir(harita_klasor):
-            if not f_.endswith(".png"):
+            if not f_.endswith(".png") or f_.startswith("mozaik_"):     # bolge ogrenme mozaigi harita degil
                 continue
             r_ = np.array(Image.open(os.path.join(harita_klasor, f_)).convert("RGB"))
             if r_.shape != resim.shape:
@@ -4525,13 +4529,36 @@ def calistir(ayar, sablon):
             except Exception:
                 return None
 
+        def _olcekli(sb_o):
+            """Sablonlar 1111 px yukseklikte kesildi; pencere buyuyunce oyun goruntuyu dikeyde uzatiyor (1171'de %5.4)."""
+            sy_ = yk_ / ayar["sablon_yukseklik"]
+            if abs(sy_ - 1.0) < 0.01:
+                return sb_o
+            return cv2.resize(sb_o, (sb_o.shape[1], max(4, round(sb_o.shape[0] * sy_))), interpolation=cv2.INTER_LINEAR)
+
         def tek_al(ad_, sb_):
             """Tek paket: True alindi (Yang azaldi), False alinmadi, None dukkanda yok."""
             k_ = kare_al(h)
             kes_ = k_[bolge_[1]:bolge_[3], bolge_[0]:bolge_[2]]
+            sb_ = _olcekli(sb_)
             fark_, _, yer_, _ = cv2.minMaxLoc(cv2.matchTemplate(kes_, sb_, cv2.TM_SQDIFF_NORMED))
-            if fark_ > 0.06:                                    # renkli eslesme: 20'lik ile 200'luk ~0.13 ayrisiyor
-                print(f"   pot al: {ad_} dukkanda bulunamadi (fark {fark_:.3f})")
+            kardes_ = ad_[:-1] if ad_.endswith("200") else ad_ + "0"     # 20'lik <-> 200'luk: ayni yerde kardes daha iyi uyuyorsa yanlis hucre
+            ks_ = cv2.imread(os.path.join(KLASOR, "sablon", f"dukkan_{kardes_}.png"))
+            if ks_ is not None and fark_ <= ayar["dukkan_esik"]:
+                ks_ = _olcekli(cv2.cvtColor(ks_, cv2.COLOR_BGR2RGB))
+                x_k, y_k = yer_
+                hucre_ = kes_[max(0, y_k - 3):y_k + sb_.shape[0] + 3, max(0, x_k - 3):x_k + sb_.shape[1] + 3]
+                if hucre_.shape[0] >= ks_.shape[0] and hucre_.shape[1] >= ks_.shape[1]:
+                    fk_ = cv2.minMaxLoc(cv2.matchTemplate(hucre_, ks_, cv2.TM_SQDIFF_NORMED))[0]
+                    if fk_ < fark_:
+                        print(f"   pot al: {ad_} yerinde {kardes_} daha iyi uyuyor ({fk_:.3f} < {fark_:.3f}) - yanlis urun, alinmadi")
+                        fark_ = 9.0
+            if fark_ > ayar["dukkan_esik"]:                      # renkli eslesme: 20'lik ile 200'luk ayrisiyor
+                print(f"   pot al: {ad_} dukkanda bulunamadi (fark {fark_:.3f}) - goruntu/dukkan_bulunamadi.png")
+                try:
+                    Image.fromarray(k_).save(os.path.join(KLASOR, "goruntu", "dukkan_bulunamadi.png"))
+                except Exception:
+                    pass
                 return None
             y_once = yang_oku(k_)
             x_h = bolge_[0] + yer_[0] + sb_.shape[1] // 2           # Vedat: saga tiklayinca onaysiz aliyor
