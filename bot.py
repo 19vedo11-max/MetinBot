@@ -1494,6 +1494,21 @@ def calistir(ayar, sablon):
         time.sleep(0.05)
         pydirectinput.click(button="right" if sag else "left")
 
+    def ctrl_sag_tikla(x, y):
+        """Vedat'in yolu: Ctrl basiliyken potun ustune 1 kez SOL tik -> oyun potu hizli cubuga koyar
+        (adi eski: once sag tik denendi, sag tik potu iciyor)."""
+        pydirectinput.moveTo(ox_son[0] + int(x), ox_son[1] + int(y))
+        time.sleep(0.3)
+        pydirectinput.keyDown("ctrl")
+        time.sleep(0.15)
+        try:
+            pydirectinput.mouseDown(button="left")
+            time.sleep(0.1)
+            pydirectinput.mouseUp(button="left")
+        finally:
+            time.sleep(0.15)
+            pydirectinput.keyUp("ctrl")
+
     def yavas_tikla(x, y):
         """Arayuz dugmeleri icin: once uzerine gel, bekle, basili tutup birak (hizli tiklamayi dukkan almiyor)."""
         pydirectinput.moveTo(ox_son[0] + int(x), ox_son[1] + int(y))
@@ -3617,12 +3632,8 @@ def calistir(ayar, sablon):
                 pydirectinput.moveRel(int(dx_), int(dy_), relative=True); time.sleep(0.04)
             yavas_tikla(hx_, hy_)
 
-        def y_ctrl(p_):                                          # Vedat: Ctrl basili + pota 1 kez sol tik
-            pydirectinput.keyDown("ctrl"); time.sleep(0.15)
-            try:
-                yavas_tikla(*p_)
-            finally:
-                time.sleep(0.15); pydirectinput.keyUp("ctrl")
+        def y_ctrl(p_):                                          # Vedat: Ctrl basili + pota 1 kez SAG tik
+            ctrl_sag_tikla(*p_)
 
         yontemler = [("ctrl", y_ctrl), ("hizli", y_hizli), ("yavas", y_yavas), ("w32_tik", y_w32_tik),
                      ("w32_surukle", y_w32_surukle), ("goreli", y_goreli)]
@@ -3737,14 +3748,7 @@ def calistir(ayar, sablon):
                         pass
             _iz("0_once")
             # gercek surukle-birak: potun ustunde bas, basili tutarak yuvaya tasi, orada birak (tikla-tikla tutmuyor)
-            # Vedat'in yolu: Ctrl basiliyken pota 1 kez sol tik -> oyun potu hizli cubuga koyuyor
-            pydirectinput.keyDown("ctrl")
-            time.sleep(0.15)
-            try:
-                yavas_tikla(yer_[0], yer_[1])
-            finally:
-                time.sleep(0.15)
-                pydirectinput.keyUp("ctrl")
+            ctrl_sag_tikla(yer_[0], yer_[1])                         # Vedat'in yolu: Ctrl + 1 kez sag tik
             _iz("1_alindi")
             time.sleep(0.1)
             _iz("2_birakildi")
