@@ -312,12 +312,12 @@ def istemci_kutusu(h):
 _mss_yerel = threading.local()
 
 
-_dx = {"kam": None, "bolge": None, "hata": False, "kilit": threading.Lock()}
+_dx = {"kam": None, "bolge": None, "hata": False, "kilit": threading.Lock(), "siyah": 0.0, "mola": 0.0}
 
 
 def _dx_kare(x, y, w, hh):
     """DXGI ile surekli yakalama (dxcam): en yeni kare ~16 ms (mss 33 ms). Olmazsa None."""
-    if _dx["hata"]:
+    if _dx["hata"] or time.time() < _dx["mola"]:
         return None
     try:
         import dxcam
@@ -332,9 +332,34 @@ def _dx_kare(x, y, w, hh):
                     kam.stop()
                 kam.start(region=bolge, target_fps=60, video_mode=True)
                 _dx["bolge"] = bolge
-        f = kam.get_latest_frame()
-        if f is None:
+        tik_ = kam.latest_frame_ticks                         # get_latest_frame yeni kare gelmezse SONSUZA dek bekliyor:
+        if tik_ != _dx.get("son_tik"):                         # once son kare ne zaman geldi bak (12:32'de bot boyle asildi)
+            _dx["son_tik"], _dx["tik_t"] = tik_, time.time()
+        durdu_ = tik_ is None or time.time() - _dx.get("tik_t", time.time()) > 1.5
+        f = None if durdu_ else kam.get_latest_frame()
+        if not durdu_ and f is None:
             return None
+        if durdu_ or float(f[::16, ::16].mean()) < 2.0:      # durmus ya da siyah: dxcam 'access loss' sonrasi boyle kaliyor
+            _dx["siyah"] = _dx["siyah"] or time.time()
+            if time.time() - _dx["siyah"] > 3:               # 3 sn hep siyah: kamerayi birak, 60 sn mss ile devam, sonra yeniden kur
+                print(f"{time.strftime('%H:%M:%S')}  ekran yakalama: dxcam {'durdu' if durdu_ else 'siyah veriyor'} - 60 sn mss, sonra yeniden kurulacak")
+                with _dx["kilit"]:
+                    try:
+                        kam.stop()
+                    except Exception:
+                        pass
+                    try:
+                        kam.release()
+                    except Exception:
+                        pass
+                    _dx["kam"], _dx["bolge"] = None, None
+                    try:
+                        dxcam.__factory.clean_up()
+                    except Exception:
+                        pass
+                _dx["mola"], _dx["siyah"], _dx["son_tik"] = time.time() + 60, 0.0, None
+            return None                                        # bu kare icin mss'e dus
+        _dx["siyah"] = 0.0
         if f.shape[0] != hh or f.shape[1] != w:              # pencere ekran kenarindan tasiyorsa eksik kenari doldur
             t = np.zeros((hh, w, 3), np.uint8)
             t[:f.shape[0], :f.shape[1]] = f[:hh, :w]
@@ -3592,7 +3617,14 @@ def calistir(ayar, sablon):
                 pydirectinput.moveRel(int(dx_), int(dy_), relative=True); time.sleep(0.04)
             yavas_tikla(hx_, hy_)
 
-        yontemler = [("hizli", y_hizli), ("yavas", y_yavas), ("w32_tik", y_w32_tik),
+        def y_ctrl(p_):                                          # Vedat: Ctrl basili + pota 1 kez sol tik
+            pydirectinput.keyDown("ctrl"); time.sleep(0.15)
+            try:
+                yavas_tikla(*p_)
+            finally:
+                time.sleep(0.15); pydirectinput.keyUp("ctrl")
+
+        yontemler = [("ctrl", y_ctrl), ("hizli", y_hizli), ("yavas", y_yavas), ("w32_tik", y_w32_tik),
                      ("w32_surukle", y_w32_surukle), ("goreli", y_goreli)]
         try:
             if yuva_dolu(kare_al(h), a_):
@@ -3705,19 +3737,15 @@ def calistir(ayar, sablon):
                         pass
             _iz("0_once")
             # gercek surukle-birak: potun ustunde bas, basili tutarak yuvaya tasi, orada birak (tikla-tikla tutmuyor)
-            hx_, hy_ = gn_ // 2 + pot_yuva[a_], yk_ - 26
-            pydirectinput.moveTo(ox_son[0] + int(yer_[0]), ox_son[1] + int(yer_[1]))
-            time.sleep(0.3)
-            pydirectinput.mouseDown()
-            time.sleep(0.2)
-            for _i in range(1, 9):
-                pydirectinput.moveTo(ox_son[0] + int(yer_[0] + (hx_ - yer_[0]) * _i / 8),
-                                     ox_son[1] + int(yer_[1] + (hy_ - yer_[1]) * _i / 8))
-                time.sleep(0.04)
-                if _i == 4:
-                    _iz("1_alindi")
-            time.sleep(0.25)
-            pydirectinput.mouseUp()
+            # Vedat'in yolu: Ctrl basiliyken pota 1 kez sol tik -> oyun potu hizli cubuga koyuyor
+            pydirectinput.keyDown("ctrl")
+            time.sleep(0.15)
+            try:
+                yavas_tikla(yer_[0], yer_[1])
+            finally:
+                time.sleep(0.15)
+                pydirectinput.keyUp("ctrl")
+            _iz("1_alindi")
             time.sleep(0.1)
             _iz("2_birakildi")
             pydirectinput.moveTo(ox_son[0] + gn_ // 2, ox_son[1] + int(yk_ * 0.4))   # imlec yuvayi ortmesin (yanlis 'olmadi')
