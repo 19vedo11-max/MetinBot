@@ -214,6 +214,20 @@ dialog .satir{padding:6px 0}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .sira{display:flex;gap:4px;flex:1;min-width:0;justify-content:flex-end}.sira select{flex:1;min-width:0;max-width:7.5rem;font-size:.82rem;padding:2px 4px}
 .patronlar{list-style:none;margin:.4rem 0 0;padding:0;display:grid;gap:4px}.patronlar li{display:flex;gap:8px;align-items:center;padding:3px 4px;border-bottom:1px solid rgba(200,160,90,.15)}.patronlar img,.patronlar .yer{width:34px;height:34px;object-fit:contain;flex:none;background:rgba(0,0,0,.35);border-radius:3px}.patronlar b{display:block;font-size:.88rem}.patronlar small{opacity:.8;font-size:.76rem}.patronlar .bos{opacity:.7;border:0}
+/* uyari seridi */
+.uyari{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.uyari[hidden]{display:none}
+.rozet{border:1px solid;border-radius:3px;padding:3px 11px;cursor:pointer;font-size:.9rem;text-shadow:0 1px 0 #000;color:#fff3e8}
+.rozet.k{background:linear-gradient(180deg,#8a2418,#4a110a);border-color:#c0584a}
+.rozet.s{background:linear-gradient(180deg,#7a5d1c,#4a3810);border-color:var(--bronz-acik)}
+.rozet:hover{filter:brightness(1.2)}
+/* hizli ayarlar */
+.izgara{display:grid;grid-template-columns:1fr 1fr;gap:2px 14px}
+.izgara .anahtar{border-bottom:0;padding:5px 0}
+.izgara .anahtar b{font-weight:600;font-size:.92rem}
+.hmod{display:flex;gap:8px;align-items:center}.hmod select{flex:1}
+.metin-l li.soluk{opacity:.4}.metin-l li.uygun b{color:var(--bronz-acik)}
+@media (max-width:420px){.izgara{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -244,8 +258,19 @@ dialog .satir{padding:6px 0}
     </div>
   </header>
 
+  <div class="uyari" id="uyari" hidden role="alert"></div>
+
   <div class="ana-alan">
     <aside class="pen akor" id="akor">
+      <section class="acc" data-g="sol" data-k="hizli">
+        <button class="ah" aria-expanded="false" aria-controls="ag_hizli"><span class="ok" aria-hidden="true"></span><span class="at">Hızlı ayarlar</span><span class="oz" id="oz_hizli"></span></button>
+        <div class="ag ic" id="ag_hizli">
+          <div class="hmod"><label for="hMod"><b>Ne yapsın?</b></label><select id="hMod" aria-label="Ne yapsın"></select></div>
+          <div class="izgara" id="hAn" style="margin-top:6px"></div>
+          <div id="hKay" class="alt-ayrac"></div>
+        </div>
+      </section>
+
       <section class="acc" data-g="sol" data-k="mod">
         <button class="ah" aria-expanded="false" aria-controls="ag_mod"><span class="ok" aria-hidden="true"></span><span class="at">Ne yapsın</span><span class="oz" id="oz_mod"></span></button>
         <div class="ag ic" id="ag_mod">
@@ -271,10 +296,10 @@ dialog .satir{padding:6px 0}
         <div class="ag ic" id="ag_pot">
           <div id="anPot"></div>
           <div class="alt-ayrac" id="kPot1"></div>
-          <p class="ozet" style="margin:.4rem 0 .1rem">Hızlı çubuktaki pot bitince envanterden bu sırayla konur; hiçbiri kalmayınca satıcıya gidilir.</p>
+          <p class="ozet" style="margin:.4rem 0 .1rem">Hızlı çubuktaki pot bitince envanterden bu sırayla konur; hiç kalmazsa satıcıya gidilir.</p>
           <div class="satir"><label>Kırmızı sırası</label><span class="sira" id="siraKirmizi"></span></div>
           <div class="satir"><label>Mavi sırası</label><span class="sira" id="siraMavi"></span></div>
-          <p class="ozet" style="margin:.4rem 0 .1rem" title="Kırmızı ya da mavi, hangisi önce biterse satıcıdan ikisinden de bu boy ve paketle alınır.">Satıcıdan alırken: kırmızı ya da mavi hangisi önce biterse ikisinden de bu boy ve paketle alınır.</p>
+          <p class="ozet" style="margin:.4rem 0 .1rem">Satıcıdan: biri bitince ikisinden de bu boy ve paketle alınır.</p>
           <div class="satir"><label for="potBoy">Boy</label><select id="potBoy"><option value="kucuk">Küçük</option><option value="orta">Orta</option><option value="buyuk">Büyük</option></select></div>
           <div class="satir"><label for="potPaket">Paket</label><select id="potPaket"><option value="20">20'lik</option><option value="200">200'lük</option></select></div>
           <div id="kPot2"></div>
@@ -297,7 +322,7 @@ dialog .satir{padding:6px 0}
           <h3>Yalnız şu canavarlar</h3>
           <div class="satir"><p class="ozet" id="hedefOzet" style="margin:0"></p><button class="d kucuk" id="hedefDugme">Canavar seç…</button></div>
           <h3>Seviye puanı</h3>
-          <p class="ozet">Seviye atlayınca puanlar hangi özelliğe gitsin. “Dağıtma” seçilirse puan verilmez.</p>
+          <p class="ozet">Seviye atlayınca puan nereye gitsin. “Dağıtma” puan vermez.</p>
           <select id="statu" aria-label="Puan dağıtımı"></select>
         </div>
       </section>
@@ -308,14 +333,14 @@ dialog .satir{padding:6px 0}
           <p class="ozet" id="beceriOzet"></p>
           <div class="satir"><span></span><button class="d kucuk" id="beceriDugme">Beceri ayarları…</button></div>
           <div id="anBeceri" class="alt-ayrac"></div>
-          <p class="ozet" style="margin-top:.4rem">Beceri sırası (ekrandan tıklamalı seçim) burada yok; eski panelden (panel.py) ayarlanır.</p>
+          <p class="ozet" style="margin-top:.4rem">Tıklamalı beceri sırası yalnız eski panelde (panel.py) ayarlanır.</p>
         </div>
       </section>
 
       <section class="acc" data-g="sol" data-k="kare">
         <button class="ah" aria-expanded="false" aria-controls="ag_kare"><span class="ok" aria-hidden="true"></span><span class="at">Kare paylaş</span><span class="oz" id="oz_kare"></span></button>
         <div class="ag ic" id="ag_kare">
-          <p class="ozet">Oynarken kaydedilen ekran karelerinden günde en çok N tanesi bu klasöre kopyalanır; klasör Vedat'ın paylaştığı OneDrive klasörü olmalı. Kareler ekranının görüntüsüdür (sohbet, adlar dahil); istemiyorsan boş bırak.</p>
+          <p class="ozet">Günde en çok N ekran karesi bu klasöre kopyalanır (OneDrive paylaşım klasörü). Karelerde sohbet ve adlar görünür; istemiyorsan boş bırak.</p>
           <input type="text" id="kpKlasor" placeholder="Klasör yolu (boş = kapalı)" aria-label="Paylaşım klasörü" style="width:100%;margin-bottom:.3rem">
           <input type="text" id="kpAd" placeholder="Takma adın" aria-label="Takma ad" style="width:100%;margin-bottom:.3rem">
           <input type="number" id="kpSayi" min="0" max="2000" placeholder="Günlük kare sayısı" aria-label="Günlük kare sayısı" style="width:100%;margin-bottom:.3rem">
@@ -328,6 +353,15 @@ dialog .satir{padding:6px 0}
         <div class="ag ic" id="ag_patron">
           <label class="anahtar"><div><b>Patronlardan kaçın</b><small>Adı aşağıdaki listede olan yaratığa ve yanındakilere dalmaz.</small></div><input type="checkbox" class="sw" id="patronKacin"></label>
           <ul class="patronlar" id="patronListe"><li class="bos">Liste yükleniyor…</li></ul>
+        </div>
+      </section>
+
+      <section class="acc" data-g="sol" data-k="metin">
+        <button class="ah" aria-expanded="false" aria-controls="ag_metin"><span class="ok" aria-hidden="true"></span><span class="at">Metin taşları</span><span class="oz" id="oz_metin"></span></button>
+        <div class="ag ic" id="ag_metin">
+          <div id="mAn"></div>
+          <div id="mKay" class="alt-ayrac"></div>
+          <ul class="patronlar metin-l" id="metinListe"><li class="bos">Liste yükleniyor…</li></ul>
         </div>
       </section>
 
@@ -427,6 +461,22 @@ const KAYDIRLAR=[
   ["pot_al_mavi_paket","Kaç paket mavi pot alsın",0,10,1,v=>`${v} paket`],
 ];
 const TUM=[...YANINDA,...ANAHTARLAR];
+const HKAY=[
+  ["seviye_ust_fark","En çok kaç seviye üstüne saldırayım",0,50,1,(v,s)=>`+${v}`+(s?` → en çok Lv ${s+v}`:""),"Seviyenden bu kadar yüksek yaratığa da saldırır."],
+  ["seviye_alt_fark","En çok kaç seviye altını keseyim",0,15,1,(v,s)=>`−${v}`+(s?` → en az Lv ${Math.max(1,s-v)}`:""),"Bundan düşük seviyeli yaratığı kesmez (exp vermez)."],
+  ["toplanacak_grup","Kesmeden önce toplanacak grup",1,5,1,v=>v+" grup","Bot önce bu kadar grubu bir araya toplar, sonra keser."],
+  ["slot_en_az","Slot sayılması için en az yaratık",2,8,1,v=>"en az "+v+" yaratık","Slot kesme açıksa bu sayıdan küçük kümelere gitmez."],
+  ["can_esigi","Can potu eşiği",.1,.9,.05,v=>`%${Math.round(v*100)} altında`,"Can bu yüzdenin altına inince can potu basılır."],
+];
+const MKAY=[["metin_ust_fark","Seviyemden en çok kaç seviye üstteki metni keseyim",0,15,1,(v,s)=>`+${v}`+(s?` → en çok Lv ${s+v}`:""),"Seviyeni aşan metin taşlarına dokunmaz."]];
+const HAN=[["metin_kes","Metin taşı kes","Ekranda metin taşı görünce önce onu keser."],["pot_satin_al","Pot bitince satın al","Kırmızı ya da mavi pot bitince satıcıdan alır."],["patronlardan_kacin","Patronlardan kaçın","Patron listesindeki yaratıklara dalmaz."],["alan_kullan","Çizdiğim alanda kal","Kapalıyken bot bölgeyi kendisi seçer; çizim saklı kalır."]];
+const DUP_AN=k=>k==="patronlardan_kacin"?a=>a[k]!==false:a=>!!a[k];
+function kayHtml(pre,l){return l.map(([k,e,mn,mx,ad,,ip])=>`<div class="kaydir" title="${esc(ip||"")}"><div><span>${e}</span><b id="${pre}v_${k}"></b></div><input type="range" id="${pre}r_${k}" min="${mn}" max="${mx}" step="${ad}" aria-label="${e}"></div>`).join("")}
+function anHtml(pre,l){return l.map(([k,e,ip])=>`<label class="anahtar" title="${esc(ip)}"><div><b>${e}</b></div><input type="checkbox" class="sw" id="${pre}s_${k}" data-ayar="${k}"></label>`).join("")}
+function kayKur(pre,l){l.forEach(([k,,,,ad,f])=>{const i=$("#"+pre+"r_"+k);
+  i.addEventListener("input",()=>{dokunuldu=Date.now();$("#"+pre+"v_"+k).textContent=f(+i.value,D.canli.seviye)});
+  i.addEventListener("change",()=>ayarYaz({[k]:ad<1?+(+i.value).toFixed(2):+i.value}))})}
+function kaySenk(pre,l,a,c){l.forEach(([k,,,,,f])=>{const i=$("#"+pre+"r_"+k); if(i&&a[k]!=null){i.value=a[k];$("#"+pre+"v_"+k).textContent=f(+a[k],c.seviye)}})}
 const GR_SAVAS=["metin_kes","dusuk_seviye_kesme","sadece_slot","esyaya_tikla"];
 const GR_MOD=["olunce_yeniden_basla","yeniden_baglan"];
 const GR_POT=["pot_yuvasi_doldur","pot_satin_al"];
@@ -475,9 +525,14 @@ function ciz(){
     if(document.activeElement!==$("#patronKacin"))$("#patronKacin").checked=a.patronlardan_kacin!==false;
     KAYDIRLAR.forEach(([k,,,,,f])=>{const i=$("#r_"+k); if(i&&a[k]!=null){i.value=a[k];$("#v_"+k).textContent=f(+a[k],c.seviye)}});
     $("#alanKullan").checked=!!a.alan_kullan;
+    kaySenk("h",HKAY,a,c); kaySenk("m",MKAY,a,c);
+    document.querySelectorAll("input[data-ayar]").forEach(i=>{i.checked=DUP_AN(i.dataset.ayar)(a)});
+    const hm=$("#hMod"); if(hm&&document.activeElement!==hm){hm.value=a.profil}
+    const pr0=(D.profiller||[]).find(p=>p.ad===a.profil); hm.title=pr0?pr0.aciklama:"";
   }
+  uyariCiz(); metinCiz();
   const top=acik&&c.profil==="toplama";
-  $("#topDugme").textContent=top?"Kapat":"Aç";
+  $("#topDugme").textContent=top?(Date.now()-topOnay<4000?"Emin misin? Kapat":"Kapat"):"Aç";
   $("#topSat").textContent=top?"Çalışıyor: bot yalnız Z'ye basıyor. Kapatırsan bot tamamen kapanır.":"Bot yalnız Z'ye basar; karakteri sen oynarsın.";
   const eo=a.esya_avi, ho=a.sadece_hedefler||[];
   $("#beceriOzet").textContent=`Sınıf: ${a.sinif||"?"} / ${a.beceri_grubu||"?"}${a.uzak_dovus?" (uzak dövüş)":""}. Güçlendirme: ${(a.sureli_tuslar||[]).map(x=>x.tus).join(", ")||"yok"}; saldırı becerileri: ${(a.saldiri_becerileri||[]).map(x=>x.tus).join(", ")||"yok"}; hamle: ${a.hamle_tusu||"kapalı"}.`;
@@ -505,15 +560,19 @@ function ozetler(a,c){
   set("oz_beceri",(a.sinif||"?")+" / "+(a.beceri_grubu||"?"));
   set("oz_kare",a.kare_paylas_klasoru?"açık · "+(a.kare_paylas_gunluk??200)+"/gün":"kapalı");
   set("oz_rapor",D.son_rapor?"var":"yok");
+  set("oz_hizli",(pr?pr.etiket:"")+" · +"+a.seviye_ust_fark+" / −"+a.seviye_alt_fark);
+  set("oz_metin",(a.metin_kes?"açık":"kapalı")+" · +"+(a.metin_ust_fark??"?"));
 }
+let solAc=()=>{};
 function accKur(){
-  const AKS="metinbot_acik_bolum";
-  const oku=()=>{try{const v=localStorage.getItem(AKS);return v===null?"mod":v}catch(e){return "mod"}};
+  const AKS="metinbot_acik_bolum2";
+  const oku=()=>{try{const v=localStorage.getItem(AKS);return v===null?"hizli":v}catch(e){return "hizli"}};
   const yaz=v=>{try{localStorage.setItem(AKS,v)}catch(e){}};
   const hepsi=[...document.querySelectorAll(".acc")], sol=hepsi.filter(x=>x.dataset.g==="sol");
   const ayar=(el,ac)=>{el.classList.toggle("acik",ac);el.querySelector(".ah").setAttribute("aria-expanded",ac?"true":"false")};
-  let o=(location.hash.slice(1))||oku(); if(o&&!sol.some(x=>x.dataset.k===o))o="mod";
+  let o=(location.hash.slice(1))||oku(); if(o&&!sol.some(x=>x.dataset.k===o))o="hizli";
   sol.forEach(x=>ayar(x,x.dataset.k===o));
+  solAc=k=>{if(!sol.some(x=>x.dataset.k===k))return;sol.forEach(x=>ayar(x,x.dataset.k===k));yaz(k)};
   hepsi.forEach(el=>el.querySelector(".ah").addEventListener("click",()=>{
     if(el.dataset.g==="sol"){const ac=!el.classList.contains("acik");sol.forEach(x=>ayar(x,x===el&&ac));yaz(ac?el.dataset.k:"")}
     else ayar(el,!el.classList.contains("acik"))}));
@@ -538,9 +597,22 @@ function kur(){
     i.addEventListener("input",()=>{dokunuldu=Date.now();$("#v_"+k).textContent=f(+i.value,D.canli.seviye)});
     i.addEventListener("change",()=>ayarYaz({[k]:ad<1?+(+i.value).toFixed(2):+i.value}))});
   $("#alanKullan").addEventListener("change",e=>ayarYaz({alan_kullan:e.target.checked}));
+  $("#hMod").innerHTML=D.profiller.map(p=>`<option value="${esc(p.ad)}">${esc(p.etiket)}</option>`).join("");
+  $("#hMod").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({profil:e.target.value})});
+  $("#hKay").innerHTML=kayHtml("h",HKAY);
+  $("#mKay").innerHTML=kayHtml("m",MKAY);
+  $("#hAn").innerHTML=anHtml("h",HAN); $("#mAn").innerHTML=anHtml("m",[HAN[0]]);
+  kayKur("h",HKAY); kayKur("m",MKAY);
+  document.querySelectorAll("input[data-ayar]").forEach(i=>i.addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({[i.dataset.ayar]:e.target.checked})}));
+  metinYukle(); setInterval(()=>{if(!M.length)metinYukle()},30000);
   $("#anaDugme").addEventListener("click",e=>gonder("/api/komut",{komut:e.currentTarget.dataset.komut}));
   document.querySelectorAll("[data-komut]").forEach(b=>{if(b.id==="anaDugme")return;
-    b.addEventListener("click",()=>{if(b.dataset.komut==="kapat"&&!confirm("Bot kapansın mı?"))return; gonder("/api/komut",{komut:b.dataset.komut})})});
+    b.addEventListener("click",()=>{
+      if(b.dataset.komut==="kapat"){
+        if(!b._on){b._on=1;b._t0=b.textContent;b.textContent="Emin misin? Kapat";b.classList.add("ana");
+          b._t=setTimeout(()=>{b._on=0;b.textContent=b._t0;b.classList.remove("ana")},4000);return}
+        clearTimeout(b._t);b._on=0;b.textContent=b._t0;b.classList.remove("ana")}
+      gonder("/api/komut",{komut:b.dataset.komut})})});
   $("#modGit").onclick=()=>modSec("git"); $("#modAlan").onclick=()=>modSec("alan");
   haritaOlaylari();
 }
@@ -576,9 +648,12 @@ function haritaOlaylari(){
     cizim=null;D.ayar.kasilma_alani=a;D.ayar.alan_kullan=true;$("#alanKullan").checked=true;alanCiz();modSec("git");
     if(await gonder("/api/ayar",{kasilma_alani:a,alan_kullan:true},true))bildir("Alan kaydedildi; bot bu dairenin içinde kasacak.")});
 }
+let topOnay=0;
 async function topla(){
   const c=D.canli;
-  if(c.ayakta&&c.profil==="toplama"){ if(confirm("Otomatik toplama kapansın mı? Bot tamamen kapanır."))gonder("/api/komut",{komut:"kapat"}); return}
+  if(c.ayakta&&c.profil==="toplama"){
+    if(Date.now()-topOnay>4000){topOnay=Date.now();$("#topDugme").textContent="Emin misin? Kapat";setTimeout(()=>{if(D)ciz()},4100);bildir("Bot tamamen kapanır; onaylamak için 4 sn içinde tekrar tıkla.");return}
+    topOnay=0;gonder("/api/komut",{komut:"kapat"}); return}
   if(await gonder("/api/ayar",{profil:"toplama"},true)){ if(!c.ayakta)gonder("/api/komut",{komut:"baslat"}); else bildir("Otomatik toplama açıldı; bot birkaç saniyede yeni ayarla açılır.")}
 }
 let L=null;
@@ -717,6 +792,37 @@ function siraGoster(id,l){
   k.querySelectorAll("select").forEach((s,i)=>{if(document.activeElement!==s)s.value=l[i]||""});
 }
 
+function uyariCiz(){
+  const c=D.canli, w=[], son=(D.log||[]).slice(-30).join("\n");
+  const yas=D.simdi&&c.zaman?D.simdi-c.zaman:0;
+  if(c.calisiyor&&!c.ayakta&&yas>120&&yas<7200)w.push(["k","Bot yanıt vermiyor: son kayıt "+Math.round(yas/60)+" dk önce","bot"]);
+  if(c.ayakta&&!c.oyun_onde&&!c.duraklat)w.push(["s","Oyun penceresi önde değil","bot"]);
+  if(c.ayakta&&c.pot_bitti)w.push(["k","POT BİTTİ","pot"]);
+  if(/pot yuvasi: .*konamadi/.test(son))w.push(["s","Pot yuvasına konamadı","pot"]);
+  if(/oyundan atilmis|baglanti koptu/.test((D.log||[]).slice(-12).join(" ")))w.push(["k","Oyundan atılmış / bağlantı koptu","bot"]);
+  const ol=D.son30?+D.son30.olum:0; if(ol>=2)w.push([ol>=4?"k":"s","Son 30 dk'da "+ol+" ölüm: seviye farkını düşür","savas"]);
+  const h=w.map(x=>x.join("|")).join("~"), el=$("#uyari");
+  if(el._h===h)return; el._h=h; el.hidden=!w.length;
+  el.innerHTML=w.map(([t,m,b])=>`<button class="rozet ${t}" data-ac="${b}">${esc(m)}</button>`).join("");
+  el.querySelectorAll("button").forEach(b=>b.onclick=()=>{const k=b.dataset.ac; if(k==="bot"){const s=document.querySelector('[data-k="bot"]'); if(s&&!s.classList.contains("acik"))s.querySelector(".ah").click()} else solAc(k)});
+}
+let M=[];
+async function metinYukle(){
+  try{M=(await (await fetch(api("/api/metinler"),{cache:"no-store"})).json()).metinler||[]}catch(e){M=[]}
+  metinCiz();
+}
+function metinCiz(){
+  const ul=$("#metinListe"); if(!ul)return;
+  if(!M.length){ul.innerHTML='<li class="bos">Liste henüz yok.</li>';return}
+  const sev=D&&D.canli.seviye, uf=D&&D.ayar.metin_ust_fark!=null?+D.ayar.metin_ust_fark:5, lim=sev?sev+uf:null;
+  const sira=[...M].sort((x,y)=>(+x.seviye||0)-(+y.seviye||0));
+  const h=sira.map(p=>{
+    const ad=esc(p.ad_tr||p.ad_en||"?"), g=p.gorsel?String(p.gorsel).split(/[\/\\]/).pop():"";
+    const img=g?`<img src="${esc(api("/metin/"+encodeURIComponent(g)))}" alt="" loading="lazy">`:'<span class="yer"></span>';
+    const uygun=lim==null||!p.seviye||+p.seviye<=lim;
+    return `<li class="${uygun?"uygun":"soluk"}" title="${uygun?"Kesilir":"Seviyen için fazla yüksek, kesilmez"}">${img}<div><b>${ad}</b><small>${p.seviye?"Lv "+esc(String(p.seviye)):""}${p.harita?" · "+esc(p.harita):""}${uygun?"":" · çok yüksek"}</small></div></li>`}).join("");
+  if(ul._h!==h){ul._h=h;ul.innerHTML=h}
+}
 async function patronYukle(){
   let P=[];
   try{P=(await (await fetch(api("/api/patronlar"),{cache:"no-store"})).json()).patronlar||[]}catch(e){}

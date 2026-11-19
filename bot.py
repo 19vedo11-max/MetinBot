@@ -168,6 +168,7 @@ VARSAYILAN = {
     "akilli_yan_kacis": True,     # takilinca iki yandan (sag/sol) yaratigi az olana kac (eski: hep ayni yana)
     "kacinilan_yaratiklar": ["boss", "patron", "lider", "reis", "kral"],   # adinda bunlar gecen yaratiga (ve yanindakilere) dalma
     "patron_atla_sn": 30,
+    "metin_ust_fark": 5,          # metinler.json'a gore seviyesi (benim + bu) ustundeki metin taslarina vurma (None = sinir yok)
     "patronlardan_kacin": True,   # patronlar.json'daki patronlara (adlarindan) ve yanlarindakilere dalma
     "vurus_bekle_saldirida_sn": 3.0,  # vurulurken secili hedefe bu kadar sn isabet yoksa beklemeyi kes (0 = kapali; eski: 10-25 sn bekliyordu)
     "iksir_bekle_en_cok_sn": 600,  # etkisi suren iksir icin envanteri en gec bu kadar sn'de bir ac (eski 300; her acis 4-9 sn)
@@ -3040,6 +3041,28 @@ def calistir(ayar, sablon):
     kacmama_son = []              # 'vuruluyorum, kacmiyor' anlari: tekrar ederse kacisa izin
     patron_yer = []               # (zaman, x, y): kacinilan (patron) adli etiketler
     _patron_d = {"t": 0.0, "adlar": []}
+    _metin_d = {"t": 0.0, "liste": []}
+    metin_agir_log = [0.0]
+
+    def metin_seviyesi(yazi_m):
+        """Okunan metin tasi adini metinler.json ile eslestirip seviyesini dondurur (bulamazsa None)."""
+        yol_ = os.path.join(KLASOR, "metinler.json")
+        try:
+            t_ = os.path.getmtime(yol_)
+            if t_ != _metin_d["t"]:
+                v_ = json.load(open(yol_, encoding="utf-8")).get("metinler", [])
+                _metin_d["liste"] = [(oku.sade(a_), m_.get("seviye")) for m_ in v_ for a_ in (m_.get("ad_tr"), m_.get("ad_en"))
+                                     if a_ and m_.get("seviye")]
+                _metin_d["t"] = t_
+        except Exception:
+            return None
+        sade_ = oku.sade(re.sub(r"^\s*l[vu]\s*\d+\s*", "", yazi_m, flags=re.I))
+        en_, sev_ = 0.0, None
+        for ad_, s_ in _metin_d["liste"]:
+            o_ = difflib.SequenceMatcher(None, sade_, ad_).ratio()
+            if o_ > en_:
+                en_, sev_ = o_, s_
+        return int(sev_) if en_ >= 0.8 and sev_ else None
 
     def patron_adlari():
         """patronlar.json'daki patron adlari (sade); dosya degisince yeniden okunur."""
@@ -5329,9 +5352,16 @@ def calistir(ayar, sablon):
                         x_, y_, w_, hh_ = t
                         yazi_ = " ".join(q["yazi"] for q in oku.oku(kare, kutu=(x_ - w_ // 2 - 60, y_ - hh_ - 6, x_ + w_ // 2 + 8, y_ + 6), olcek=4))
                         if any(oku.benzer(yazi_, w) for w in ayar["metin_kelimeleri"]):
+                            m_sev = metin_seviyesi(yazi_)
+                            if (m_sev and benim_sev and ayar["metin_ust_fark"] is not None
+                                    and m_sev > benim_sev + ayar["metin_ust_fark"]):
+                                if time.time() - metin_agir_log[0] > 60:
+                                    metin_agir_log[0] = time.time()
+                                    print(f"{time.strftime('%H:%M:%S')}  metin tasi agir, atlandi: {yazi_} (Lv {m_sev})")
+                                continue
                             yeni_tas.append(t)
                             if not metin_gorulen:
-                                print(f"{time.strftime('%H:%M:%S')}  metin tasi goruldu: {yazi_}")
+                                print(f"{time.strftime('%H:%M:%S')}  metin tasi goruldu: {yazi_}" + (f" (Lv {m_sev})" if m_sev else ""))
                                 Image.fromarray(kare).save(os.path.join(KLASOR, "goruntu", "metin_goruldu.png"))
                     metin_gorulen = yeni_tas
                 elif not adaylar:
