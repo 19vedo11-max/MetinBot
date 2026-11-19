@@ -2851,6 +2851,7 @@ def calistir(ayar, sablon):
 
     def kamera_egim_ayarla():
         son_kamera_egim[0] = time.time()
+        print(f"{time.strftime('%H:%M:%S')}  kamera: aci duzeltildi (yatay)")
         birak()
         pydirectinput.keyDown("g")
         time.sleep(1.2)                                         # en tepe: her seferinde ayni baslangic
@@ -4606,7 +4607,9 @@ def calistir(ayar, sablon):
                     continue
 
             # kamera egimi: duzenli olarak yatay aciya getir (G tepeye diker, T yataylastirir)
-            if ayar["kamera_egim_t_sn"] and time.time() - son_kamera_egim[0] > ayar["kamera_egim_aralik_sn"] and sakin_mi(kare):
+            if (ayar["kamera_egim_t_sn"] and time.time() - son_kamera_egim[0] > ayar["kamera_egim_aralik_sn"]
+                    and (sakin_mi(kare) or (not tehdit and not saldiri_altinda() and time.time() - son_savas[0] > 1.5))):
+                # kalabalik bolgede tam sakin an az: dibimde yaratik yok ve vurulmuyorsam da duzelt
                 kamera_egim_ayarla()
                 continue
 
