@@ -160,6 +160,7 @@ VARSAYILAN = {
     "metin_kelimeleri": ["metin", "metni", "tasi", "metini"],  # metin tasi icin ust sinir
     "etiket_alti_piksel": 45,     # isim yazisinin kac piksel altina tiklansin
     "kamera_tusu": "e",           # hedef yokken kamerayi dondurur
+    "kamera_ters_tusu": "q",      # ters yone dondurme (yaratiklar soldaysa Q); bos = yalniz E
     "kamera_egim_t_sn": 0.55,     # G ile tepeye dikip T'ye bu kadar basili tut (yatay aci); 0 = kameraya dokunma
     "kamera_egim_aralik_sn": 180,
     "kamera_uzak_tusu": "",       # bos: kameraya dokunma (F bu sunucuda kamerayi tepeye dikiyordu)      # kamerayi uzaklastirir (Metin2: R yakin, F uzak)
@@ -1160,10 +1161,28 @@ def calistir(ayar, sablon):
         son_neden[0] = "sure doldu"
         return False
 
+    kamera_d = {"son": "e"}
+
+    def kamera_yonu(k_):
+        """Kamera hangi yone donsun: ekranda yaratik etiketleri solda yogunsa Q (sola), sagda ise E (saga);
+        hic yoksa her seferinde yon degistir (hep ayni yone donup 360 derece harcamasin)."""
+        ters_ = ayar.get("kamera_ters_tusu", "q")
+        if not ters_:
+            return ayar["kamera_tusu"]
+        et_ = kirmizi_etiketler(k_)
+        gen_ = k_.shape[1]
+        if et_:
+            sol_ = sum(1 for t in et_ if t[0] < gen_ // 2)
+            kamera_d["son"] = ters_ if sol_ > len(et_) - sol_ else ayar["kamera_tusu"]
+        else:
+            kamera_d["son"] = ters_ if kamera_d["son"] != ters_ else ayar["kamera_tusu"]
+        return kamera_d["son"]
+
     def etrafa_bak(sure):
         su_an[0] = "etrafa_bak"
         """Kamerayi SUREKLI dondururken her karede bakar; slot (ya da metin tasi) gorunce hemen durur."""
-        pydirectinput.keyDown(ayar["kamera_tusu"])
+        tus_ = kamera_yonu(kare_al(h))
+        pydirectinput.keyDown(tus_)
         bas_ = time.time()
         try:
             while time.time() - bas_ < sure and durum["calis"] and not durum["duraklat"]:
@@ -1182,7 +1201,7 @@ def calistir(ayar, sablon):
                 time.sleep(0.02)
             return False
         finally:
-            pydirectinput.keyUp(ayar["kamera_tusu"])
+            pydirectinput.keyUp(tus_)
 
     _menzil_yol = os.path.join(KLASOR, "menzil.json")
     try:
@@ -5196,9 +5215,10 @@ def calistir(ayar, sablon):
                         # grup bitmedi: kamerayi kisa cevirip daha genis alanda (filtreye uyan) siradakini ara
                         if bos % 3 == 2:
                             birak()
-                            pydirectinput.keyDown(ayar["kamera_tusu"])
+                            tus_k = kamera_yonu(k2)                 # yaratiklar hangi yandaysa o yone (Q/E)
+                            pydirectinput.keyDown(tus_k)
                             time.sleep(0.3)
-                            pydirectinput.keyUp(ayar["kamera_tusu"])
+                            pydirectinput.keyUp(tus_k)
                         k2b = kare_al(h)
                         yakin = yakindakiler(k2b, 9999, 0, ayar["spot_yaricapi_piksel"] + 260, alt_s)
                         if ayar["sadece_hedefler"] and yakin and not vuruluyor:
