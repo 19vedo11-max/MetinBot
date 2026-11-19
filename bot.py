@@ -113,7 +113,8 @@ VARSAYILAN = {
     "oncelikli_beceri_konumu": [-123, 138],   # eski tek oncelik (artik beceri_sirasi kullaniliyor)
     "beceri_sirasi": ["hava_kilici", "ofke", "uc_yonlu", "kilic_cevirme", "hamle"],  # bastaki master olunca siradaki
     "beceri_birer_ver": False,    # ilk seferde her beceriye 1 puan verme (eski davranis)
-    "beceri_sira_konum": [],      # panelde tiklanan beceri ikonlari (kapat dugmesine gore); bossa beceri_sirasi
+    "beceri_sira_konum": [],
+    "beceri_sira_yuva": [4, 3, 1, 2, 5],   # beceri puani sirasi: beceri penceresindeki yuva (1-6; 1. satir sol=1, sag=2 ...)      # panelde tiklanan beceri ikonlari (kapat dugmesine gore); bossa beceri_sirasi
     "gorev_araligi_sn": 30,      # bu aralikla sol kenardaki gorev parsomenlerinden birine tiklar (0 = kapali)
     "izleme_araligi_sn": 40,     # bu aralikla goruntu/izleme klasorune kare kaydeder
     "spot_yaricapi_piksel": 240,  # olen hedefin ardindan bu yaricaptaki yaratiklara ara vermeden gec
@@ -253,6 +254,7 @@ VARSAYILAN = {
 # Yetenekler sekmesinde becerilerin ARTI dugmesi konumu (kapat dugmesine gore; 16.11 ekran goruntusunden olculdu)
 BECERI_KONUM = {"uc_yonlu": (-263, 93), "kilic_cevirme": (-123, 93), "ofke": (-263, 138),
                 "hava_kilici": (-123, 138), "hamle": (-263, 183)}
+BECERI_YUVA = {1: (-263, 93), 2: (-123, 93), 3: (-263, 138), 4: (-123, 138), 5: (-263, 183), 6: (-123, 183)}
 
 # Gunluk plan: secilen profil, ayar.json'daki degerlerin USTUNE yazilir ("ozel" hicbir seye dokunmaz).
 PROFILLER = {
@@ -2995,8 +2997,12 @@ def calistir(ayar, sablon):
         # sirayla: bir becerinin arti dugmesi kalmadiysa (master oldu ya da kapali) siradakine gecilir;
         # hic arti kalmadiysa puan bitmistir. Listede olmayan beceriye puan verilmez.
         dokunulan = []
-        sira_ = ayar["beceri_sira_konum"] or [[BECERI_KONUM[a][0] + 11, BECERI_KONUM[a][1] - 13]
-                                              for a in ayar["beceri_sirasi"] if a in BECERI_KONUM]
+        if ayar["beceri_sira_yuva"]:                     # panelde simgeyle secilen sira (yuva 1-6, her sinif)
+            sira_ = [[BECERI_YUVA[int(n)][0] + 11, BECERI_YUVA[int(n)][1] - 13]
+                     for n in ayar["beceri_sira_yuva"] if int(n) in BECERI_YUVA]
+        else:
+            sira_ = ayar["beceri_sira_konum"] or [[BECERI_KONUM[a][0] + 11, BECERI_KONUM[a][1] - 13]
+                                                  for a in ayar["beceri_sirasi"] if a in BECERI_KONUM]
         for i_, (dx_, dy_) in enumerate(sira_):
             if not liste:
                 break

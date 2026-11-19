@@ -37,7 +37,7 @@ AYAR_IZINLI = {
     "kare_paylas_klasoru", "kare_paylas_adi", "kare_paylas_gunluk",
     "profil", "alan_kullan", "av_gorevi", "gorev_parsomen", "aranan_oncelik", "npc_gorevleri",
     "dusuk_seviye_kesme", "sadece_slot", "esyaya_tikla", "olunce_yeniden_basla", "yeniden_baglan",
-    "beceri_puani_dagit", "pot_yuvasi_doldur", "metin_kes", "pot_satin_al", "pot_al_kirmizi_paket", "pot_al_mavi_paket", "pot_boy", "pot_paket", "pot_sira_kirmizi", "pot_sira_mavi", "patronlardan_kacin", "metin_ust_fark", "bildirim",
+    "beceri_puani_dagit", "pot_yuvasi_doldur", "metin_kes", "pot_satin_al", "pot_al_kirmizi_paket", "pot_al_mavi_paket", "pot_boy", "pot_paket", "pot_sira_kirmizi", "pot_sira_mavi", "patronlardan_kacin", "metin_ust_fark", "bildirim", "beceri_sira_yuva",
     "can_esigi", "mana_esigi", "seviye_ust_fark", "seviye_alt_fark", "slot_en_az", "savunma_can_esigi",
     "kasilma_alani", "toplanacak_grup", "statu", "esya_avi", "sadece_hedefler",
     "sinif", "beceri_grubu", "egitmen_anahtar", "sureli_tuslar", "saldiri_becerileri", "hamle_tusu", "saldiri_tusu",
@@ -210,6 +210,20 @@ class Isleyici(BaseHTTPRequestHandler):
                                                       for x in reversed(satir)]})
             except Exception:
                 return self._gonder(200, {"olumler": []})
+        if yol == "/api/beceriler":
+            try:
+                with open(os.path.join(KLASOR, "beceriler.json"), encoding="utf-8") as f:
+                    return self._gonder(200, json.load(f))
+            except Exception:
+                return self._gonder(200, {"siniflar": {}})
+        if yol.startswith("/beceri/"):
+            ad = os.path.basename(yol[len("/beceri/"):])
+            uz = os.path.splitext(ad)[1].lower()
+            tip = {".png": "image/png", ".jpg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp"}.get(uz)
+            pb = os.path.join(KLASOR, "goruntu", "beceriler", ad)
+            if tip and os.path.isfile(pb):
+                with open(pb, "rb") as f:
+                    return self._gonder(200, f.read(), tip)
         if yol == "/api/metinler":
             try:
                 with open(os.path.join(KLASOR, "metinler.json"), encoding="utf-8") as f:

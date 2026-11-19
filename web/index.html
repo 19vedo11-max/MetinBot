@@ -229,6 +229,7 @@ dialog .satir{padding:6px 0}
 .metin-l li.soluk{opacity:.4}.metin-l li.uygun b{color:var(--bronz-acik)}
 @media (max-width:420px){.izgara{grid-template-columns:1fr}}
 .olumler{list-style:none;margin:0;padding:0;display:grid;gap:3px;font-size:.82rem}.olumler li{padding:3px 2px;border-bottom:1px solid rgba(200,160,90,.15)}.olumler b{margin-right:6px}.olumler .bos{opacity:.7;border:0}
+.becsira{list-style:none;margin:0;padding:0;display:grid;gap:4px}.becsira li{display:flex;gap:8px;align-items:center;padding:3px 2px;border-bottom:1px solid rgba(200,160,90,.15)}.becsira select{width:3.6rem;flex:none}.becsira img,.becsira .yer{width:34px;height:34px;object-fit:contain;flex:none;background:rgba(0,0,0,.35);border-radius:3px}.becsira b{display:block;font-size:.88rem}.becsira small{opacity:.8;font-size:.74rem}.becsira .bos{opacity:.7;border:0}
 </style>
 </head>
 <body>
@@ -335,7 +336,9 @@ dialog .satir{padding:6px 0}
           <p class="ozet" id="beceriOzet"></p>
           <div class="satir"><span></span><button class="d kucuk" id="beceriDugme">Beceri ayarları…</button></div>
           <div id="anBeceri" class="alt-ayrac"></div>
-          <p class="ozet" style="margin-top:.4rem">Tıklamalı beceri sırası yalnız eski panelde (panel.py) ayarlanır.</p>
+          <h3 style="margin:.5rem 0 .2rem">Puan verme sırası</h3>
+          <p class="ozet" style="margin:0 0 .3rem">Seviye atlayınca beceri puanı bu sırayla verilir: 1. beceri ustalaşınca 2.'ye geçilir. "—" seçilene puan verilmez.</p>
+          <ul class="becsira" id="becSira"><li class="bos">Beceri listesi yükleniyor…</li></ul>
         </div>
       </section>
 
@@ -454,7 +457,7 @@ const ANAHTARLAR=[
   ["esyaya_tikla","Yere düşen eşyaları topla","Düşen eşyaya tıklayıp alır."],
   ["pot_yuvasi_doldur","Pot yuvasını doldur","Hızlı çubuktaki pot bitince envanterden koyar."],
   ["pot_satin_al","Pot bitince satıcıdan al","Kırmızı ya da mavi pot (hangisi önce) bitince köydeki Satıcı'ya gidip ikisinden de seçilen boy ve paketle alır."],
-  ["beceri_puani_dagit","Beceri puanlarını dağıt","Eski panelde seçtiğin sıraya göre puan verir."],
+  ["beceri_puani_dagit","Beceri puanlarını dağıt","Aşağıda seçtiğin sıraya göre puan verir."],
   ["olunce_yeniden_basla","Ölünce kendisi kalksın","Burada yeniden başla'ya basar."],
   ["yeniden_baglan","Atılınca yeniden bağlan","Giriş ekranında kayıtlı hesapla girer."],
 ];
@@ -858,6 +861,34 @@ async function olumYukle(){
     return `<li><b>${esc((o.zaman||"").slice(11,16))}</b> <span>can en düşük ${can} · yanında ${esc(o.yakin||"?")} yaratık${o.seviyeler?" (Lv "+esc(o.seviyeler)+")":""} · pot ${esc(o.pot||"?")}</span></li>`}).join("");
 }
 setInterval(olumYukle,60000);
+
+let BEC=null;
+async function beceriSiraKur(){
+  if(!BEC){try{BEC=(await (await fetch(api("/api/beceriler"),{cache:"no-store"})).json()).siniflar||{}}catch(e){BEC={}}}
+  const ul=$("#becSira"); if(!ul||!D)return;
+  const a=D.ayar||{}, sn=a.sinif||"savasci", gr=a.beceri_grubu||"bedensel";
+  const g=((BEC[sn]||{}).gruplar||{})[gr];
+  if(!g||!(g.beceriler||[]).length){ul.innerHTML='<li class="bos">Bu sınıf/grup için beceri listesi henüz yok.</li>';return}
+  const sira=(a.beceri_sira_yuva&&a.beceri_sira_yuva.length?a.beceri_sira_yuva:[4,3,1,2,5]).map(Number);
+  const n=g.beceriler.length;
+  const sec=yv=>{const i=sira.indexOf(yv);return i<0?"":String(i+1)};
+  const seen=ul.dataset.anahtar===sn+"/"+gr+"/"+sira.join(",");
+  if(seen&&!ul.querySelector(".bos"))return;
+  ul.dataset.anahtar=sn+"/"+gr+"/"+sira.join(",");
+  const satir=[...g.beceriler].sort((x,y)=>{const a1=sira.indexOf(+x.slot),b1=sira.indexOf(+y.slot);return (a1<0?99:a1)-(b1<0?99:b1)||x.slot-y.slot});
+  ul.innerHTML=satir.map(b=>{const ik=b.ikon?String(b.ikon).split(/[\\/]/).pop():"";
+    const opts=['<option value="">—</option>'].concat(Array.from({length:n},(_,i)=>`<option value="${i+1}">${i+1}.</option>`)).join("");
+    return `<li><select data-yuva="${b.slot}" aria-label="${esc(b.ad_tr||b.ad_en||"")} sırası">${opts}</select>`
+      +(ik?`<img src="${api("/beceri/"+encodeURIComponent(ik))}" alt="" loading="lazy">`:'<span class="yer"></span>')
+      +`<div><b>${esc(b.ad_tr||b.ad_en||"?")}</b><small>${esc(b.kisa||"")}${b.tur?" · "+esc(b.tur):""}</small></div></li>`}).join("");
+  ul.querySelectorAll("select").forEach(x=>{x.value=sec(+x.dataset.yuva);x.addEventListener("change",()=>{
+    dokunuldu=Date.now();
+    const sel=[...ul.querySelectorAll("select")].map(e=>({y:+e.dataset.yuva,s:+e.value||0})).filter(e=>e.s>0).sort((p,q)=>p.s-q.s);
+    const yeni=[];sel.forEach(e=>{if(!yeni.includes(e.y))yeni.push(e.y)});
+    ayarYaz({beceri_sira_yuva:yeni}); ul.dataset.anahtar="";})});
+  $("#oz_beceri").textContent=(BEC[sn]||{}).ad?`${BEC[sn].ad} / ${g.ad||gr}`:$("#oz_beceri").textContent;
+}
+setInterval(()=>{try{beceriSiraKur()}catch(e){}},4000);
 </script>
 </body>
 </html>

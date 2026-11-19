@@ -31,8 +31,13 @@ def ornek_ayar():
         json.dump(a, f, ensure_ascii=False, indent=2)
 
 
+IZINLI_ALT = {("goruntu", "beceriler"), ("goruntu", "patronlar"), ("goruntu", "metinler")}   # panel simgeleri arkadaslara da gitsin
+
+
 def yasak_mi(rel):
     parcalar = rel.replace("\\", "/").split("/")
+    if len(parcalar) >= 3 and (parcalar[0], parcalar[1]) in IZINLI_ALT:
+        return False
     if any(p in YASAK_KLASOR for p in parcalar[:-1]):
         return True
     return any(fnmatch.fnmatch(parcalar[-1].lower(), y.lower()) for y in YASAK_AD)
