@@ -188,7 +188,8 @@ VARSAYILAN = {
     "guc_can_esigi": 0.5,         # can bunun altindayken hava kilici / ofke (sureli_tuslar) basilmaz
     "mini_harita_yuru": True,     # buyuk haritadan once mini haritadaki kirmizi nokta kumesine yuru
     "alan_kisa_yuruyus": 5,      # slot bitince haritasiz kisa yuruyusle ayni alanda kac kez aransin
-    "dolum_esigi": 0.85,          # grup bitince can bu orana kadar pot ile doldurulur
+    "dolum_esigi": 0.7,           # grup bitince can bu orana kadar pot ile doldurulur (sonrasini pot izlegi yurur, beklemeden)
+    "dolum_en_uzun_sn": 2.5,      # grup sonu can doldurma icin en cok bu kadar dur (eski 8 sn)
     "yolo_gpu": True,            # sekil modeli ekran kartinda ayri surecte (sekil_sunucu.py); yoksa CPU
     "yolo_kullan": True,         # sekil modeli (sekil.py) yardimci: etiketsiz yaratik + oyuncu korumasi
     "yolo_esik": 0.45,           # yaratik kutusu min skoru
@@ -5377,7 +5378,7 @@ def calistir(ayar, sablon):
                 grup_sonu_guclendir()                           # hava kilici dolduysa sonraki gruba girmeden yak
                 # grup bitti: can dolana kadar pot (vurulursa birak)
                 bas_d = time.time()
-                while time.time() - bas_d < 8 and durum["calis"] and not durum["duraklat"]:
+                while time.time() - bas_d < ayar["dolum_en_uzun_sn"] and durum["calis"] and not durum["duraklat"]:
                     can_d = can_orani(kare_al(h))
                     if can_d < 0.02 or can_d >= ayar["dolum_esigi"] or saldiri_altinda():
                         break
