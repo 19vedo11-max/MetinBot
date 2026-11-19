@@ -187,12 +187,14 @@
   "hizli_engel": false,
   "yolo_slot": true,
   "engel_hafiza": false,
-  "kamera_egim_aralik_sn": 35,
+  "kamera_egim_aralik_sn": 120,
   "alan_bos_sn": 25,
   "etrafa_bakma_sn": 1.25,
   "pot_paket": 200,
   "pot_boy": "kucuk",
   "dalma_olum_sayisi": 3,
   "dalma_olum_sn": 600,
-  "pot_yuva_iz": false
+  "pot_yuva_iz": false,
+  "bildirim": true,
+  "menzil_bekle_sn": 3.0
 }

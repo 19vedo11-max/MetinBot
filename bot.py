@@ -168,13 +168,17 @@ VARSAYILAN = {
     "akilli_yan_kacis": True,     # takilinca iki yandan (sag/sol) yaratigi az olana kac (eski: hep ayni yana)
     "kacinilan_yaratiklar": ["boss", "patron", "lider", "reis", "kral"],   # adinda bunlar gecen yaratiga (ve yanindakilere) dalma
     "patron_atla_sn": 30,
+    "bildirim": True,             # telefona bildirim (ntfy; konu .env NTFY_KONU): pot bitti, olum serisi, atilma, donma, seviye
+    "donma_bekcisi": True,        # ana dongu donma_sn boyunca ekran okumazsa botu yeniden baslat (Bot-Baslat.bat acar)
+    "donma_sn": 150,
+    "surum_bekle_sn": 60,         # yeni kod: son degisiklikten bu kadar sn sonra ve sakin bir anda yukle (10 dk icinde mutlaka)
     "menzil_kapisi": True,        # saldiri tusunu yalniz secili hedef ogrenilen vurma mesafesine girince bas (uzaktan kilic sallamasin)
     "menzil_bekle_sn": 3.0,       # hedefe yururken en cok bu kadar bekle, sonra yine bas
     "menzil_kapisi_vurulurken": True,   # vuruluyorken de menzili bekle (False: vurulunca hemen bas)
     "burada_tutmazsa_sehirde": True,   # 'Burada yeniden basla' 25 sn tutmazsa 'Sehirde'ye gec (kalabaliktan da cikar)
     "bolge_ogren": True,          # mini haritadan bolge haritasi (mozaik) cikar, konumunu bil, takildigi yerleri hatirla
     "bolge_ogren_harita": "Bakra",
-    "bolge_kayip_sifirla_sn": 45,   # bu kadar sn konum bulunamazsa mozaigi yedekleyip bastan ogren
+    "bolge_kayip_sifirla_sn": 120,   # bu kadar sn konum bulunamazsa mozaigi yedekleyip bastan ogren
     "bolge_engel_suz": True,      # bilinen engelin ardindaki hedefleri secme (hepsi oyleyse secer)
     "metin_ust_fark": 5,          # metinler.json'a gore seviyesi (benim + bu) ustundeki metin taslarina vurma (None = sinir yok)
     "patronlardan_kacin": True,   # patronlar.json'daki patronlara (adlarindan) ve yanlarindakilere dalma
@@ -381,7 +385,42 @@ def _dx_kare(x, y, w, hh):
         return None
 
 
+_bildirim = {"son": {}, "konu": None}
+
+
+def bildir(tur, metin, ara_dk=15):
+    """Telefona kisa Turkce bildirim (ntfy.sh; konu adi .env NTFY_KONU). Ayni tur en cok ara_dk'da bir.
+    Yalniz bu kisa metin gider; ekran goruntusu, hesap ya da kisisel bilgi GITMEZ. Arka planda, botu bekletmez."""
+    try:
+        if not _AYAR_REF.get("bildirim", True):
+            return
+        if _bildirim["konu"] is None:
+            _bildirim["konu"] = ""
+            yol_e = os.path.join(KLASOR, ".env")
+            if os.path.exists(yol_e):
+                for sat in open(yol_e, encoding="utf-8"):
+                    if sat.strip().startswith("NTFY_KONU="):
+                        _bildirim["konu"] = sat.split("=", 1)[1].strip()
+        if not _bildirim["konu"] or time.time() - _bildirim["son"].get(tur, 0) < ara_dk * 60:
+            return
+        _bildirim["son"][tur] = time.time()
+
+        def _gonder():
+            try:
+                import urllib.request
+                urllib.request.urlopen(urllib.request.Request(
+                    "https://ntfy.sh/" + _bildirim["konu"], data=metin.encode("utf-8"),
+                    headers={"Title": "MetinBot", "User-Agent": "metinbot"}), timeout=8).read()
+            except Exception:
+                pass
+        threading.Thread(target=_gonder, daemon=True).start()
+    except Exception:
+        pass
+
+
+_AYAR_REF = {}
 _son_kare = [None]
+_nabiz = [time.time()]          # ana is parcaciginin son kare aldigi an (donma bekcisi)
 # Genel gorunum haritasi (M) kirpintisi: kapat dugmesine gore. 2026-11-19 olculdu (eski 254x317 sol 65 px'i kesiyordu)
 HX0, HY0, HW, HH = -307, 16, 316, 318
 
@@ -511,6 +550,8 @@ def kare_al(h):
             f = _kare_al_ic(h)
             if f is not None and f.size and f.shape[0] > 100 and f.shape[1] > 100:
                 _son_kare[0] = f
+                if threading.current_thread() is threading.main_thread():
+                    _nabiz[0] = time.time()
                 _yolo["kare_t"] = time.time()
                 return f
         except Exception:
@@ -1015,6 +1056,8 @@ def plan_hesapla(bilgi, sev, harita_adi="monastry"):
 
 # ---------------------------------------------------------------- dongu
 def calistir(ayar, sablon):
+    global _AYAR_REF
+    _AYAR_REF = ayar
     _SU["acik"] = bool(ayar.get("su_kacin", True))
     import keyboard
     import pydirectinput
@@ -2994,12 +3037,25 @@ def calistir(ayar, sablon):
         zaman_yaz("exp_son", [simdi_, sev_, exp_, gerekli_])
         zaman_yaz("exp_toplam", [exp_toplam[0], exp_toplam[1]])
         gecen_ = simdi_ - exp_toplam[1]
+        # son 30 dk, yalniz calisilan sure: ardisik okumalar arasi 15 dk'dan uzunsa (donma/kopma/duraklatma) o aralik sayilmaz
+        del exp_olcum[:-60]
+        kaz_, akt_ = 0, 0.0
+        for (ta, sa, ea, ga), (tb, sb, eb, gb) in zip(exp_olcum, exp_olcum[1:]):
+            if tb < simdi_ - 1800 or tb - ta > 900:
+                continue
+            d_ = eb - ea if sb == sa else ((ga - ea) + eb if sb == sa + 1 else None)
+            if d_ is not None and d_ >= 0:
+                kaz_ += d_
+                akt_ += tb - ta
         if gecen_ > 120:
             saat_ = exp_toplam[0] / gecen_ * 3600
-            exp_toplam[2] = round(saat_)
-            kalan_ = (gerekli_ - exp_) / saat_ * 60 if saat_ > 0 else None
-            print(f"{time.strftime('%H:%M:%S')}  tecrube: saatte {saat_:,.0f} exp ({gecen_ / 60:.0f} dk olcum)"
-                  + (f", seviye atlamaya ~{kalan_:.0f} dk" if kalan_ else ""))
+            saat30_ = kaz_ / akt_ * 3600 if akt_ > 300 else None
+            exp_toplam[2] = round(saat30_ if saat30_ is not None else saat_)
+            hiz_ = saat30_ if saat30_ else saat_
+            kalan_ = (gerekli_ - exp_) / hiz_ * 60 if hiz_ > 0 and gerekli_ > exp_ else None
+            print(f"{time.strftime('%H:%M:%S')}  tecrube: saatte {exp_toplam[2]:,.0f} exp "
+                  + (f"(son 30 dk, {akt_ / 60:.0f} dk calisma; uzun olcum {saat_:,.0f}, {gecen_ / 60:.0f} dk)" if saat30_ else f"({gecen_ / 60:.0f} dk olcum)")
+                  + (f", seviye atlamaya ~{kalan_:.0f} dk" if kalan_ and kalan_ < 6000 else ""))
             with open(os.path.join(KLASOR, "exp_olcum.csv"), "a", encoding="utf-8") as f_:
                 f_.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')},{sev_},{exp_},{gerekli_},{round(saat_)}\n")
 
@@ -3097,19 +3153,32 @@ def calistir(ayar, sablon):
         if ogren is None or time.time() - ogren_d["besle"] < 0.4:
             return
         ogren_d["besle"] = time.time()
+        try:                                            # oyun disi (giris/karakter secimi/olum/yukleme): besleme, kayip sayma
+            if sayfa_s is not None and hizli_cubuk_puani(k_b) < 0.86 or olum_penceresi(k_b) is not None:
+                ogren_d["kayip"] = 0.0
+                return
+        except Exception:
+            pass
         try:
             r_b = ogren.besle(cv2.cvtColor(np.ascontiguousarray(k_b[:200, -200:]), cv2.COLOR_RGB2BGR), time.time())
             if r_b and r_b.get("durum") == "kayip":
                 ogren_d["kayip"] = ogren_d.get("kayip") or time.time()
                 if time.time() - ogren_d["kayip"] > ayar["bolge_kayip_sifirla_sn"]:
-                    import shutil
+                    import shutil, glob
                     from harita_ogren import HaritaOgren
                     hk_ = os.path.join(KLASOR, "goruntu", "haritalar")
+                    damga_ = time.strftime("%Y%m%d-%H%M%S")
                     for uz_ in (".png", ".json", "_engel.json"):
                         y_ = os.path.join(hk_, f"mozaik_{ayar['bolge_ogren_harita']}{uz_}")
                         if os.path.exists(y_):
-                            shutil.copy(y_, y_ + ".yedek")
+                            shutil.copy(y_, f"{y_}.yedek-{damga_}")          # tarihli yedek (en cok 3 takim)
                             os.remove(y_)
+                        eski_ = sorted(glob.glob(y_ + ".yedek-*"))
+                        for e_ in eski_[:-3]:
+                            try:
+                                os.remove(e_)
+                            except OSError:
+                                pass
                     ogren = HaritaOgren(ayar["bolge_ogren_harita"], yukle=False)
                     ogren_d["kayip"] = 0.0
                     print(f"{time.strftime('%H:%M:%S')}  bolge: {ayar['bolge_kayip_sifirla_sn']} sn konum bulunamadi - "
@@ -3263,6 +3332,7 @@ def calistir(ayar, sablon):
         kisa_ = olum_sayac["dalma_z"]          # ayri liste: 'zamanlar' olum_dongusu_sn (180) ile kirpildigi icin 10 dk'yi goremiyordu
         if len(kisa_) >= ayar["dalma_olum_sayisi"] and simdi > olum_sayac.get("dalma_yok_bitis", 0):
             olum_sayac["dalma_yok_bitis"] = simdi + ayar["dalma_yok_dk"] * 60
+            bildir("olum", f"{len(kisa_)} olum {ayar['dalma_olum_sn'] // 60} dk icinde - kalabaliga dalmiyor")
             print(f"{time.strftime('%H:%M:%S')}  {len(kisa_)} olum {ayar['dalma_olum_sn']} sn icinde - "
                   f"{ayar['dalma_yok_dk']} dk kalabalik slotlara dalmiyor (yalniz tek/ikili yaratik)")
         if len(olum_sayac["zamanlar"]) >= 2:                   # 2. olumden itibaren: guclu yaratiklardan uzak dur
@@ -3458,6 +3528,7 @@ def calistir(ayar, sablon):
             giris["ekranda"] = time.time()
             kaydet("giris_ekrani.png")
             print(f"{an}  oyundan atilmis (giris ekrani) - kayitli hesapla baglaniliyor (F1)")
+            bildir("atildi", "Oyundan atildi - yeniden baglaniyor")
             pydirectinput.press("f1")                           # 'F1 Baglan <kayitli hesap>'
             time.sleep(6.0)
             return True
@@ -3490,10 +3561,15 @@ def calistir(ayar, sablon):
         giris.pop("bilinmeyen_bas", None)
         return False
 
-    kod_dosyalari = [os.path.join(KLASOR, f) for f in ("bot.py", "oku.py", "rakam.py", "yol.py", "gorev_yurut.py", "sekil.py", "ayar.json")]
+    kod_dosyalari = [os.path.join(KLASOR, f) for f in ("bot.py", "oku.py", "rakam.py", "yol.py", "gorev_yurut.py", "sekil.py",
+                                                         "harita_ogren.py", "ayar.json")]
+    _ayar_yol = kod_dosyalari[-1]
 
-    def kod_damgasi():
-        return tuple(os.path.getmtime(f) if os.path.exists(f) else 0 for f in kod_dosyalari)
+    def kod_damgasi():                                  # yalniz .py: ayar.json yeniden baslatmadan uygulanir
+        return tuple(os.path.getmtime(f) if os.path.exists(f) else 0 for f in kod_dosyalari[:-1])
+
+    def ayar_damgasi():
+        return os.path.getmtime(_ayar_yol) if os.path.exists(_ayar_yol) else 0
 
     def kod_saglam():
         """Yeni kod derlenmiyorsa (yarim kalmis duzenleme) yeniden baslatma."""
@@ -3509,6 +3585,8 @@ def calistir(ayar, sablon):
             return False
 
     ilk_damga, son_damga_bakis = kod_damgasi(), time.time()
+    ilk_ayar_damga = [ayar_damgasi()]
+    yeni_surum_ilk = [0.0]                              # yeni kod ilk goruldugu an (sakin ani beklemek icin)
 
     yol_sh = os.path.join(KLASOR, "sablon", "sohbet_normal.png")
     sohbet_s = cv2.imread(yol_sh, cv2.IMREAD_GRAYSCALE) if os.path.exists(yol_sh) else None
@@ -3855,6 +3933,7 @@ def calistir(ayar, sablon):
                 if a_ == "kirmizi_pot":                              # can potu bitti: olum dongusune girmesin
                     if time.time() - pot_bitti[0] > 300:
                         print(f"{time.strftime('%H:%M:%S')}  POT BITTI - 30 dk temkinli: kalabaliga dalmiyor, yalniz kolay yaratik (pot alinmali)")
+                        bildir("pot", "Kirmizi pot bitti - saticidan alinacak")
                     pot_bitti[0] = time.time()
                     olum_sayac["temkin_bitis"] = max(olum_sayac["temkin_bitis"], time.time() + 1800)
                     olum_sayac["dalma_yok_bitis"] = max(olum_sayac.get("dalma_yok_bitis", 0), time.time() + 1800)
@@ -4471,6 +4550,7 @@ def calistir(ayar, sablon):
                     print(f"{time.strftime('%H:%M:%S')}  pot al: {ad_} 1 paket alindi ({y_once - y_sonra:,} Yang, kalan {y_sonra:,})")
                     return True
                 print(f"{time.strftime('%H:%M:%S')}  pot al: {ad_} ALINAMADI - Yang degismedi ({y_once:,}); para yetmemis olabilir")
+                bildir("pot_alinamadi", "Pot alinamadi (Yang degismedi)")
                 return False
             print(f"{time.strftime('%H:%M:%S')}  pot al: {ad_} 1 paket alindi (Yang okunamadi - DOGRULANAMADI)")
             return True
@@ -4672,6 +4752,8 @@ def calistir(ayar, sablon):
                     istek["harita_kaydet"] = True
                 elif k_ == "envanter_foto":
                     istek["envanter_foto"] = True
+                elif k_ == "yeniden_baslat":
+                    istek["yeniden_baslat"] = True
                 elif k_ == "pot_yuva_test":
                     istek["pot_yuva_test"] = True
                 elif k_ == "harita_buyuk_kaydet":
@@ -4727,6 +4809,33 @@ def calistir(ayar, sablon):
             time.sleep(1.0)
 
     threading.Thread(target=_uzaktan_dongu, daemon=True).start()
+
+    def _donma_bekcisi():
+        """Ana dongu uzun sure kare almazsa (ekran yakalama ya da bir bekleme sonsuza asildi; bugun 2 kez 35 ve 114 dk)
+        botu kod 1 ile kapatir: Bot-Baslat.bat 10 sn sonra yeniden acar. Duraklatma / oyun onde degilken saymaz."""
+        while durum["calis"]:
+            time.sleep(10)
+            try:
+                if (not ayar["donma_bekcisi"] or durum["duraklat"] or win32gui.GetForegroundWindow() != h):
+                    _nabiz[0] = time.time()
+                    continue
+                bos_ = time.time() - _nabiz[0]
+                if bos_ > ayar["donma_sn"]:
+                    print(f"{time.strftime('%H:%M:%S')}  DONMA: ana dongu {bos_:.0f} sn'dir ekran okumadi - bot yeniden baslatiliyor (kod 1)")
+                    try:
+                        bildir("donma", f"Bot {bos_ / 60:.0f} dk dondu, kendini yeniden baslatiyor")
+                    except Exception:
+                        pass
+                    try:
+                        birak()
+                    except Exception:
+                        pass
+                    sys.stdout.flush()
+                    os._exit(1)
+            except Exception:
+                pass
+
+    threading.Thread(target=_donma_bekcisi, daemon=True).start()
 
     secilemedi = 0
     son_serbest, tehdit = 0.0, False
@@ -5009,7 +5118,27 @@ def calistir(ayar, sablon):
             bolge_besle(kare)
             if time.time() - son_damga_bakis > 5:
                 son_damga_bakis = time.time()
-                if kod_damgasi() != ilk_damga and kod_saglam():
+                if ayar_damgasi() != ilk_ayar_damga[0]:          # panelden ayar degisti: yeniden baslatmadan uygula
+                    try:
+                        yeni_a = ayar_yukle()
+                        degisen_ = sorted(k_ for k_ in yeni_a if yeni_a.get(k_) != ayar.get(k_))
+                        ayar.clear()
+                        ayar.update(yeni_a)
+                        ilk_ayar_damga[0] = ayar_damgasi()
+                        if degisen_:
+                            print(f"{time.strftime('%H:%M:%S')}  ayar uygulandi (yeniden baslatmadan): {', '.join(degisen_[:8])}")
+                    except Exception as e_a:
+                        print("ayar okunamadi (yarim yazilmis olabilir), sonra yeniden denenecek:", e_a)
+                yeni_kod_ = kod_damgasi() != ilk_damga
+                if yeni_kod_ and not yeni_surum_ilk[0]:
+                    yeni_surum_ilk[0] = time.time()
+                    print(f"{time.strftime('%H:%M:%S')}  yeni surum var - sakin bir anda yuklenecek")
+                son_degisim_ = max(kod_damgasi()) if yeni_kod_ else 0
+                sakin_ = (not saldiri_altinda() and can_orani(kare) > 0.6
+                          and not any(math.hypot(t[0] - gen // 2, t[1] + 45 - int(yuk * 0.58)) < 300 for t in kirmizi_etiketler(kare)))
+                acil_ = istek.pop("yeniden_baslat", False)
+                if (acil_ or (yeni_kod_ and time.time() - son_degisim_ > ayar["surum_bekle_sn"]
+                              and (sakin_ or time.time() - yeni_surum_ilk[0] > 600))) and kod_saglam():
                     print(f"{time.strftime('%H:%M:%S')}  yeni surum bulundu - bot kendini yeniden baslatiyor")
                     birak()
                     yeniden_baslat[0] = True
@@ -5485,6 +5614,8 @@ def calistir(ayar, sablon):
                 okunan = seviye_karakterden()
                 if okunan and okunan != benim_sev:
                     print(f"{time.strftime('%H:%M:%S')}  seviye: {okunan} (karakter penceresinden)")
+                    if benim_sev and okunan > benim_sev:
+                        bildir("seviye", f"Seviye atladi: Lv {okunan}", ara_dk=1)
                     if plan["sev"] != okunan:
                         plan["sev"], plan["p"] = okunan, plan_hesapla(bilgi, okunan)
                         print(f"{time.strftime('%H:%M:%S')}  plan: {plan['p']['yazi']}")

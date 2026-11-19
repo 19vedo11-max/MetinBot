@@ -37,13 +37,13 @@ AYAR_IZINLI = {
     "kare_paylas_klasoru", "kare_paylas_adi", "kare_paylas_gunluk",
     "profil", "alan_kullan", "av_gorevi", "gorev_parsomen", "aranan_oncelik", "npc_gorevleri",
     "dusuk_seviye_kesme", "sadece_slot", "esyaya_tikla", "olunce_yeniden_basla", "yeniden_baglan",
-    "beceri_puani_dagit", "pot_yuvasi_doldur", "metin_kes", "pot_satin_al", "pot_al_kirmizi_paket", "pot_al_mavi_paket", "pot_boy", "pot_paket", "pot_sira_kirmizi", "pot_sira_mavi", "patronlardan_kacin", "metin_ust_fark",
+    "beceri_puani_dagit", "pot_yuvasi_doldur", "metin_kes", "pot_satin_al", "pot_al_kirmizi_paket", "pot_al_mavi_paket", "pot_boy", "pot_paket", "pot_sira_kirmizi", "pot_sira_mavi", "patronlardan_kacin", "metin_ust_fark", "bildirim",
     "can_esigi", "mana_esigi", "seviye_ust_fark", "seviye_alt_fark", "slot_en_az", "savunma_can_esigi",
     "kasilma_alani", "toplanacak_grup", "statu", "esya_avi", "sadece_hedefler",
     "sinif", "beceri_grubu", "egitmen_anahtar", "sureli_tuslar", "saldiri_becerileri", "hamle_tusu", "saldiri_tusu",
     "can_potu_tusu", "mana_potu_tusu", "uzak_dovus", "beceri_puani_dagit",
 }
-KOMUT_IZINLI = {"duraklat", "devam", "kapat", "koy1", "koy2", "harita_kaydet", "harita_buyuk_kaydet", "pot_al"}
+KOMUT_IZINLI = {"duraklat", "devam", "kapat", "koy1", "koy2", "harita_kaydet", "harita_buyuk_kaydet", "pot_al", "yeniden_baslat"}
 
 
 def _oku_csv(ad, n):
@@ -125,7 +125,12 @@ def durum():
     a.update(kumanda.ayar_oku())
     haritalar = sorted(f[:-4] for f in os.listdir(os.path.join(KLASOR, "goruntu", "haritalar")) if f.endswith(".png")) \
         if os.path.isdir(os.path.join(KLASOR, "goruntu", "haritalar")) else []
+    try:
+        panel_surum = os.path.getmtime(os.path.join(WEB, "index.html"))
+    except OSError:
+        panel_surum = 0
     return {
+        "panel_surum": panel_surum,
         "canli": d,
         "ayar": {k: a.get(k) for k in AYAR_IZINLI},
         "profiller": [{"ad": k, "etiket": v, "aciklama": kumanda.PROFIL_ACIKLAMA.get(k, "")}

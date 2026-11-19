@@ -242,6 +242,7 @@ dialog .satir{padding:6px 0}
       <button class="d ana" id="anaDugme">Botu başlat</button>
       <button class="d" data-komut="koy1">1. köye ışınlan</button>
       <button class="d" data-komut="koy2">2. köye ışınlan</button>
+      <button class="d" data-komut="yeniden_baslat" title="Bekleyen yeni sürümü hemen yükler (bot birkaç saniye durup yeniden açılır)">Yeniden başlat</button>
       <button class="d tehlike" data-komut="kapat">Botu kapat</button>
     </nav>
     <div class="ozs">
@@ -469,8 +470,8 @@ const HKAY=[
   ["can_esigi","Can potu eşiği",.1,.9,.05,v=>`%${Math.round(v*100)} altında`,"Can bu yüzdenin altına inince can potu basılır."],
 ];
 const MKAY=[["metin_ust_fark","Seviyemden en çok kaç seviye üstteki metni keseyim",0,15,1,(v,s)=>`+${v}`+(s?` → en çok Lv ${s+v}`:""),"Seviyeni aşan metin taşlarına dokunmaz."]];
-const HAN=[["metin_kes","Metin taşı kes","Ekranda metin taşı görünce önce onu keser."],["pot_satin_al","Pot bitince satın al","Kırmızı ya da mavi pot bitince satıcıdan alır."],["patronlardan_kacin","Patronlardan kaçın","Patron listesindeki yaratıklara dalmaz."],["alan_kullan","Çizdiğim alanda kal","Kapalıyken bot bölgeyi kendisi seçer; çizim saklı kalır."]];
-const DUP_AN=k=>k==="patronlardan_kacin"?a=>a[k]!==false:a=>!!a[k];
+const HAN=[["metin_kes","Metin taşı kes","Ekranda metin taşı görünce önce onu keser."],["pot_satin_al","Pot bitince satın al","Kırmızı ya da mavi pot bitince satıcıdan alır."],["patronlardan_kacin","Patronlardan kaçın","Patron listesindeki yaratıklara dalmaz."],["alan_kullan","Çizdiğim alanda kal","Kapalıyken bot bölgeyi kendisi seçer; çizim saklı kalır."],["bildirim","Telefona bildirim","Pot bitti, sık ölüm, oyundan atılma, donma, seviye atlama olunca telefona kısa mesaj (ntfy)."]];
+const DUP_AN=k=>(k==="patronlardan_kacin"||k==="bildirim")?a=>a[k]!==false:a=>!!a[k];
 function kayHtml(pre,l){return l.map(([k,e,mn,mx,ad,,ip])=>`<div class="kaydir" title="${esc(ip||"")}"><div><span>${e}</span><b id="${pre}v_${k}"></b></div><input type="range" id="${pre}r_${k}" min="${mn}" max="${mx}" step="${ad}" aria-label="${e}"></div>`).join("")}
 function anHtml(pre,l){return l.map(([k,e,ip])=>`<label class="anahtar" title="${esc(ip)}"><div><b>${e}</b></div><input type="checkbox" class="sw" id="${pre}s_${k}" data-ayar="${k}"></label>`).join("")}
 function kayKur(pre,l){l.forEach(([k,,,,ad,f])=>{const i=$("#"+pre+"r_"+k);
@@ -770,7 +771,9 @@ async function beceriPenceresi(){
 async function yenile(){
   try{const r=await fetch(api("/api/durum"),{cache:"no-store"});
     if(!r.ok){$("#durum").textContent=r.status===403?"Anahtar geçersiz: adresi bilgisayardaki konsoldan kopyala.":"Panel hatası";return}
-    const ilk=!D; D=await r.json(); if(ilk)kur(); ciz()}
+    const ilk=!D; D=await r.json();
+    if(D.panel_surum){if(window.PS&&D.panel_surum!==window.PS){location.reload();return} window.PS=D.panel_surum}   // panel guncellenince kendini yenile
+    if(ilk)kur(); ciz()}
   catch(e){$("#durum").textContent="Panel sunucusu kapalı: bilgisayarda Web-Panel.bat'ı aç.";$("#isik").className="isik"}
 }
 function ekranYenile(){$("#ekran").src=api("/api/ekran?t="+Date.now())}
