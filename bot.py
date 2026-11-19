@@ -174,7 +174,9 @@ VARSAYILAN = {
     "bosta_donus_sn": 0.5,
     "bosta_hareket_px": 0.8,      # bolge haritasinda son 2 sn'de bu kadar yer degisimi = yuruyor        # bosta bakista kameranin donus suresi (bir yon; sonraki seferde oteki)      # bosta/ararken/takilinca kamera uzakta kalir, hedef secilince yakina doner  # hedef aranirken en sik bu aralikla uzaklas-yakinlas
     "yururken_bakis_sn": 3.0,     # yururken bu aralikla sirayla saga/sola kisa bakis (0 = kapali)
-    "kamera_zoom_tara_sn": 0.5,  # hedef ararken etrafa bakmadan once bu kadar uzaklas, sonra ayni sure yakinlas (0 = kapali)
+    "kamera_zoom_tara_sn": 0.5,
+    "zoom_max_sn": 1.5,           # en uzaga cikmak icin F basma suresi
+    "zoom_yakin_sn": 0.35,        # savas kamerasi: en uzaktan bu kadar sn R (0 = hep en uzak; buyudukce yakin)  # hedef ararken etrafa bakmadan once bu kadar uzaklas, sonra ayni sure yakinlas (0 = kapali)
     "zoom_uzak_tusu": "f",
     "zoom_yakin_tusu": "r",
     "akilli_yan_kacis": True,     # takilinca iki yandan (sag/sol) yaratigi az olana kac (eski: hep ayni yana)
@@ -3198,6 +3200,10 @@ def calistir(ayar, sablon):
             kamera_egim_ayarla()
 
     def kamera_egim_ayarla():
+        try:
+            zoom_sabitle()
+        except NameError:
+            pass
         son_kamera_egim[0] = time.time()
         print(f"{time.strftime('%H:%M:%S')}  kamera: aci duzeltildi (yatay)")
         birak()
@@ -4971,24 +4977,34 @@ def calistir(ayar, sablon):
     kamera_z = {"uzak": False, "t": 0.0}
 
     def zoom_uzak():
-        """Kamerayi uzaklastir (bir kez): genis alan gorulsun. Zaten uzaktaysa bir sey yapma."""
+        """Kamerayi EN UZAGA al (F'yi uzun bas: en uzakta daha fazla uzaklasmaz -> her seferinde ayni nokta)."""
         if not ayar["kamera_uzak_kal"] or kamera_z["uzak"]:
             return
         with tik_kilit:
             pydirectinput.keyDown(ayar["zoom_uzak_tusu"])
-            time.sleep(ayar["kamera_zoom_tara_sn"])
+            time.sleep(ayar["zoom_max_sn"])
             pydirectinput.keyUp(ayar["zoom_uzak_tusu"])
         kamera_z["uzak"], kamera_z["t"] = True, time.time()
 
     def zoom_yakin():
-        """Uzaklastirilmissa ayni sure yakinlas (vurma mesafesi piksel olcegi geri gelsin)."""
+        """En uzaktan zoom_yakin_sn kadar yakinlas: savas kamerasi hep ayni yakinlikta (vurma mesafesi pikseli dogru,
+        eski esit sureli gidip gelme her seferinde biraz daha yaklasip en yakina iniyordu)."""
         if not kamera_z["uzak"]:
             return
         with tik_kilit:
-            pydirectinput.keyDown(ayar["zoom_yakin_tusu"])
-            time.sleep(ayar["kamera_zoom_tara_sn"])
-            pydirectinput.keyUp(ayar["zoom_yakin_tusu"])
+            if ayar["zoom_yakin_sn"] > 0:
+                pydirectinput.keyDown(ayar["zoom_yakin_tusu"])
+                time.sleep(ayar["zoom_yakin_sn"])
+                pydirectinput.keyUp(ayar["zoom_yakin_tusu"])
         kamera_z["uzak"] = False
+
+    def zoom_sabitle():
+        """Bilinen yakinliga getir (acilista ve kamera acisi duzeltilirken): en uzak -> zoom_yakin_sn yakin."""
+        if not ayar["kamera_uzak_kal"]:
+            return
+        kamera_z["uzak"] = False
+        zoom_uzak()
+        zoom_yakin()
 
     KAMERA_SERBEST = {"slot kesiyor", "savunma", "ana dongu (hedef ariyor)", "yuruyor (hedef ariyor)",
                       "alan ici kisa yuruyus", "hedefe gidiyor", "vurus_bekle", "vuruluyor - vurani ariyor"}

@@ -480,6 +480,7 @@ const HKAY=[
   ["toplanacak_grup","Kesmeden önce toplanacak grup",1,5,1,v=>v+" grup","Bot önce bu kadar grubu bir araya toplar, sonra keser."],
   ["slot_en_az","Slot sayılması için en az yaratık",2,8,1,v=>"en az "+v+" yaratık","Slot kesme açıksa bu sayıdan küçük kümelere gitmez."],
   ["can_esigi","Can potu eşiği",.1,.9,.05,v=>`%${Math.round(v*100)} altında`,"Can bu yüzdenin altına inince can potu basılır."],
+  ["zoom_yakin_sn","Savaşta kamera yakınlığı",0,1.2,.05,v=>v<=0?"en uzak":v<.3?"uzak":v<.6?"orta":v<.9?"yakın":"çok yakın","Boştayken kamera en uzakta; hedefe girince bu kadar yakınlaşır. Değişince vurma mesafesi birkaç dakikada yeniden öğrenilir."],
 ];
 const MKAY=[["metin_ust_fark","Seviyemden en çok kaç seviye üstteki metni keseyim",0,15,1,(v,s)=>`+${v}`+(s?` → en çok Lv ${s+v}`:""),"Seviyeni aşan metin taşlarına dokunmaz."]];
 const HAN=[["metin_kes","Metin taşı kes","Ekranda metin taşı görünce önce onu keser."],["pot_satin_al","Pot bitince satın al","Kırmızı ya da mavi pot bitince satıcıdan alır."],["patronlardan_kacin","Patronlardan kaçın","Patron listesindeki yaratıklara dalmaz."],["alan_kullan","Çizdiğim alanda kal","Kapalıyken bot bölgeyi kendisi seçer; çizim saklı kalır."],["bildirim","Telefona bildirim","Pot bitti, sık ölüm, oyundan atılma, donma, seviye atlama olunca telefona kısa mesaj (ntfy)."]];
