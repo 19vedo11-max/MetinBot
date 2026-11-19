@@ -228,6 +228,7 @@ dialog .satir{padding:6px 0}
 .hmod{display:flex;gap:8px;align-items:center}.hmod select{flex:1}
 .metin-l li.soluk{opacity:.4}.metin-l li.uygun b{color:var(--bronz-acik)}
 @media (max-width:420px){.izgara{grid-template-columns:1fr}}
+.olumler{list-style:none;margin:0;padding:0;display:grid;gap:3px;font-size:.82rem}.olumler li{padding:3px 2px;border-bottom:1px solid rgba(200,160,90,.15)}.olumler b{margin-right:6px}.olumler .bos{opacity:.7;border:0}
 </style>
 </head>
 <body>
@@ -363,6 +364,14 @@ dialog .satir{padding:6px 0}
           <div id="mAn"></div>
           <div id="mKay" class="alt-ayrac"></div>
           <ul class="patronlar metin-l" id="metinListe"><li class="bos">Liste yükleniyor…</li></ul>
+        </div>
+      </section>
+
+      <section class="acc" data-g="sol" data-k="olum">
+        <button class="ah" aria-expanded="false" aria-controls="ag_olum"><span class="ok" aria-hidden="true"></span><span class="at">Son ölümler</span><span class="oz" id="oz_olum"></span></button>
+        <div class="ag ic" id="ag_olum">
+          <p class="ozet" style="margin:0 0 .3rem">Her ölümden önceki 20 saniye: en düşük can, yanındaki yaratık sayısı ve seviyeleri, 1. pot yuvası.</p>
+          <ul class="olumler" id="olumListe"><li class="bos">Henüz kayıt yok.</li></ul>
         </div>
       </section>
 
@@ -590,6 +599,7 @@ function kur(){
   siraKur("siraKirmizi","pot_sira_kirmizi"); siraKur("siraMavi","pot_sira_mavi");
   $("#patronKacin").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({patronlardan_kacin:e.target.checked})});
   patronYukle();
+  olumYukle();
   $("#potPaket").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({pot_paket:+e.target.value})});
   $("#topDugme").onclick=topla; $("#esyaDugme").onclick=esyaPenceresi; $("#beceriDugme").onclick=beceriPenceresi; $("#kpKaydet").onclick=()=>ayarYaz({kare_paylas_klasoru:$("#kpKlasor").value.trim(),kare_paylas_adi:$("#kpAd").value.trim(),kare_paylas_gunluk:Math.max(0,parseInt($("#kpSayi").value)||0)}); $("#hedefDugme").onclick=canavarPenceresi;
   const kd=l=>l.map(k=>KAYDIRLAR.find(x=>x[0]===k)).map(([k,e,mn,mx,ad])=>`<div class="kaydir"><div><span>${e}</span><b id="v_${k}"></b></div><input type="range" id="r_${k}" min="${mn}" max="${mx}" step="${ad}" aria-label="${e}"></div>`).join("");
@@ -837,6 +847,17 @@ async function patronYukle(){
     const img=g?`<img src="${api("/patron/"+encodeURIComponent(g))}" alt="" loading="lazy">`:'<span class="yer"></span>';
     return `<li title="${esc(p.kaynak||"")}">${img}<div><b>${ad}</b><small>${p.seviye?"Lv "+esc(String(p.seviye)):""}${p.harita?" · "+esc(p.harita):""}${p.tur&&p.tur!=="patron"?" · "+esc(p.tur):""}</small></div></li>`}).join("");
 }
+
+async function olumYukle(){
+  let O=[]; try{O=(await (await fetch(api("/api/olumler"),{cache:"no-store"})).json()).olumler||[]}catch(e){}
+  const ul=$("#olumListe"); if(!ul)return;
+  const bugun=new Date().toISOString().slice(0,10);
+  $("#oz_olum").textContent=O.length?(O.filter(o=>(o.zaman||"").startsWith(bugun)).length+" bugün"):"kayıt yok";
+  if(!O.length){ul.innerHTML='<li class="bos">Henüz kayıt yok.</li>';return}
+  ul.innerHTML=O.map(o=>{const c=parseFloat(o.can);const can=isNaN(c)||c<0?"?":"%"+Math.round(c*100);
+    return `<li><b>${esc((o.zaman||"").slice(11,16))}</b> <span>can en düşük ${can} · yanında ${esc(o.yakin||"?")} yaratık${o.seviyeler?" (Lv "+esc(o.seviyeler)+")":""} · pot ${esc(o.pot||"?")}</span></li>`}).join("");
+}
+setInterval(olumYukle,60000);
 </script>
 </body>
 </html>

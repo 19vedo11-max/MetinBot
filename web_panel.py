@@ -202,6 +202,14 @@ class Isleyici(BaseHTTPRequestHandler):
             if os.path.exists(p):
                 with open(p, "rb") as f:
                     return self._gonder(200, f.read(), "image/png")
+        if yol == "/api/olumler":                       # olum kara kutusu: son 10 kayit
+            try:
+                with open(os.path.join(KLASOR, "olum_defteri.csv"), encoding="utf-8") as f:
+                    satir = [x.rstrip("\n").split(",") for x in f.readlines()[1:]][-10:]
+                return self._gonder(200, {"olumler": [dict(zip(["zaman", "seviyem", "can", "yakin", "seviyeler", "pot", "mana", "alan"], x))
+                                                      for x in reversed(satir)]})
+            except Exception:
+                return self._gonder(200, {"olumler": []})
         if yol == "/api/metinler":
             try:
                 with open(os.path.join(KLASOR, "metinler.json"), encoding="utf-8") as f:
