@@ -3049,7 +3049,7 @@ def calistir(ayar, sablon):
             if sev_ == s0:
                 kazanc_ = exp_ - e0
             elif sev_ == s0 + 1:
-                kazanc_ = (g0 - e0) + exp_                      # seviye atladi
+                kazanc_ = g0 + exp_                             # seviye atladi (g0 = onceki seviyede KALAN)
             else:
                 kazanc_ = None                                   # okuma hatasi / cok seviye: yeni baslangic
                 exp_olcum.clear()
@@ -3070,7 +3070,7 @@ def calistir(ayar, sablon):
         for (ta, sa, ea, ga), (tb, sb, eb, gb) in zip(exp_olcum, exp_olcum[1:]):
             if tb < simdi_ - 1800 or tb - ta > 900:
                 continue
-            d_ = eb - ea if sb == sa else ((ga - ea) + eb if sb == sa + 1 else None)
+            d_ = eb - ea if sb == sa else (ga + eb if sb == sa + 1 else None)
             if d_ is not None and d_ >= 0:
                 kaz_ += d_
                 akt_ += tb - ta
@@ -3079,7 +3079,7 @@ def calistir(ayar, sablon):
             saat30_ = kaz_ / akt_ * 3600 if akt_ > 300 else None
             exp_toplam[2] = round(saat30_ if saat30_ is not None else saat_)
             hiz_ = saat30_ if saat30_ else saat_
-            kalan_ = (gerekli_ - exp_) / hiz_ * 60 if hiz_ > 0 and gerekli_ > exp_ else None
+            kalan_ = gerekli_ / hiz_ * 60 if hiz_ > 0 and gerekli_ > 0 else None      # gerekli_ = seviye atlamaya KALAN exp
             print(f"{time.strftime('%H:%M:%S')}  tecrube: saatte {exp_toplam[2]:,.0f} exp "
                   + (f"(son 30 dk, {akt_ / 60:.0f} dk calisma; uzun olcum {saat_:,.0f}, {gecen_ / 60:.0f} dk)" if saat30_ else f"({gecen_ / 60:.0f} dk olcum)")
                   + (f", seviye atlamaya ~{kalan_:.0f} dk" if kalan_ and kalan_ < 6000 else ""))

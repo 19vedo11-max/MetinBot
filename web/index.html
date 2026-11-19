@@ -511,8 +511,8 @@ function ciz(){
   const exp=D.exp.filter(r=>r.length>=5).map(r=>({sev:+r[1],e:+r[2],g:+r[3],s:+r[4]}));
   const s=c.exp_saat||(exp.length?exp.at(-1).s:0);
   if(s){$("#expSaat").textContent=s.toLocaleString("tr-TR")+" exp/saat";
-    const son=exp.at(-1); if(son){const dk=Math.round((son.g-son.e)/s*60);
-      $("#expAlt").textContent=`Seviye ${son.sev}'den ${son.sev+1}'e: ${son.e.toLocaleString("tr-TR")} / ${son.g.toLocaleString("tr-TR")}, atlamaya yaklaşık ${dk} dk`}}
+    const son=exp.at(-1); if(son){const dk=Math.round(son.g/s*60), top=son.e+son.g;   // g = seviye atlamaya KALAN exp
+      $("#expAlt").textContent=`Lv ${son.sev} → ${son.sev+1}: ${son.e.toLocaleString("tr-TR")} / ${top.toLocaleString("tr-TR")} (%${Math.round(son.e/top*100)}), kalan ${son.g.toLocaleString("tr-TR")} exp ≈ ${dk<90?dk+" dk":(dk/60).toFixed(1)+" saat"}`}}
   const g=$("#expGrafik");
   if(exp.length>1){const m=Math.max(...exp.map(x=>x.s))||1, p=exp.map((x,i)=>`${(i/(exp.length-1)*600).toFixed(1)},${(105-x.s/m*95).toFixed(1)}`).join(" ");
     g.innerHTML=`<defs><linearGradient id="dg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#c9974a" stop-opacity=".35"/><stop offset="1" stop-color="#c9974a" stop-opacity="0"/></linearGradient></defs>
