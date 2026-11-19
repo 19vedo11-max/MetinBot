@@ -168,6 +168,7 @@ VARSAYILAN = {
     "akilli_yan_kacis": True,     # takilinca iki yandan (sag/sol) yaratigi az olana kac (eski: hep ayni yana)
     "kacinilan_yaratiklar": ["boss", "patron", "lider", "reis", "kral"],   # adinda bunlar gecen yaratiga (ve yanindakilere) dalma
     "patron_atla_sn": 30,
+    "burada_tutmazsa_sehirde": True,   # 'Burada yeniden basla' 25 sn tutmazsa 'Sehirde'ye gec (kalabaliktan da cikar)
     "bolge_ogren": True,          # mini haritadan bolge haritasi (mozaik) cikar, konumunu bil, takildigi yerleri hatirla
     "bolge_ogren_harita": "Bakra",
     "bolge_kayip_sifirla_sn": 45,   # bu kadar sn konum bulunamazsa mozaigi yedekleyip bastan ogren
@@ -3298,6 +3299,9 @@ def calistir(ayar, sablon):
                 return True
             yer = p_[1]
         print(f"{time.strftime('%H:%M:%S')}  {kim}: dirilme dugmesi 25 sn'de tutmadi ({deneme_} tiklama)")
+        if not sehirde and ayar["burada_tutmazsa_sehirde"]:   # 'Burada' kilitli (art arda olum): sonraki tur Sehirde
+            olum_pencere["sehirde"] = True
+            print(f"{time.strftime('%H:%M:%S')}  {kim}: 'Burada' tutmuyor - 'Sehirde yeniden basla'ya geciliyor")
         return False
 
     def temkinde():
