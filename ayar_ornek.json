@@ -190,5 +190,6 @@
   "kamera_egim_aralik_sn": 35,
   "alan_bos_sn": 25,
   "etrafa_bakma_sn": 1.25,
-  "pot_paket": 200
+  "pot_paket": 200,
+  "pot_boy": "kucuk"
 }

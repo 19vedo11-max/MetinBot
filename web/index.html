@@ -221,6 +221,10 @@ dialog .ic{overflow:auto;flex:1;min-height:0}
       <h3>Seviye puanı</h3>
       <p class="ozet">Seviye atlayınca puanlar hangi özelliğe gitsin. “Dağıtma” seçilirse puan verilmez.</p>
       <select id="statu" aria-label="Puan dağıtımı"></select>
+      <h3>Pot boyu ve paket</h3>
+      <p class="ozet">Kırmızı ya da mavi, hangisi önce biterse satıcıdan ikisinden de bu boy ve paketle alınır.</p>
+      <div class="satir"><label for="potBoy">Boy</label><select id="potBoy"><option value="kucuk">Küçük</option><option value="orta">Orta</option><option value="buyuk">Büyük</option></select></div>
+      <div class="satir"><label for="potPaket">Paket</label><select id="potPaket"><option value="20">20'lik</option><option value="200">200'lük</option></select></div>
     </div></section>
 
     <section class="pen"><h2 class="bs">Kare paylaş</h2><div class="ic">
@@ -309,8 +313,8 @@ const KAYDIRLAR=[
   ["mana_esigi","Mana potu basma eşiği",0,.9,.05,v=>v?`%${Math.round(v*100)}`:"kapalı"],
   ["toplanacak_grup","Kesmeden önce toplanacak grup sayısı",1,5,1,v=>`${v}`],
   ["slot_en_az","Slot sayılması için en az yaratık",2,8,1,v=>`${v}`],
-  ["pot_al_kirmizi_paket","Kaç paket küçük kırmızı pot alsın",0,10,1,v=>`${v} paket, ${v*200} adet`],
-  ["pot_al_mavi_paket","Kaç paket küçük mavi pot alsın",0,10,1,v=>`${v} paket, ${v*200} adet`],
+  ["pot_al_kirmizi_paket","Kaç paket kırmızı pot alsın",0,10,1,v=>`${v} paket`],
+  ["pot_al_mavi_paket","Kaç paket mavi pot alsın",0,10,1,v=>`${v} paket`],
 ];
 const TUM=[...YANINDA,...ANAHTARLAR];
 const PLAN_DURUM={level:"level kasıyor",metin:"metin kesiyor",gorev:"önce görevler",yalniz_gorev:"yalnız görev yapıyor",toplama:"yalnız topluyor",ozel:"özel ayarlarla"};
@@ -348,6 +352,7 @@ function ciz(){
     YANINDA.forEach(([k])=>{const i=$("#a_"+k); i.disabled=hepsi; if(hepsi)i.checked=true; i.closest("label").classList.toggle("kilit",hepsi)});
     $("#yanNot").textContent=hepsi?"“Önce görevler” seçiliyken dördü de açık sayılır.":"Kasılırken bunlardan hangilerini de yapsın:";
     $("#statu").value=a.statu==null?"str":a.statu;
+    $("#potBoy").value=a.pot_boy||"kucuk"; $("#potPaket").value=String(a.pot_paket||200);
     KAYDIRLAR.forEach(([k,,,,,f])=>{const i=$("#r_"+k); if(i&&a[k]!=null){i.value=a[k];$("#v_"+k).textContent=f(+a[k],c.seviye)}});
     $("#alanKullan").checked=!!a.alan_kullan;
   }
@@ -374,6 +379,8 @@ function kur(){
   TUM.forEach(([k])=>$("#a_"+k).addEventListener("change",e=>ayarYaz({[k]:e.target.checked})));
   $("#statu").innerHTML=STATULER.map(([k,e])=>`<option value="${k}">${e}</option>`).join("");
   $("#statu").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({statu:e.target.value})});
+  $("#potBoy").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({pot_boy:e.target.value})});
+  $("#potPaket").addEventListener("change",e=>{dokunuldu=Date.now();ayarYaz({pot_paket:+e.target.value})});
   $("#topDugme").onclick=topla; $("#esyaDugme").onclick=esyaPenceresi; $("#beceriDugme").onclick=beceriPenceresi; $("#kpKaydet").onclick=()=>ayarYaz({kare_paylas_klasoru:$("#kpKlasor").value.trim(),kare_paylas_adi:$("#kpAd").value.trim(),kare_paylas_gunluk:Math.max(0,parseInt($("#kpSayi").value)||0)}); $("#hedefDugme").onclick=canavarPenceresi;
   $("#kaydirlar").innerHTML=KAYDIRLAR.map(([k,e,mn,mx,ad])=>`<div class="kaydir"><div><span>${e}</span><b id="v_${k}"></b></div><input type="range" id="r_${k}" min="${mn}" max="${mx}" step="${ad}" aria-label="${e}"></div>`).join("");
   KAYDIRLAR.forEach(([k,,,,ad,f])=>{const i=$("#r_"+k);

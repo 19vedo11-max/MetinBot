@@ -200,6 +200,7 @@ VARSAYILAN = {
     "yolo_oyuncu_koru": True,    # etiketin govdesi YOLO oyuncu ise hedef alma
     "sadece_hedefler": [],        # doluysa yalniz adi bunlara tutan canavarlar kesilir (or. "Kotu Siyah Firtina Okcusu")
     "pot_satin_al": True,         # can potu bitince koydeki Saticidan al (20'lik kucuk iksir paketleri)
+    "pot_boy": "kucuk",           # kucuk / orta / buyuk iksir (sablon/dukkan_<renk>_<boy><paket>.png)
     "pot_paket": 200,             # dukkandaki paket boyu: 20 ya da 200 (sablon/dukkan_kirmizi200.png)
     "pot_al_kirmizi_paket": 5,    # kac paket kucuk kirmizi (her biri pot_paket adet)
     "pot_al_mavi_paket": 1,       # kac paket kucuk mavi
@@ -3441,6 +3442,7 @@ def calistir(ayar, sablon):
         return int(((r_[..., 2] > 150) & (r_[..., 0] < 110) & (r_[..., 1] < 110)).sum()) >= 6
 
     pot_bitti = [0.0]   # can potunun envanterde bulunamadigi son an
+    mavi_bitti = [0.0]  # mana potunun envanterde bulunamadigi son an
     pot_alim = [0.0]    # son pot satin alma denemesi
 
     def pot_yuvasi_doldur(k):
@@ -3479,6 +3481,10 @@ def calistir(ayar, sablon):
                     pot_bitti[0] = time.time()
                     olum_sayac["temkin_bitis"] = max(olum_sayac["temkin_bitis"], time.time() + 1800)
                     olum_sayac["dalma_yok_bitis"] = max(olum_sayac.get("dalma_yok_bitis", 0), time.time() + 1800)
+                elif a_ == "mavi_pot":                               # mana potu bitti: o da satin alma sebebi
+                    if time.time() - mavi_bitti[0] > 300:
+                        print(f"{time.strftime('%H:%M:%S')}  MAVI POT BITTI - saticidan alinacak")
+                    mavi_bitti[0] = time.time()
                 continue
             tikla(yer_[0], yer_[1])                                  # potu al (elde)
             time.sleep(0.25)
@@ -4198,7 +4204,7 @@ def calistir(ayar, sablon):
             print(f"{time.strftime('%H:%M:%S')}  pot al: toplam {n_al} paket alindi")
             pot_alim[0] = time.time()
             if n_al:
-                pot_bitti[0] = 0.0
+                pot_bitti[0] = mavi_bitti[0] = 0.0
                 pot_yasak[0] = 0.0                               # yuvalar yeniden doldurulsun
         for _ in range(2):
             pydirectinput.press("esc")
@@ -4523,7 +4529,8 @@ def calistir(ayar, sablon):
                     pass
                 pot_alim[0] = time.time()
                 print(f"{time.strftime('%H:%M:%S')}  pot al: saticiya gidiliyor (toplama kipi)")
-                satici_test(al={f"kirmizi{ayar['pot_paket']}": ayar["pot_al_kirmizi_paket"], f"mavi{ayar['pot_paket']}": ayar["pot_al_mavi_paket"]})
+                satici_test(al={f"kirmizi_{ayar['pot_boy']}{ayar['pot_paket']}": ayar["pot_al_kirmizi_paket"],
+                                f"mavi_{ayar['pot_boy']}{ayar['pot_paket']}": ayar["pot_al_mavi_paket"]})
                 continue
             if time.time() - son_damga_bakis > 5:
                 son_damga_bakis = time.time()
@@ -4778,7 +4785,8 @@ def calistir(ayar, sablon):
                 istek.pop("satici_test")
                 satici_test()
                 continue
-            if (ayar["pot_satin_al"] and not tehdit and time.time() - pot_bitti[0] < 1800
+            if (ayar["pot_satin_al"] and not tehdit
+                    and (time.time() - pot_bitti[0] < 1800 or time.time() - mavi_bitti[0] < 1800)   # hangisi once biterse
                     and time.time() - pot_alim[0] > 1200):          # can potu bitti: koydeki saticidan al
                 istek["pot_al"] = True
             if istek.get("pot_al") and not tehdit:
@@ -4789,7 +4797,8 @@ def calistir(ayar, sablon):
                     pass
                 pot_alim[0] = time.time()
                 print(f"{time.strftime('%H:%M:%S')}  pot al: saticiya gidiliyor")
-                n_p = satici_test(al={f"kirmizi{ayar['pot_paket']}": ayar["pot_al_kirmizi_paket"], f"mavi{ayar['pot_paket']}": ayar["pot_al_mavi_paket"]})
+                n_p = satici_test(al={f"kirmizi_{ayar['pot_boy']}{ayar['pot_paket']}": ayar["pot_al_kirmizi_paket"],
+                                f"mavi_{ayar['pot_boy']}{ayar['pot_paket']}": ayar["pot_al_mavi_paket"]})
                 if n_p is None and not istek.pop("pot_koy_denendi", False):
                     print(f"{time.strftime('%H:%M:%S')}  pot al: bu haritada Satici bulunamadi - koye isinlanip yeniden denenecek")
                     istek["pot_koy_denendi"] = True
