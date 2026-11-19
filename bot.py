@@ -166,6 +166,10 @@ VARSAYILAN = {
     "kamera_ters_tusu": "q",
     "kamera_durt_sn": 0.15,       # slot icinde yaratik kaybolunca kamerayi bu kadar sn dondur (yarim aci; eski 0.3)
     "yururken_kamera": True,
+    "yururken_bakis_sn": 3.0,     # yururken bu aralikla sirayla saga/sola kisa bakis (0 = kapali)
+    "kamera_zoom_tara_sn": 0.35,  # hedef ararken etrafa bakmadan once bu kadar uzaklas, sonra ayni sure yakinlas (0 = kapali)
+    "zoom_uzak_tusu": "f",
+    "zoom_yakin_tusu": "r",
     "akilli_yan_kacis": True,     # takilinca iki yandan (sag/sol) yaratigi az olana kac (eski: hep ayni yana)
     "kacinilan_yaratiklar": ["boss", "patron", "lider", "reis", "kral"],   # adinda bunlar gecen yaratiga (ve yanindakilere) dalma
     "patron_atla_sn": 30,
@@ -1380,6 +1384,11 @@ def calistir(ayar, sablon):
         su_an[0] = "etrafa_bak"
         """Kamerayi SUREKLI dondururken her karede bakar; slot (ya da metin tasi) gorunce hemen durur."""
         tus_ = kamera_yonu(kare_al(h))
+        zoom_ = ayar["kamera_zoom_tara_sn"] if ayar["kamera_zoom_tara_sn"] and not saldiri_altinda() else 0
+        if zoom_:                                        # uzaklas: daha genis alani gor
+            pydirectinput.keyDown(ayar["zoom_uzak_tusu"])
+            time.sleep(zoom_)
+            pydirectinput.keyUp(ayar["zoom_uzak_tusu"])
         pydirectinput.keyDown(tus_)
         bas_ = time.time()
         try:
@@ -1400,6 +1409,10 @@ def calistir(ayar, sablon):
             return False
         finally:
             pydirectinput.keyUp(tus_)
+            if zoom_:                                    # ayni sure yakinlas: vurma mesafesi (piksel) olcegi bozulmasin
+                pydirectinput.keyDown(ayar["zoom_yakin_tusu"])
+                time.sleep(zoom_)
+                pydirectinput.keyUp(ayar["zoom_yakin_tusu"])
 
     _menzil_yol = os.path.join(KLASOR, "menzil.json")
     try:
@@ -3140,6 +3153,8 @@ def calistir(ayar, sablon):
     son_kamera_uzak = 0.0
     son_kamera_egim = [0.0]
 
+    yur_bakis = [0.0, "e"]
+
     def yururken_isler():
         """Karakter yururken yapilabilen isler (tus basmak yuruyusu kesmiyor): kamera acisini burada duzelt ki
         savas araliklarinda ayrica durup beklenmesin. Bolge ogrenmeye de kare verir."""
@@ -3147,6 +3162,12 @@ def calistir(ayar, sablon):
             bolge_besle(kare_al(h))
         except Exception:
             pass
+        if ayar["yururken_bakis_sn"] and time.time() - yur_bakis[0] > ayar["yururken_bakis_sn"] and not saldiri_altinda():
+            yur_bakis[0] = time.time()
+            yur_bakis[1] = ayar.get("kamera_ters_tusu", "q") if yur_bakis[1] == ayar["kamera_tusu"] else ayar["kamera_tusu"]
+            pydirectinput.keyDown(yur_bakis[1])          # sirayla saga / sola kisa bakis
+            time.sleep(ayar["kamera_durt_sn"])
+            pydirectinput.keyUp(yur_bakis[1])
         if (ayar["yururken_kamera"] and ayar["kamera_egim_t_sn"]
                 and time.time() - son_kamera_egim[0] > ayar["kamera_egim_aralik_sn"] and not saldiri_altinda()):
             kamera_egim_ayarla()
