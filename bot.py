@@ -3237,7 +3237,8 @@ def calistir(ayar, sablon):
             return olum_pencere["sehirde"]
         olum_sayac["n"] += 1
         olum_sayac["zamanlar"] = [z for z in olum_sayac["zamanlar"] if simdi - z < ayar["olum_dongusu_sn"]] + [simdi]
-        kisa_ = [z for z in olum_sayac["zamanlar"] if simdi - z < ayar["dalma_olum_sn"]]
+        olum_sayac["dalma_z"] = [z for z in olum_sayac.get("dalma_z", []) if simdi - z < ayar["dalma_olum_sn"]] + [simdi]
+        kisa_ = olum_sayac["dalma_z"]          # ayri liste: 'zamanlar' olum_dongusu_sn (180) ile kirpildigi icin 10 dk'yi goremiyordu
         if len(kisa_) >= ayar["dalma_olum_sayisi"] and simdi > olum_sayac.get("dalma_yok_bitis", 0):
             olum_sayac["dalma_yok_bitis"] = simdi + ayar["dalma_yok_dk"] * 60
             print(f"{time.strftime('%H:%M:%S')}  {len(kisa_)} olum {ayar['dalma_olum_sn']} sn icinde - "
