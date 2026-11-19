@@ -165,6 +165,7 @@ VARSAYILAN = {
     "kamera_ters_tusu": "q",
     "kamera_durt_sn": 0.15,       # slot icinde yaratik kaybolunca kamerayi bu kadar sn dondur (yarim aci; eski 0.3)
     "yururken_kamera": True,
+    "iksir_bekle_en_cok_sn": 600,  # etkisi suren iksir icin envanteri en gec bu kadar sn'de bir ac (eski 300; her acis 4-9 sn)
     "kamera_ana_dongu_kat": 3,    # yururken duzeltme acikken slot sonu (duran) duzeltme bu kat seyrek
     "vurulurken_kacma": True,     # ulasilamayan hedefte bile vuruluyorsam kosup kacma: yanimdakilere don
     "slot_sart_yakin_istisna": 350,   # bu (dunya) mesafedeki yaratik slot sartina bakilmadan kesilir
@@ -4965,7 +4966,7 @@ def calistir(ayar, sablon):
                             durum_yaz(iksir_icildi=d_)
                             not_ = f"icildi, sonraki {e['sure'] / 60:.1f} dk sonra"
                         else:                                 # adet ayni: etkisi suruyor, 45 sn sonra yeniden
-                            e["bekle"] = min(300, e.get("bekle", 22) * 2)   # 45, 90, 180, 300 sn: envanteri sik acma
+                            e["bekle"] = min(ayar["iksir_bekle_en_cok_sn"], e.get("bekle", 22) * 2)   # 45, 90, 180, 360.. sn: envanteri sik acma
                             e["ayni"], e["sonraki"] = True, simdi_ + e["bekle"]
                             not_ = "etkisi suruyor (adet ayni)"
                         print(f"{time.strftime('%H:%M:%S')}  envanter: {e['ad']}: {not_} (fark {fark_:.1f})")
