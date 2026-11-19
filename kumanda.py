@@ -70,7 +70,7 @@ def ayar_yaz(degisen):
 
 
 def komut(ad):
-    if ad not in ("duraklat", "devam", "kapat", "arka_test", "beceri_goruntu", "bayrak_test", "bayrak_test2", "koy1", "koy2", "buyuk_harita_test", "yuru_test", "yuru_test2", "harita_kaydet", "satici_test", "pot_al"):
+    if ad not in ("duraklat", "devam", "kapat", "arka_test", "beceri_goruntu", "bayrak_test", "bayrak_test2", "koy1", "koy2", "buyuk_harita_test", "yuru_test", "yuru_test2", "harita_kaydet", "harita_buyuk_kaydet", "satici_test", "pot_al"):
         raise ValueError("bilinmeyen komut: " + ad)
     gecici = _yol("komut.json.tmp")
     with open(gecici, "w", encoding="utf-8") as f:
@@ -134,7 +134,7 @@ def main(arg):
     elif arg[0] == "profil" and len(arg) > 1 and arg[1] in PROFILLER:
         ayar_yaz({"profil": arg[1]})
         print("profil ->", arg[1], "(bot kendini yeniden acacak)")
-    elif arg[0] in ("duraklat", "devam", "kapat", "arka_test", "beceri_goruntu", "bayrak_test", "bayrak_test2", "koy1", "koy2", "buyuk_harita_test", "yuru_test", "yuru_test2", "harita_kaydet", "satici_test", "pot_al"):
+    elif arg[0] in ("duraklat", "devam", "kapat", "arka_test", "beceri_goruntu", "bayrak_test", "bayrak_test2", "koy1", "koy2", "buyuk_harita_test", "yuru_test", "yuru_test2", "harita_kaydet", "harita_buyuk_kaydet", "satici_test", "pot_al"):
         komut(arg[0])
         print("komut gonderildi:", arg[0])
     elif arg[0] == "ayar" and len(arg) > 2:

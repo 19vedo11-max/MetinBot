@@ -362,7 +362,7 @@ function ciz(){
   gl.innerHTML=D.log.map(s=>{const k=/oldu \(|Traceback|hatasi/.test(s)?"k":/grup:|slot bitti|tecrube/.test(s)?"y":/hasar|engel|ulasilamadi/.test(s)?"b":/DURAKLAMA/.test(s)?"s":"";
     return `<div class="${k}">${esc(s)}</div>`}).join("");
   if(altta)gl.scrollTop=gl.scrollHeight;
-  if(!seciliHarita&&D.haritalar.length){seciliHarita=(a.kasilma_alani&&a.kasilma_alani.harita)||D.haritalar[0];haritaSekme()}
+  if(!seciliHarita&&D.haritalar.length){seciliHarita=(a.kasilma_alani&&alanSekme(a.kasilma_alani))||D.haritalar[0];haritaSekme()}
   alanCiz();
 }
 
@@ -390,15 +390,20 @@ function modSec(m){mod=m;$("#modGit").setAttribute("aria-pressed",m==="git");$("
 function haritaSekme(){
   $("#sekmeler").innerHTML=D.haritalar.map(h=>`<button aria-pressed="${h===seciliHarita}">${esc(h)}</button>`).join("");
   $("#sekmeler").querySelectorAll("button").forEach(b=>b.onclick=()=>{seciliHarita=b.textContent;haritaSekme();alanCiz()});
-  $("#haritaResim").src=api("/harita/"+encodeURIComponent(seciliHarita)+"?t="+Date.now());
+  const im=$("#haritaResim");
+  im.onload=()=>{HW=im.naturalWidth||254;HH=im.naturalHeight||317;$("#haritaAlan").style.aspectRatio=HW+"/"+HH;$("#haritaSvg").setAttribute("viewBox","0 0 "+HW+" "+HH);alanCiz()};
+  im.src=api("/harita/"+encodeURIComponent(seciliHarita)+"?t="+Date.now());
 }
+let HW=254,HH=317;
+const asilAd=s=>s.replace(/_buyuk$/,""),buyukMu=s=>/_buyuk$/.test(s);
+const alanSekme=a=>a.harita+(a.buyuk?"_buyuk":"");
 function alanCiz(onizleme){
   const a=onizleme||(D&&D.ayar.kasilma_alani);
   let h="";
-  if(a&&a.harita===seciliHarita){const cx=a.x*254,cy=a.y*317,r=a.r*254;
+  if(a&&alanSekme(a)===seciliHarita){const cx=a.x*HW,cy=a.y*HH,r=a.r*HW;
     h=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#5fae8c22" stroke="#5fae8c" stroke-width="2" vector-effect="non-scaling-stroke" ${onizleme?'stroke-dasharray="5 4"':""}/><circle cx="${cx}" cy="${cy}" r="2.5" fill="#5fae8c"/>`}
   if(hedefNokta&&hedefNokta.h===seciliHarita&&Date.now()-hedefNokta.t<60000)
-    h+=`<circle cx="${hedefNokta.x*254}" cy="${hedefNokta.y*317}" r="6" fill="none" stroke="#e2b56c" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
+    h+=`<circle cx="${hedefNokta.x*HW}" cy="${hedefNokta.y*HH}" r="6" fill="none" stroke="#e2b56c" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
   $("#haritaSvg").innerHTML=h;
 }
 function haritaOlaylari(){
@@ -408,8 +413,8 @@ function haritaOlaylari(){
     if(mod==="git"){hedefNokta={h:seciliHarita,x:p.x,y:p.y,t:Date.now()};alanCiz();gonder("/api/git",{harita:seciliHarita,x:+p.x.toFixed(4),y:+p.y.toFixed(4)});return}
     alan.setPointerCapture(e.pointerId);cizim={x:p.x,y:p.y,r:.03}});
   alan.addEventListener("pointermove",e=>{if(!cizim)return;const p=oran(e);
-    cizim.r=Math.max(.02,Math.hypot(p.x-cizim.x,(p.y-cizim.y)*317/254));alanCiz({harita:seciliHarita,...cizim})});
-  alan.addEventListener("pointerup",async()=>{if(!cizim)return;const a={harita:seciliHarita,x:+cizim.x.toFixed(4),y:+cizim.y.toFixed(4),r:+cizim.r.toFixed(4)};
+    cizim.r=Math.max(.02,Math.hypot(p.x-cizim.x,(p.y-cizim.y)*HH/HW));alanCiz({harita:asilAd(seciliHarita),buyuk:buyukMu(seciliHarita),...cizim})});
+  alan.addEventListener("pointerup",async()=>{if(!cizim)return;const a={harita:asilAd(seciliHarita),x:+cizim.x.toFixed(4),y:+cizim.y.toFixed(4),r:+cizim.r.toFixed(4)};if(buyukMu(seciliHarita))a.buyuk=true;
     cizim=null;D.ayar.kasilma_alani=a;D.ayar.alan_kullan=true;$("#alanKullan").checked=true;alanCiz();modSec("git");
     if(await gonder("/api/ayar",{kasilma_alani:a,alan_kullan:true},true))bildir("Alan kaydedildi; bot bu dairenin içinde kasacak.")});
 }

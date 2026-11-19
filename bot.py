@@ -319,6 +319,8 @@ def _dx_kare(x, y, w, hh):
 
 
 _son_kare = [None]
+# Genel gorunum haritasi (M) kirpintisi: kapat dugmesine gore. 2026-11-19 olculdu (eski 254x317 sol 65 px'i kesiyordu)
+HX0, HY0, HW, HH = -307, 16, 316, 318
 
 
 def dunya_uzak(x, y, kx, ky, ufuk=227.0, carpan=1.7):
@@ -1413,7 +1415,7 @@ def calistir(ayar, sablon):
         if kayitli:
             return kapat_d, (cx + kayitli[0], cy + kayitli[1], anahtar)
         k = kare_al(h)
-        x0, y0, x1, y1 = cx - 242, cy + 17, cx + 12, cy + 334  # harita resmi
+        x0, y0, x1, y1 = cx + HX0, cy + HY0, cx + HX0 + HW, cy + HY0 + HH  # harita resmi
         p = k[y0:y1, x0:x1].astype(int)
         m = ((p[..., 1] > 180) & (p[..., 0] < 140) & (p[..., 2] < 140)).astype(np.uint8) * 255
         n, _, ist, _ = cv2.connectedComponentsWithStats(m, 8)
@@ -1446,7 +1448,7 @@ def calistir(ayar, sablon):
     def halkali_noktalar(k, kapat_d):
         """Haritada pembe halkayla isaretlenmis (gorev veren) NPC noktalari: [(ekran_x, ekran_y), ...]"""
         cx, cy = kapat_d
-        x0, y0, x1, y1 = cx - 242, cy + 17, cx + 12, cy + 334
+        x0, y0, x1, y1 = cx + HX0, cy + HY0, cx + HX0 + HW, cy + HY0 + HH
         p = k[y0:y1, x0:x1].astype(int)
         yesil = ((p[..., 1] > 180) & (p[..., 0] < 140) & (p[..., 2] < 140)).astype(np.uint8)
         pembe = (p[..., 0] > 175) & (p[..., 0] > p[..., 1] + 30) & (p[..., 0] > p[..., 2] + 30) & (p[..., 1] > 120)
@@ -1663,17 +1665,19 @@ def calistir(ayar, sablon):
         Donus: True vardi | False varamadi / yarida kesildi / rota yok | None oyuncunun yeri bilinmiyor
         (cagiran eski usul tek tikla yurutur). Harita acik birakilir; kapatmak cagiranin isi."""
         cx, cy = kapat_d
-        x0, y0 = cx - 242, cy + 17
+        x0, y0 = cx + HX0, cy + HY0
 
         def harita_karesi():
             k_ = kare_al(h)
-            return k_, k_[y0:y0 + 317, x0:x0 + 254]
+            return k_, k_[y0:y0 + HH, x0:x0 + HW]
 
         pydirectinput.moveTo(ox_son[0] + 300, ox_son[1] + 900)   # imlec/ipucu haritayi ortmesin
         time.sleep(0.25)
         k_, p_ = harita_karesi()
-        if p_.shape[:2] != (317, 254):
+        if p_.shape[:2] != (HH, HW):
             return None
+        if yol_d["yigin"] and np.asarray(yol_d["yigin"][0]).shape != p_.shape:
+            yol_d["yigin"] = []                                 # harita kirpinti boyutu degisti: arka plan yeniden
         yol_d["yigin"], arka = yolbul.arka_guncelle(yol_d["yigin"], p_)
         try:
             np.save(yol_yigin_dosya, np.stack(yol_d["yigin"]))
@@ -1838,7 +1842,7 @@ def calistir(ayar, sablon):
         rastgele = tuple(aday[random.randrange(len(aday))])
         try:
             cx, cy = kapat_d
-            p_ = kare_al(h)[cy + 17:cy + 334, cx - 242:cx + 12]
+            p_ = kare_al(h)[cy + HY0:cy + HY0 + HH, cx + HX0:cx + HX0 + HW]
             if len(yol_d["yigin"]) < 3:
                 return rastgele
             ben = yolbul.oyuncu_bul(p_, np.median(np.stack(yol_d["yigin"]), axis=0).astype(np.uint8))
@@ -2234,9 +2238,11 @@ def calistir(ayar, sablon):
             return
         kd_, resim, _, _ = g_
         try:
-            if resim.shape[:2] != (317, 254):
+            if resim.shape[:2] != (HH, HW):
                 return
             ad_ = kayitli_harita_bul(resim) or "?"
+            if yol_d["yigin"] and np.asarray(yol_d["yigin"][0]).shape != resim.shape:
+                yol_d["yigin"] = []
             yol_d["yigin"], arka_ = yolbul.arka_guncelle(yol_d["yigin"], resim)
             oy_ = yolbul.oyuncu_bul(resim, arka_)
         finally:
@@ -2244,7 +2250,7 @@ def calistir(ayar, sablon):
         if oy_ is None:
             print(f"{time.strftime('%H:%M:%S')}  engel hafiza: haritada yerim bulunamadi ({time.time() - t0_:.1f} sn)")
             return
-        x_, y_ = round(float(oy_[0]) / 254, 4), round(float(oy_[1]) / 317, 4)
+        x_, y_ = round(float(oy_[0]) / HW, 4), round(float(oy_[1]) / HH, 4)
         liste_ = engel_veri().setdefault(ad_, [])
         for e_ in liste_:
             if math.hypot(e_[0] - x_, e_[1] - y_) < 0.01:
@@ -2269,9 +2275,13 @@ def calistir(ayar, sablon):
         a_ = ayar["kasilma_alani"]
         for _ in range(40):
             aci_, r_ = random.uniform(0, 2 * math.pi), a_["r"] * math.sqrt(random.uniform(0.05, 1.0))
-            x_, y_ = a_["x"] + r_ * math.cos(aci_), a_["y"] + r_ * math.sin(aci_) * 254 / 317
+            en_ = HW / HH
+            if a_.get("buyuk"):
+                bi_ = buyuk_bilgi(a_.get("harita", ""))
+                en_ = bi_["w"] / bi_["h"] if bi_ else 599 / 524
+            x_, y_ = a_["x"] + r_ * math.cos(aci_), a_["y"] + r_ * math.sin(aci_) * en_
             if 0.02 < x_ < 0.98 and 0.02 < y_ < 0.98:
-                if engel_yakin(a_.get("harita", ""), x_, y_):
+                if engel_yakin(a_.get("harita", "") + ("_buyuk" if a_.get("buyuk") else ""), x_, y_):
                     continue
                 if any(math.hypot(x_ - bx_, y_ - by_) < 0.008 for bx_, by_ in alan_yolsuz):
                     continue                                # buraya daha once yuruyemedi (harita kenari / ucurum)
@@ -2285,7 +2295,7 @@ def calistir(ayar, sablon):
             x_, y_ = alan_noktasi()
             print(f"{time.strftime('%H:%M:%S')}  alan: cizilen kasilma alaninin icinde yeni noktaya ({x_}, {y_})")
             try:
-                if harita_git(ayar["kasilma_alani"].get("harita", ""), x_, y_):
+                if harita_git(ayar["kasilma_alani"].get("harita", "") + ("_buyuk" if ayar["kasilma_alani"].get("buyuk") else ""), x_, y_):
                     alan_mola[1] = 0
                     return
                 alan_yolsuz.append((x_, y_))                    # yuruyemedi: bu noktayi bir daha secme
@@ -2313,7 +2323,7 @@ def calistir(ayar, sablon):
             tikla(gen_ // 2 + 600 * math.cos(aci), yuk_ * 0.55 + 330 * math.sin(aci))
         else:
             cx, cy = kapat_d
-            x0, y0, x1, y1 = cx - 242, cy + 17, cx + 12, cy + 334
+            x0, y0, x1, y1 = cx + HX0, cy + HY0, cx + HX0 + HW, cy + HY0 + HH
             p = k[y0:y1, x0:x1].astype(int)
             npc = ((p[..., 1] > 180) & (p[..., 0] < 140) & (p[..., 2] < 140)).astype(np.uint8)
             koy = cv2.dilate(npc, np.ones((61, 61), np.uint8)) > 0
@@ -2325,7 +2335,7 @@ def calistir(ayar, sablon):
                     pts_ = engel_noktalari(kayitli_harita_bul(p.astype(np.uint8)) or "")
                     keep_ = np.ones(len(aday), bool)
                     for ex_, ey_, say_ in pts_:
-                        keep_ &= np.hypot(aday[:, 1] / 254 - ex_, aday[:, 0] / 317 - ey_) >= (0.03 if say_ >= 2 else 0.02)
+                        keep_ &= np.hypot(aday[:, 1] / HW - ex_, aday[:, 0] / HH - ey_) >= (0.03 if say_ >= 2 else 0.02)
                     if keep_.any():
                         aday = aday[keep_]
                 except Exception as e_ef:
@@ -3610,7 +3620,15 @@ def calistir(ayar, sablon):
         def dolu(k_):                                         # harita dokusu yuklu mu (siyah degil)
             return float(k_[kutu[1] + 40:kutu[3] - 40, kutu[0] + 20:kutu[2] - 60].mean()) > 25
 
-        for _ in range(8):                                   # adim adim uzaklastir, siyaha donerse geri al
+        eksi_ = (bx - 324, by + 77)                          # haritanin sag ustundeki '-' (uzaklastir) dugmesi
+        k_once = kare_al(h)
+        for _ in range(10):                                  # once dugmeyle uzaklastir (tekerlek her zaman islemedi)
+            tikla(*eksi_)
+            time.sleep(0.25)
+        if float(np.abs(kare_al(h)[kutu[1]:kutu[3], kutu[0]:kutu[2]].astype(int)
+                        - k_once[kutu[1]:kutu[3], kutu[0]:kutu[2]].astype(int)).mean()) > 4:
+            print(f"{time.strftime('%H:%M:%S')}  buyuk harita: '-' dugmesiyle uzaklastirildi")
+        for _ in range(15):                                  # adim adim uzaklastir (en uzak gorus), siyaha donerse geri al
             tekerlek(-1, *orta_)
             time.sleep(0.45)
             if not dolu(kare_al(h)):
@@ -3630,7 +3648,7 @@ def calistir(ayar, sablon):
         return bx, by, kutu, bolge, kb
 
     def genel_harita_resmi():
-        """Genel haritayi (M) acar; (kapat_dugmesi, harita_resmi 254x317, x0, y0) ya da None. Harita acik kalir."""
+        """Genel haritayi (M) acar; (kapat_dugmesi, harita_resmi HWxHH, x0, y0) ya da None. Harita acik kalir."""
         kd_ = harita_ac()
         if kd_ is None:
             return None
@@ -3638,8 +3656,8 @@ def calistir(ayar, sablon):
         pydirectinput.moveTo(ox_son[0] + 300, ox_son[1] + 900)
         time.sleep(0.15)
         k_ = kare_al(h)
-        x0_, y0_ = kd_[0] - 242, kd_[1] + 17
-        return kd_, k_[y0_:y0_ + 317, x0_:x0_ + 254].copy(), x0_, y0_
+        x0_, y0_ = kd_[0] + HX0, kd_[1] + HY0
+        return kd_, k_[y0_:y0_ + HH, x0_:x0_ + HW].copy(), x0_, y0_
 
     def kayitli_harita_bul(resim):
         """Genel harita resmini kayitli haritalarla karsilastirir; en benzer kaydin adi (ya da None)."""
@@ -3676,21 +3694,82 @@ def calistir(ayar, sablon):
         Image.fromarray(resim).save(os.path.join(harita_klasor, ad + ".png"))
         print(f"{time.strftime('%H:%M:%S')}  harita kaydedildi: {ad} (panelde 'Harita' penceresinden secilebilir)")
 
+    def buyuk_pencere_kutu(bx, by):
+        """Buyuk harita penceresinde harita alani (x0, y0, x1, y1), X dugmesine gore."""
+        return bx - 899, by + 25, bx - 300, by + 549
+
+    def harita_buyuk_kaydet():
+        su_an[0] = "harita_buyuk_kaydet"
+        r_ = buyuk_harita_ac_uzak()
+        if r_ is None:
+            print("harita_buyuk_kaydet: buyuk harita acilamadi")
+            return
+        bx, by, _, bolge, kb = r_
+        x0b, y0b, x1b, y1b = buyuk_pencere_kutu(bx, by)
+        Image.fromarray(kb).save(os.path.join(KLASOR, "goruntu", "buyuk_harita_tam.png"))
+        sen_var = False
+        if sen_sab is not None:
+            rs_ = cv2.matchTemplate(sari_maske(kb[y0b:y1b, x0b:x1b]), sen_sab, cv2.TM_CCOEFF_NORMED)
+            sen_var = float(cv2.minMaxLoc(rs_)[1]) >= 0.6
+        ad = bolge or time.strftime("bolge_%H%M%S")
+        Image.fromarray(kb[y0b:y1b, x0b:x1b].copy()).save(os.path.join(harita_klasor, ad + "_buyuk.png"))
+        with open(os.path.join(harita_klasor, ad + "_buyuk.json"), "w", encoding="utf-8") as f_:
+            json.dump({"w": x1b - x0b, "h": y1b - y0b, "dx": x0b - bx, "dy": y0b - by, "bolge": bolge,
+                       "sen_gorundu": sen_var}, f_)
+        tikla(bx, by)
+        print(f"{time.strftime('%H:%M:%S')}  buyuk harita kaydedildi: {ad}_buyuk ({x1b - x0b}x{y1b - y0b}), oyuncu isareti {'GORUNDU' if sen_var else 'gorunmedi'}")
+
+    def buyuk_bilgi(ad):
+        try:
+            with open(os.path.join(harita_klasor, ad + "_buyuk.json"), encoding="utf-8") as f_:
+                return json.load(f_)
+        except Exception:
+            return None
+
+    def harita_git_buyuk(ad, rx, ry):
+        """Buyuk haritayi (her seferinde ayni sekilde en uzak gorus) acip orana gore tiklar. (bx, by) ya da None."""
+        bilgi_ = buyuk_bilgi(ad)
+        if bilgi_ is None:
+            print(f"git: '{ad}_buyuk' kaydi yok (harita_buyuk_kaydet gerek)")
+            return None
+        r_ = buyuk_harita_ac_uzak()
+        if r_ is None:
+            print("git: buyuk harita acilamadi")
+            return None
+        bx, by, _, bolge, kb = r_
+        if ad and bolge and oku.sade(ad) != oku.sade(bolge):
+            print(f"{time.strftime('%H:%M:%S')}  git: hedef '{ad}' haritasinda, ben '{bolge}' haritasindayim - once oraya isinlan")
+            tikla(bx, by)
+            return None
+        tikla(bx + bilgi_["dx"] + rx * bilgi_["w"], by + bilgi_["dy"] + ry * bilgi_["h"])
+        time.sleep(0.6)
+        return bx, by
+
     def harita_git(ad, rx, ry):
         su_an[0] = "harita_git"
-        g_ = genel_harita_resmi()
-        if g_ is None:
-            print("git: genel harita acilamadi")
-            return False
-        kd_, resim, x0_, y0_ = g_
-        burasi = kayitli_harita_bul(resim)
-        if ad and burasi and oku.sade(ad) != oku.sade(burasi):
-            print(f"{time.strftime('%H:%M:%S')}  git: hedef '{ad}' haritasinda, ben '{burasi}' haritasindayim - once oraya isinlan")
-            tikla(*kd_)
-            return False
-        mh0, _ = mini_harita(kare_al(h))
-        tikla(x0_ + rx * 254, y0_ + ry * 317)
-        time.sleep(0.6)
+        buyuk_ = ad.endswith("_buyuk")
+        if buyuk_:
+            ad = ad[:-6]
+            mh0, _ = mini_harita(kare_al(h))
+            b_ = harita_git_buyuk(ad, rx, ry)
+            if b_ is None:
+                return False
+            kd_ = b_
+            burasi = ad
+        else:
+            g_ = genel_harita_resmi()
+            if g_ is None:
+                print("git: genel harita acilamadi")
+                return False
+            kd_, resim, x0_, y0_ = g_
+            burasi = kayitli_harita_bul(resim)
+            if ad and burasi and oku.sade(ad) != oku.sade(burasi):
+                print(f"{time.strftime('%H:%M:%S')}  git: hedef '{ad}' haritasinda, ben '{burasi}' haritasindayim - once oraya isinlan")
+                tikla(*kd_)
+                return False
+            mh0, _ = mini_harita(kare_al(h))
+            tikla(x0_ + rx * HW, y0_ + ry * HH)
+            time.sleep(0.6)
         tikla(*kd_)                                       # haritayi kapat (yuruyus devam ediyor)
         yurudu = float(np.abs(mini_harita(kare_al(h))[0] - mh0).mean()) > 1.5
         print(f"{time.strftime('%H:%M:%S')}  git: {ad or burasi or ''} haritasinda isaretlenen noktaya " + ("yuruyor" if yurudu else "YURUYEMEDI (oraya yol yok olabilir)"))
@@ -4062,6 +4141,8 @@ def calistir(ayar, sablon):
                     istek["git"] = (kj_.get("harita", ""), float(kj_.get("x", 0.5)), float(kj_.get("y", 0.5)))
                 elif k_ == "harita_kaydet":
                     istek["harita_kaydet"] = True
+                elif k_ == "harita_buyuk_kaydet":
+                    istek["harita_buyuk_kaydet"] = True
                 os.remove(yol_komut)
                 if k_ == "duraklat":
                     durum["duraklat"] = True
@@ -4564,6 +4645,11 @@ def calistir(ayar, sablon):
             if istek.get("harita_kaydet") and not tehdit:
                 istek.pop("harita_kaydet")
                 harita_kaydet()
+                continue
+            if istek.get("harita_buyuk_kaydet") and not tehdit:
+                istek.pop("harita_buyuk_kaydet")
+                birak()
+                harita_buyuk_kaydet()
                 continue
             if istek.get("binek_test"):                      # at muhrune sag tikla: once/sonra kareleri
                 istek.pop("binek_test")

@@ -43,7 +43,7 @@ AYAR_IZINLI = {
     "sinif", "beceri_grubu", "egitmen_anahtar", "sureli_tuslar", "saldiri_becerileri", "hamle_tusu", "saldiri_tusu",
     "can_potu_tusu", "mana_potu_tusu", "uzak_dovus", "beceri_puani_dagit",
 }
-KOMUT_IZINLI = {"duraklat", "devam", "kapat", "koy1", "koy2", "harita_kaydet", "pot_al"}
+KOMUT_IZINLI = {"duraklat", "devam", "kapat", "koy1", "koy2", "harita_kaydet", "harita_buyuk_kaydet", "pot_al"}
 
 
 def _oku_csv(ad, n):
