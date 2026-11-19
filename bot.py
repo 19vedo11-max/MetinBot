@@ -165,6 +165,8 @@ VARSAYILAN = {
     "kamera_ters_tusu": "q",
     "kamera_durt_sn": 0.15,       # slot icinde yaratik kaybolunca kamerayi bu kadar sn dondur (yarim aci; eski 0.3)
     "yururken_kamera": True,
+    "yon_kara_liste": True,       # takildigim yondeki (dag/engel ardindaki) diger hedeflere de bir sure gitme
+    "yon_kara_liste_sn": 25,
     "harita_otomatik_kaydet": True,   # taninmayan haritaya gelince haritayi kendisi kaydetsin (panelde alan cizilebilsin)      # kamera acisini yururken duzelt (savas araliginda durmasin)
     "kamera_hedef_varken_yok": True,   # ekranda yaratik etiketi varken kamera acisini duzeltme (slot sonrasi bekleme olmasin)      # ters yone dondurme (yaratiklar soldaysa Q); bos = yalniz E
     "kamera_egim_t_sn": 0.55,     # G ile tepeye dikip T'ye bu kadar basili tut (yatay aci); 0 = kameraya dokunma
@@ -341,7 +343,7 @@ def derinlik_guncelle(kutular):
     egimi degistikce (yatay/tepeden) uzaklik hesabi buna uysun."""
     try:
         yk = [(float(k[5]), float(k[5]) - float(k[3])) for k in kutular if k[0] == "yaratik" and k[1] >= 0.5]
-        if len(yk) < 4:
+        if len(yk) < 6:
             return
         ys = np.array([a for a, _ in yk]); hs = np.array([b for _, b in yk])
         if ys.max() - ys.min() < 120:
@@ -350,7 +352,7 @@ def derinlik_guncelle(kutular):
         if m <= 0.02:
             return
         u = float(np.clip(c / m, -600.0, 1500.0))          # h = m*(y + u)  ->  u = c/m (ufuk_y = -u)
-        _derinlik["ufuk"] = u if _derinlik["ufuk"] is None else 0.9 * _derinlik["ufuk"] + 0.1 * u
+        _derinlik["ufuk"] = u if _derinlik["ufuk"] is None else 0.96 * _derinlik["ufuk"] + 0.04 * u   # yavas: tek karelik sapma oynatmasin
         _derinlik["n"] += 1
         if _derinlik["n"] % 200 == 5:
             print(f"{time.strftime('%H:%M:%S')}  derinlik: ufuk y={-_derinlik['ufuk']:.0f}, carpan "
@@ -1277,7 +1279,8 @@ def calistir(ayar, sablon):
             return
         menzil_ornek.append(round(math.hypot(halka_[0] - gen_ // 2, halka_[1] - int(yuk_ * 0.60)), 1))
         del menzil_ornek[:-300]
-        if len(menzil_ornek) % 25 == 0:
+        menzil_d["n"] = menzil_d.get("n", 0) + 1
+        if menzil_d["n"] % 50 == 0:
             print(f"{time.strftime('%H:%M:%S')}  menzil: ogrenilen vurma mesafesi {menzil():.0f} px ({len(menzil_ornek)} ornek)")
         if time.time() - menzil_d["yaz"] > 60:
             menzil_d["yaz"] = time.time()
@@ -1311,6 +1314,9 @@ def calistir(ayar, sablon):
         boy = math.hypot(dx, dy) or 1.0
         atla.append((time.time(), hx, hy))
         del atla[:-12]
+        if ayar["yon_kara_liste"] and boy > 80:               # dag/engel yonu: o yondeki uzak hedeflere de gitme
+            yon_atla.append((time.time(), math.atan2(hy - ky, hx - kx), boy))
+            del yon_atla[:-8]
         diger_ = [t for t in kirmizi_etiketler(k) if math.hypot(t[0] - hx, t[1] - hy) > 60
                   and math.hypot(t[0] - kx, t[1] - ky) < 450]
         son_atla_ = [z for z, _, _ in atla if time.time() - z < 25]
@@ -2945,6 +2951,9 @@ def calistir(ayar, sablon):
     son_savas = [0.0]
     hemen_savas = [0.0]   # yolda slot gorulup dalindi: bu andan 10 sn yan isler (envanter, gorev, guclendirme) yok
     atla = []                     # ulasilamayan hedefler (zaman, x, y): kisa sure secilmez
+    son_slot_bitis = [0.0]        # slot arasi olcumu
+    slot_aralari = []
+    yon_atla = []                 # takilinan yonler (zaman, aci, uzaklik): dagin ardindakilere de kosma
     alan_don = [False]
     dusuk_gezin, dusuk_izin = [], [0.0]
     son_diyalog_bakis = 0.0
@@ -5044,6 +5053,16 @@ def calistir(ayar, sablon):
                 else:
                     sirali.append(((1, int(uzak // ayar["yakinlik_halkasi_piksel"]), -yog(t), -sev, uzak), t))
             yaratik = [t for _, t in sorted(sirali, key=lambda s: s[0])]
+            if yon_atla and ayar["yon_kara_liste"]:                # takildigim yon (dag): o yondeki, oradan uzak hedefleri atla
+                def _yonde(t):
+                    a_ = math.atan2(t[1] - karakter[1], t[0] - karakter[0])
+                    d_ = math.hypot(t[0] - karakter[0], t[1] - karakter[1])
+                    return any(time.time() - z < ayar["yon_kara_liste_sn"] and d_ > b_ * 0.7
+                               and abs((a_ - y_ + math.pi) % (2 * math.pi) - math.pi) < math.radians(28)
+                               for z, y_, b_ in yon_atla)
+                _yy = [t for t in yaratik if not _yonde(t)]
+                if _yy:                                              # hepsi o yondeyse bos birakma
+                    yaratik = _yy
             if atla:                                              # az once ulasilamayanlari 12 sn atla
                 yaratik = [t for t in yaratik if not any(time.time() - z < (ayar['hizli_vazgec_atla_sn'] if ayar['hizli_vazgec'] else 12) and math.hypot(t[0] - ax, t[1] - ay) < 70
                                                          for z, ax, ay in atla)]
@@ -5227,6 +5246,16 @@ def calistir(ayar, sablon):
                     print(f"{time.strftime('%H:%M:%S')}  slottan once guclendirme")
                     guclendir()
                     kare = kare_al(h)
+
+            # slot arasi olcumu (hedef: 1 sn alti): son slot bitisinden bu yeni hedefe kadar gecen
+            if son_slot_bitis[0] and time.time() - son_slot_bitis[0] < 180:
+                slot_aralari.append(time.time() - son_slot_bitis[0])
+                son_slot_bitis[0] = 0.0
+                if len(slot_aralari) >= 10:
+                    _sa = sorted(slot_aralari)
+                    print(f"{time.strftime('%H:%M:%S')}  slot arasi: medyan {_sa[len(_sa) // 2]:.1f} sn, ort {sum(_sa) / len(_sa):.1f} sn "
+                          f"(son {len(_sa)} slot, en kisa {_sa[0]:.1f}, en uzun {_sa[-1]:.1f})")
+                    slot_aralari.clear()
 
             # 1) ilk hedefi sec ve ilk vurusu yap
             su_an[0] = "hedefe gidiyor"
@@ -5473,6 +5502,7 @@ def calistir(ayar, sablon):
             time.sleep(0.1)
             topla()
             print(f"{time.strftime('%H:%M:%S')}  slot bitti ({time.time() - slot_bas:.0f} sn)")
+            son_slot_bitis[0] = time.time()
             if kesilen % 20 == 0:
                 print(f"{time.strftime('%H:%M:%S')}  kesilen hedef: {kesilen}  can %{can * 100:.0f}")
     finally:
