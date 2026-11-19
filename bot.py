@@ -870,11 +870,23 @@ def mana_orani(kare):
 
 
 def hedef_cani(kare):
-    """Ust ortadaki hedef penceresinin can cubugu (0-1). Hedef secili degilse 0."""
+    """Ust ortadaki hedef penceresinin can cubugu (0-1); secili hedef yoksa 0.
+    Cubuk yaratik adinin uzunluguna (pencere genisler) ve oyun penceresinin boyuna gore yatayda ~90 px, dikeyde birkac px
+    kayiyor: sabit yerde degil, iki satirlik imzayla (koyu kirmizi ust satir + parlak kirmizi alt satir) aranir."""
     gen = kare.shape[1]
-    serit = kare[38:40, gen // 2 + 42:gen // 2 + 179].astype(int)
-    kirmizi = (serit[..., 0] > 110) & (serit[..., 1] < 50) & (serit[..., 2] < 50)
-    return float(kirmizi.all(axis=0).mean())
+    b = kare[32:50, gen // 2 - 60:gen // 2 + 300].astype(np.int16)
+    r, g, bl = b[..., 0], b[..., 1], b[..., 2]
+    koyu = (r > 95) & (r < 150) & (g < 60) & (bl < 60)
+    parlak = (r > 140) & (g < 55) & (bl < 55)
+    imza = koyu[:-1] & parlak[1:]
+    en = 0
+    for sat in imza:
+        if sat.sum() < 4:
+            continue
+        xs = np.where(sat)[0]
+        for p in np.split(xs, np.where(np.diff(xs) > 6)[0] + 1):
+            en = max(en, int(p[-1] - p[0] + 1))
+    return 0.0 if en < 4 else float(min(1.0, en / 137))
 
 
 def secim_halkasi(kare):
