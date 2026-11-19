@@ -166,6 +166,9 @@ VARSAYILAN = {
     "kamera_ters_tusu": "q",
     "kamera_durt_sn": 0.15,       # slot icinde yaratik kaybolunca kamerayi bu kadar sn dondur (yarim aci; eski 0.3)
     "yururken_kamera": True,
+    "kamera_izlegi": True,        # kamera hareketleri ayri izlekte, savas/yuruyusle AYNI ANDA (tiklama aninda bekler)
+    "kamera_izlek_sn": 3.0,       # bu aralikla sirayla saga/sola kisa bakis
+    "kamera_zoom_aralik_sn": 12,  # hedef aranirken en sik bu aralikla uzaklas-yakinlas
     "yururken_bakis_sn": 3.0,     # yururken bu aralikla sirayla saga/sola kisa bakis (0 = kapali)
     "kamera_zoom_tara_sn": 0.35,  # hedef ararken etrafa bakmadan once bu kadar uzaklas, sonra ayni sure yakinlas (0 = kapali)
     "zoom_uzak_tusu": "f",
@@ -1384,7 +1387,8 @@ def calistir(ayar, sablon):
         su_an[0] = "etrafa_bak"
         """Kamerayi SUREKLI dondururken her karede bakar; slot (ya da metin tasi) gorunce hemen durur."""
         tus_ = kamera_yonu(kare_al(h))
-        zoom_ = ayar["kamera_zoom_tara_sn"] if ayar["kamera_zoom_tara_sn"] and not saldiri_altinda() else 0
+        zoom_ = (ayar["kamera_zoom_tara_sn"] if ayar["kamera_zoom_tara_sn"] and not saldiri_altinda()
+                 and not ayar["kamera_izlegi"] else 0)
         if zoom_:                                        # uzaklas: daha genis alani gor
             pydirectinput.keyDown(ayar["zoom_uzak_tusu"])
             time.sleep(zoom_)
@@ -1621,10 +1625,13 @@ def calistir(ayar, sablon):
         pydirectinput.moveTo(ox_son[0] + k.shape[1] // 2, ox_son[1] + int(k.shape[0] * 0.75))
         return True
 
+    tik_kilit = threading.Lock()                        # kamera izlegi tiklama aninda kamerayi oynatmasin
+
     def tikla(x, y, sag=False):
-        pydirectinput.moveTo(ox_son[0] + int(x), ox_son[1] + int(y))
-        time.sleep(0.05)
-        pydirectinput.click(button="right" if sag else "left")
+        with tik_kilit:
+            pydirectinput.moveTo(ox_son[0] + int(x), ox_son[1] + int(y))
+            time.sleep(0.05)
+            pydirectinput.click(button="right" if sag else "left")
 
     def ctrl_sag_tikla(x, y):
         """Vedat'in yolu: Ctrl basiliyken potun ustune 1 kez SOL tik -> oyun potu hizli cubuga koyar
@@ -1643,11 +1650,12 @@ def calistir(ayar, sablon):
 
     def yavas_tikla(x, y):
         """Arayuz dugmeleri icin: once uzerine gel, bekle, basili tutup birak (hizli tiklamayi dukkan almiyor)."""
-        pydirectinput.moveTo(ox_son[0] + int(x), ox_son[1] + int(y))
-        time.sleep(0.3)
-        pydirectinput.mouseDown()
-        time.sleep(0.1)
-        pydirectinput.mouseUp()
+        with tik_kilit:
+            pydirectinput.moveTo(ox_son[0] + int(x), ox_son[1] + int(y))
+            time.sleep(0.3)
+            pydirectinput.mouseDown()
+            time.sleep(0.1)
+            pydirectinput.mouseUp()
 
     def pencereleri_kapat():
         for px, py in acik_pencereler(kare_al(h), kapat_s):
@@ -3162,7 +3170,7 @@ def calistir(ayar, sablon):
             bolge_besle(kare_al(h))
         except Exception:
             pass
-        if ayar["yururken_bakis_sn"] and time.time() - yur_bakis[0] > ayar["yururken_bakis_sn"] and not saldiri_altinda():
+        if not ayar["kamera_izlegi"] and ayar["yururken_bakis_sn"] and time.time() - yur_bakis[0] > ayar["yururken_bakis_sn"] and not saldiri_altinda():
             yur_bakis[0] = time.time()
             yur_bakis[1] = ayar.get("kamera_ters_tusu", "q") if yur_bakis[1] == ayar["kamera_tusu"] else ayar["kamera_tusu"]
             pydirectinput.keyDown(yur_bakis[1])          # sirayla saga / sola kisa bakis
@@ -4943,6 +4951,42 @@ def calistir(ayar, sablon):
 
     threading.Thread(target=_uzaktan_dongu, daemon=True).start()
 
+    KAMERA_SERBEST = {"slot kesiyor", "savunma", "ana dongu (hedef ariyor)", "yuruyor (hedef ariyor)",
+                      "alan ici kisa yuruyus", "hedefe gidiyor", "vurus_bekle", "vuruluyor - vurani ariyor"}
+    KAMERA_ZOOM = {"ana dongu (hedef ariyor)", "yuruyor (hedef ariyor)", "alan ici kisa yuruyus"}
+
+    def _kamera_izlegi():
+        """Ana isle AYNI ANDA calisir: belirli aralikla sirayla saga/sola kisa bakis; hedef aranirken uzaklasip
+        yakinlasma. Pencere/menu islerinde (envanter, satici, harita, olum...) hic dokunmaz; tiklama aninda bekler."""
+        yon_ = [ayar["kamera_tusu"]]
+        son_z = 0.0
+        while durum["calis"]:
+            time.sleep(max(0.5, ayar["kamera_izlek_sn"]))
+            try:
+                if (not ayar["kamera_izlegi"] or durum["duraklat"] or durum.get("yazi")
+                        or win32gui.GetForegroundWindow() != h or su_an[0] not in KAMERA_SERBEST or olum_pencere["acik"]):
+                    continue
+                with tik_kilit:
+                    if su_an[0] not in KAMERA_SERBEST:
+                        continue
+                    yon_[0] = ayar.get("kamera_ters_tusu", "q") if yon_[0] == ayar["kamera_tusu"] else ayar["kamera_tusu"]
+                    pydirectinput.keyDown(yon_[0])
+                    time.sleep(ayar["kamera_durt_sn"])
+                    pydirectinput.keyUp(yon_[0])
+                    if (ayar["kamera_zoom_tara_sn"] and su_an[0] in KAMERA_ZOOM and not saldiri_altinda()
+                            and time.time() - son_z > ayar["kamera_zoom_aralik_sn"]):
+                        son_z = time.time()
+                        pydirectinput.keyDown(ayar["zoom_uzak_tusu"])
+                        time.sleep(ayar["kamera_zoom_tara_sn"])
+                        pydirectinput.keyUp(ayar["zoom_uzak_tusu"])
+                        time.sleep(0.6)                  # uzaktan bir bakis
+                        pydirectinput.keyDown(ayar["zoom_yakin_tusu"])
+                        time.sleep(ayar["kamera_zoom_tara_sn"])
+                        pydirectinput.keyUp(ayar["zoom_yakin_tusu"])
+            except Exception:
+                pass
+
+    threading.Thread(target=_kamera_izlegi, daemon=True).start()
     takildi_son = [0.0]
 
     def _donma_bekcisi():
