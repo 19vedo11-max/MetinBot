@@ -207,6 +207,7 @@ VARSAYILAN = {
     "yolo_oyuncu_koru": True,    # etiketin govdesi YOLO oyuncu ise hedef alma
     "sadece_hedefler": [],        # doluysa yalniz adi bunlara tutan canavarlar kesilir (or. "Kotu Siyah Firtina Okcusu")
     "pot_satin_al": True,         # can potu bitince koydeki Saticidan al (20'lik kucuk iksir paketleri)
+    "pot_yedek_20_paket": 5,      # 200'luk alinamazsa (para yetmez) yerine bu kadar 20'lik paket dene (0 = deneme)
     "pot_boy": "kucuk",           # kucuk / orta / buyuk iksir (sablon/dukkan_<renk>_<boy><paket>.png)
     "pot_paket": 200,             # dukkandaki paket boyu: 20 ya da 200 (sablon/dukkan_kirmizi200.png)
     "pot_al_kirmizi_paket": 5,    # kac paket kucuk kirmizi (her biri pot_paket adet)
@@ -4060,30 +4061,66 @@ def calistir(ayar, sablon):
         bolge_ = (x0_, y0_, min(gn_, bas_[0] + 200), min(yk_, bas_[1] + 400))
         alinan_ = 0
 
+        def yang_oku(k_y):
+            """Envanterin altindaki 'NNN.NNN Yang' yazisi (dukkan acikken envanter de acik). Okunamazsa None."""
+            try:
+                yy_, gg_ = k_y.shape[:2]
+                t_ = " ".join(x["yazi"] for x in oku.oku(k_y[yy_ - 75:yy_ - 45, gg_ - 220:gg_ - 5], olcek=3))
+                m_ = re.search(r"([\d.,]+)\s*Yang", t_)
+                return int(re.sub(r"\D", "", m_[1])) if m_ and re.sub(r"\D", "", m_[1]) else None
+            except Exception:
+                return None
+
+        def tek_al(ad_, sb_):
+            """Tek paket: True alindi (Yang azaldi), False alinmadi, None dukkanda yok."""
+            k_ = kare_al(h)
+            kes_ = k_[bolge_[1]:bolge_[3], bolge_[0]:bolge_[2]]
+            fark_, _, yer_, _ = cv2.minMaxLoc(cv2.matchTemplate(kes_, sb_, cv2.TM_SQDIFF_NORMED))
+            if fark_ > 0.06:                                    # renkli eslesme: 20'lik ile 200'luk ~0.13 ayrisiyor
+                print(f"   pot al: {ad_} dukkanda bulunamadi (fark {fark_:.3f})")
+                return None
+            y_once = yang_oku(k_)
+            x_h = bolge_[0] + yer_[0] + sb_.shape[1] // 2           # Vedat: saga tiklayinca onaysiz aliyor
+            y_h = bolge_[1] + yer_[1] + sb_.shape[0] // 2
+            pydirectinput.moveTo(ox_son[0] + int(x_h), ox_son[1] + int(y_h))
+            time.sleep(0.3)
+            pydirectinput.mouseDown(button="right")
+            time.sleep(0.1)
+            pydirectinput.mouseUp(button="right")
+            time.sleep(0.5)
+            pydirectinput.moveTo(ox_son[0] + gn_ // 2, ox_son[1] + int(yk_ * 0.75))   # bilgi kutusu sonraki aramayi ortmesin
+            time.sleep(0.6)
+            y_sonra = yang_oku(kare_al(h))
+            if y_once is not None and y_sonra is not None:
+                if y_sonra < y_once:
+                    print(f"{time.strftime('%H:%M:%S')}  pot al: {ad_} 1 paket alindi ({y_once - y_sonra:,} Yang, kalan {y_sonra:,})")
+                    return True
+                print(f"{time.strftime('%H:%M:%S')}  pot al: {ad_} ALINAMADI - Yang degismedi ({y_once:,}); para yetmemis olabilir")
+                return False
+            print(f"{time.strftime('%H:%M:%S')}  pot al: {ad_} 1 paket alindi (Yang okunamadi - DOGRULANAMADI)")
+            return True
+
         for ad_, n_ in al.items():
             sb_ = cv2.imread(os.path.join(KLASOR, "sablon", f"dukkan_{ad_}.png"))
             if sb_ is None or n_ <= 0:
                 continue
             sb_ = cv2.cvtColor(sb_, cv2.COLOR_BGR2RGB)
             for _ in range(n_):
-                k_ = kare_al(h)
-                kes_ = k_[bolge_[1]:bolge_[3], bolge_[0]:bolge_[2]]
-                fark_, _, yer_, _ = cv2.minMaxLoc(cv2.matchTemplate(kes_, sb_, cv2.TM_SQDIFF_NORMED))
-                if fark_ > 0.06:                                # renkli eslesme: 20'lik ile 200'luk ~0.13 ayrisiyor
-                    print(f"   pot al: {ad_} dukkanda bulunamadi (fark {fark_:.3f})")
-                    break
-                x_h = bolge_[0] + yer_[0] + sb_.shape[1] // 2       # Vedat: saga tiklayinca onaysiz aliyor
-                y_h = bolge_[1] + yer_[1] + sb_.shape[0] // 2
-                pydirectinput.moveTo(ox_son[0] + int(x_h), ox_son[1] + int(y_h))
-                time.sleep(0.3)
-                pydirectinput.mouseDown(button="right")
-                time.sleep(0.1)
-                pydirectinput.mouseUp(button="right")
-                time.sleep(0.5)
-                pydirectinput.moveTo(ox_son[0] + gn_ // 2, ox_son[1] + int(yk_ * 0.75))   # bilgi kutusu sonraki aramayi ortmesin
-                time.sleep(0.3)
-                alinan_ += 1
-                print(f"{time.strftime('%H:%M:%S')}  pot al: {ad_} 1 paket alindi")
+                s_ = tek_al(ad_, sb_)
+                if s_:
+                    alinan_ += 1
+                    continue
+                if s_ is False and ad_.endswith("200") and ayar["pot_yedek_20_paket"]:   # 200'luk alinamadi: 20'likle dene
+                    ad20_ = ad_[:-1]
+                    sb20_ = cv2.imread(os.path.join(KLASOR, "sablon", f"dukkan_{ad20_}.png"))
+                    if sb20_ is not None:
+                        sb20_ = cv2.cvtColor(sb20_, cv2.COLOR_BGR2RGB)
+                        print(f"   pot al: 200'luk yerine {ayar['pot_yedek_20_paket']} x {ad20_} deneniyor")
+                        for _y in range(ayar["pot_yedek_20_paket"]):
+                            if not tek_al(ad20_, sb20_):
+                                break
+                            alinan_ += 1
+                break
         return alinan_
 
     def satici_adla(k_):
