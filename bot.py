@@ -168,6 +168,9 @@ VARSAYILAN = {
     "akilli_yan_kacis": True,     # takilinca iki yandan (sag/sol) yaratigi az olana kac (eski: hep ayni yana)
     "kacinilan_yaratiklar": ["boss", "patron", "lider", "reis", "kral"],   # adinda bunlar gecen yaratiga (ve yanindakilere) dalma
     "patron_atla_sn": 30,
+    "menzil_kapisi": True,        # saldiri tusunu yalniz secili hedef ogrenilen vurma mesafesine girince bas (uzaktan kilic sallamasin)
+    "menzil_bekle_sn": 3.0,       # hedefe yururken en cok bu kadar bekle, sonra yine bas
+    "menzil_kapisi_vurulurken": True,   # vuruluyorken de menzili bekle (False: vurulunca hemen bas)
     "burada_tutmazsa_sehirde": True,   # 'Burada yeniden basla' 25 sn tutmazsa 'Sehirde'ye gec (kalabaliktan da cikar)
     "bolge_ogren": True,          # mini haritadan bolge haritasi (mozaik) cikar, konumunu bil, takildigi yerleri hatirla
     "bolge_ogren_harita": "Bakra",
@@ -1338,6 +1341,24 @@ def calistir(ayar, sablon):
             return 170.0
         s_ = sorted(menzil_ornek)
         return float(min(200, max(90, s_[int(len(s_) * 0.70)])))   # %70 dilim: uzaktan vuran beceri (kilic cevirme) ornekleri sismesin
+
+    def saldiri_bas(en_cok_sn=None):
+        """Saldiri tusunu YALNIZ secili hedef menzile girince bas (uzaktayken basili tutmak karakteri durdurup
+        havaya kilic sallatiyor). Hedefe tiklanmis olmali: karakter yururken secim halkasinin uzakligina bakar;
+        halka yoksa / sure dolarsa yine basar (eski davranis)."""
+        if ayar["menzil_kapisi"]:
+            bit_ = time.time() + (en_cok_sn if en_cok_sn is not None else ayar["menzil_bekle_sn"])
+            while time.time() < bit_ and durum["calis"] and not durum["duraklat"]:
+                k_m = kare_al(h)
+                yk_m, gn_m = k_m.shape[:2]
+                halka_ = secim_halkasi(k_m)
+                if halka_ is None or math.hypot(halka_[0] - gn_m // 2, halka_[1] - int(yk_m * 0.60)) <= menzil() * 1.15:
+                    break
+                if saldiri_altinda() and not ayar["menzil_kapisi_vurulurken"]:
+                    break
+                time.sleep(0.08)
+        pydirectinput.keyDown(ayar["saldiri_tusu"])
+        su_an[0] = "slot kesiyor"                 # vurus_bekle etiketi slot boyunca kalip duraklama olcumunu yaniltiyordu
 
     def menzil_kaydet(k_, gen_, yuk_):
         """Can dusurdugumuz anda hedefin uzakligini kaydet (saniyede en cok 1)."""
@@ -5625,11 +5646,13 @@ def calistir(ayar, sablon):
                         print(f"{time.strftime('%H:%M:%S')}  hasar aliyorum - yanimdaki {len(yakin_)} yaratiga donuluyor")
                     su_an[0] = "savunma"
                     hedefler, sure = yakin_, ayar["hedef_basi_ust_sure_sn"]
-                    pydirectinput.keyDown(ayar["saldiri_tusu"])       # tiklamadan once hemen vurmaya basla
-                    if len(yakin_) >= 2 and ayar["saldiri_becerileri"]:
-                        pydirectinput.press(ayar["saldiri_becerileri"][0]["tus"])   # cevreye vuran beceri (kilic cevirme)
-                    time.sleep(0.25)
-                    pydirectinput.keyUp(ayar["saldiri_tusu"])
+                    if (not ayar["menzil_kapisi"]
+                            or math.hypot(yakin_[0][0] - karakter[0], yakin_[0][1] + 45 - karakter[1]) <= menzil() * 1.15):
+                        pydirectinput.keyDown(ayar["saldiri_tusu"])       # dibimde: tiklamadan once hemen vurmaya basla
+                        if len(yakin_) >= 2 and ayar["saldiri_becerileri"]:
+                            pydirectinput.press(ayar["saldiri_becerileri"][0]["tus"])   # cevreye vuran beceri (kilic cevirme)
+                        time.sleep(0.25)
+                        pydirectinput.keyUp(ayar["saldiri_tusu"])
 
             odak_d = list(ayar["sadece_hedefler"]) + esya_hedef + (av_aranan if ayar["av_gorevi"] else [])
             if (odak_d and not tehdit and not tas and not saldiran
@@ -5785,7 +5808,7 @@ def calistir(ayar, sablon):
             slot_atla = []                  # bu slotta ulasilamayan/vurulamayan yaratiklar (zaman, x, y): 20 sn secilmez
             yolo_deneme = [0]               # bu slotta sekil modeliyle (etiketsiz) yaratiga gidis sayisi
             dib_gecis = [0.0]               # dibimdeki saldirgana son gecis ani
-            pydirectinput.keyDown(ayar["saldiri_tusu"])
+            saldiri_bas()
             saldiri_basili = True
             su_an[0] = "slot kesiyor"
             while time.time() < bitis and durum["calis"] and not durum["duraklat"]:
@@ -5851,7 +5874,7 @@ def calistir(ayar, sablon):
                         bos += 1
                         if vuruluyor and bos < 25:  # vuruluyor ama etiket gorunmuyor: yerinde vurmaya devam
                             if not saldiri_basili:
-                                pydirectinput.keyDown(ayar["saldiri_tusu"])
+                                saldiri_bas()
                                 saldiri_basili = True
                             time.sleep(0.12)
                             continue
@@ -5870,14 +5893,14 @@ def calistir(ayar, sablon):
                                     slot_atla.append((time.time(), yakin[0][0], yakin[0][1]))
                                     yaklasma = 0
                                     print(f"{time.strftime('%H:%M:%S')}  slot ici: ulasilamayan yaratik atlandi - gruptakilere devam")
-                                    pydirectinput.keyDown(ayar["saldiri_tusu"])
+                                    saldiri_bas()
                                     saldiri_basili = True
                                     continue
                                 kacin(yakin[0][0], yakin[0][1], "slot ici yeni hedef")
                                 break
                             continue
                         yaklasma = 0
-                        pydirectinput.keyDown(ayar["saldiri_tusu"])
+                        saldiri_bas()
                         saldiri_basili = True
                         son_can, son_degisim, son_hasar = 2.0, time.time(), time.time()
                 else:
@@ -5895,7 +5918,7 @@ def calistir(ayar, sablon):
                                 birak()
                                 print(f"{time.strftime('%H:%M:%S')}  slot ici: dibimdeki saldirgana donuldu")
                                 if sec(dib_d[0][0], dib_d[0][1]):
-                                    pydirectinput.keyDown(ayar["saldiri_tusu"])
+                                    saldiri_bas()
                                     saldiri_basili = True
                                     son_can, son_degisim = 2.0, time.time()
                                 continue
@@ -5926,7 +5949,7 @@ def calistir(ayar, sablon):
                                     print(f"{time.strftime('%H:%M:%S')}  slot ici: vurulamayan yaratik birakildi - gruptakilere devam")
                                     if diger_ and sec(diger_[0][0], diger_[0][1]):
                                         vurus_bekle(3)
-                                    pydirectinput.keyDown(ayar["saldiri_tusu"])
+                                    saldiri_bas()
                                     saldiri_basili = True
                                     son_can, son_degisim = 2.0, time.time()
                                     continue
@@ -5939,7 +5962,7 @@ def calistir(ayar, sablon):
                             time.sleep(0.05)
                             pydirectinput.click()
                             vurus_bekle(3)
-                        pydirectinput.keyDown(ayar["saldiri_tusu"])
+                        saldiri_bas()
                         saldiri_basili = True
                         son_can, son_degisim = 2.0, time.time()
                 if can_orani(k2) < ayar["can_esigi"]:
