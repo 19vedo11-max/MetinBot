@@ -422,6 +422,20 @@ def bildir(tur, metin, ara_dk=15):
 
 
 _AYAR_REF = {}
+_cizim = {"t": 0.0, "h": 889}
+
+
+def oyun_cizim_yuksekligi():
+    """metin2.cfg HEIGHT (oyunun cizdigi yukseklik, 125% olceksiz). 60 sn'de bir okunur; okunamazsa 889."""
+    if time.time() - _cizim["t"] > 60:
+        _cizim["t"] = time.time()
+        try:
+            for sat in open(r"C:\Program Files (x86)\Waryong2\metin2.cfg", encoding="latin-1"):
+                if sat.split() and sat.split()[0] == "HEIGHT":
+                    _cizim["h"] = int(sat.split()[1])
+        except Exception:
+            pass
+    return _cizim["h"]
 _son_kare = [None]
 _nabiz = [time.time()]          # ana is parcaciginin son kare aldigi an (donma bekcisi)
 # Genel gorunum haritasi (M) kirpintisi: kapat dugmesine gore. 2026-11-19 olculdu (eski 254x317 sol 65 px'i kesiyordu)
@@ -4530,8 +4544,9 @@ def calistir(ayar, sablon):
                 return None
 
         def _olcekli(sb_o):
-            """Sablonlar 1111 px yukseklikte kesildi; pencere buyuyunce oyun goruntuyu dikeyde uzatiyor (1171'de %5.4)."""
-            sy_ = yk_ / ayar["sablon_yukseklik"]
+            """Sablonlar oyun 1536x889 (125% olcekte 1111 px) cizerken kesildi. Pencere oyunun cizim yuksekliginden buyukse
+            oyun goruntuyu dikeyde uzatiyor (889 cizim, 1171 pencere: %5.4). Oyunun cizim yuksekligi metin2.cfg'den okunur."""
+            sy_ = yk_ / (oyun_cizim_yuksekligi() * ayar["sablon_yukseklik"] / 889)
             if abs(sy_ - 1.0) < 0.01:
                 return sb_o
             return cv2.resize(sb_o, (sb_o.shape[1], max(4, round(sb_o.shape[0] * sy_))), interpolation=cv2.INTER_LINEAR)
