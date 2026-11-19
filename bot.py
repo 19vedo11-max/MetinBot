@@ -179,7 +179,9 @@ VARSAYILAN = {
     "donma_bekcisi": True,        # ana dongu donma_sn boyunca ekran okumazsa botu yeniden baslat (Bot-Baslat.bat acar)
     "donma_sn": 150,
     "surum_bekle_sn": 60,         # yeni kod: son degisiklikten bu kadar sn sonra ve sakin bir anda yukle (10 dk icinde mutlaka)
-    "menzil_kapisi": True,        # saldiri tusunu yalniz secili hedef ogrenilen vurma mesafesine girince bas (uzaktan kilic sallamasin)
+    "menzil_kapisi": True,
+    "beceri_menzil_kapisi": True,
+    "menzil_dikey_kat": 1.6,      # vurma mesafesinde dikey (one-arka) farki bu katla say: yatik kamerada derinlik ekranda kisa gorunur  # saldiri becerileri (kilic cevirme vb.) yalniz secili hedef vurma mesafesindeyken        # saldiri tusunu yalniz secili hedef ogrenilen vurma mesafesine girince bas (uzaktan kilic sallamasin)
     "menzil_bekle_sn": 3.0,       # hedefe yururken en cok bu kadar bekle, sonra yine bas
     "menzil_kapisi_vurulurken": True,   # vuruluyorken de menzili bekle (False: vurulunca hemen bas)
     "burada_tutmazsa_sehirde": True,   # 'Burada yeniden basla' 25 sn tutmazsa 'Sehirde'ye gec (kalabaliktan da cikar)
@@ -1424,13 +1426,18 @@ def calistir(ayar, sablon):
                 k_m = kare_al(h)
                 yk_m, gn_m = k_m.shape[:2]
                 halka_ = secim_halkasi(k_m)
-                if halka_ is None or math.hypot(halka_[0] - gn_m // 2, halka_[1] - int(yk_m * 0.60)) <= menzil() * 1.15:
+                if halka_ is None or menzil_uzak(halka_[0], halka_[1], gn_m, yk_m) <= menzil() * 1.15:
                     break
                 if saldiri_altinda() and not ayar["menzil_kapisi_vurulurken"]:
                     break
                 time.sleep(0.08)
         pydirectinput.keyDown(ayar["saldiri_tusu"])
         su_an[0] = "slot kesiyor"                 # vurus_bekle etiketi slot boyunca kalip duraklama olcumunu yaniltiyordu
+
+    def menzil_uzak(hx_, hy_, gen_, yuk_):
+        """Secim halkasinin karaktere 'vurma' uzakligi: dikey fark menzil_dikey_kat ile buyutulur (yatik kamerada
+        derinlik ekranda kisalir; ayni piksel uzaklik one-arkada daha uzak demek)."""
+        return math.hypot(hx_ - gen_ // 2, (hy_ - int(yuk_ * 0.60)) * ayar["menzil_dikey_kat"])
 
     def menzil_kaydet(k_, gen_, yuk_):
         """Can dusurdugumuz anda hedefin uzakligini kaydet (saniyede en cok 1)."""
@@ -1440,7 +1447,7 @@ def calistir(ayar, sablon):
         halka_ = secim_halkasi(k_)
         if not halka_:
             return
-        menzil_ornek.append(round(math.hypot(halka_[0] - gen_ // 2, halka_[1] - int(yuk_ * 0.60)), 1))
+        menzil_ornek.append(round(menzil_uzak(halka_[0], halka_[1], gen_, yuk_), 1))
         del menzil_ornek[:-300]
         menzil_d["n"] = menzil_d.get("n", 0) + 1
         if menzil_d["n"] % 50 == 0:
@@ -1461,7 +1468,7 @@ def calistir(ayar, sablon):
         if time.time() - son_degisim_ < 0.9:
             return 2.5
         halka_ = secim_halkasi(k_)
-        if halka_ and math.hypot(halka_[0] - gen_ // 2, halka_[1] - int(yuk_ * 0.60)) > menzil() * 1.15:
+        if halka_ and menzil_uzak(halka_[0], halka_[1], gen_, yuk_) > menzil() * 1.15:
             return 0.7                                  # ogrenilen vurma mesafesinin disinda: bosa vuruyor, hemen yuru
         return 2.0 if halka_ else 2.5                   # menzilde ama can dusmuyor (yanlis yone bakiyor olabilir): 2 sn sonra tikla
 
@@ -6212,7 +6219,7 @@ def calistir(ayar, sablon):
                     if (ayar["yakin_saldir"] and time.time() - son_hasar > 1.0 and time.time() - dib_gecis[0] > 2.0
                             and saldiri_altinda()):
                         halka_d = secim_halkasi(k2)
-                        if not halka_d or math.hypot(halka_d[0] - gen // 2, halka_d[1] - int(yuk * 0.60)) > menzil() * 1.15:
+                        if not halka_d or menzil_uzak(halka_d[0], halka_d[1], gen, yuk) > menzil() * 1.15:
                             dib_d = sorted((t for t in kirmizi_etiketler(k2)
                                             if math.hypot(t[0] - gen // 2, t[1] + 45 - int(yuk * 0.58)) < ayar["yakin_saldir_piksel"]),
                                            key=lambda t: math.hypot(t[0] - gen // 2, t[1] + 45 - int(yuk * 0.58)))
@@ -6272,7 +6279,11 @@ def calistir(ayar, sablon):
                     pydirectinput.press(ayar["can_potu_tusu"])
                 guc_denetle(k2)
                 time.sleep(0.0)
-                if hc > 0.03 and time.time() - son_hasar < 1.5:
+                menzilde_b = True
+                if hc > 0.03 and time.time() - son_hasar < 1.5 and ayar["beceri_menzil_kapisi"]:
+                    halka_b = secim_halkasi(k2)              # beceri (kilic cevirme vb.) yalniz hedef dibimdeyken: havaya gitmesin
+                    menzilde_b = bool(halka_b) and menzil_uzak(halka_b[0], halka_b[1], gen, yuk) <= menzil()
+                if hc > 0.03 and time.time() - son_hasar < 1.5 and menzilde_b:
                     for bi, bc in enumerate(ayar["saldiri_becerileri"]):
                         if time.time() - son_saldiri_b.get(bi, 0) > bc["aralik_sn"]:
                             pydirectinput.press(bc["tus"])
