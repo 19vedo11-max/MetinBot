@@ -3589,6 +3589,7 @@ def calistir(ayar, sablon):
             tikla(yer_[0], yer_[1])                                  # potu al (elde)
             time.sleep(0.25)
             tikla(gn_ // 2 + pot_yuva[a_], yk_ - 26)                  # yuvaya birak
+            pydirectinput.moveTo(ox_son[0] + gn_ // 2, ox_son[1] + int(yk_ * 0.4))   # imlec yuvayi ortmesin (yanlis 'olmadi')
             konuldu_ = False
             for _bk in (0.35, 0.5, 0.8):                             # simge gec beliriyor: erken 'olmadi' deyip geri tiklama
                 time.sleep(_bk)
@@ -3602,8 +3603,15 @@ def calistir(ayar, sablon):
                 print(f"{time.strftime('%H:%M:%S')}  pot yuvasi: {a_} envanterden {1 if a_ == 'kirmizi_pot' else 2} numaraya kondu")
                 (pot_bitti if a_ == 'kirmizi_pot' else mavi_bitti)[0] = 0.0     # bulundu: 'bitti' yanlis alarmdi, tekrar satin almaya gitme
             else:
-                tikla(yer_[0], yer_[1])                              # olmadi: eldeki potu yerine geri birak
-                time.sleep(0.25)
+                # olmadi: eldeki potu yerine geri birak. Elde yoksa bu tiklama potu ELE ALIR (sonra hicbir tiklama
+                # islemez - dirilme dugmesi dahil): birakinca yerinde mi bak, degilse bir kez daha tikla.
+                for _gb in range(2):
+                    tikla(yer_[0], yer_[1])
+                    pydirectinput.moveTo(ox_son[0] + gn_ // 2, ox_son[1] + int(yk_ * 0.4))
+                    time.sleep(0.35)
+                    y2_ = _env_ara(kare_al(h), a_)
+                    if y2_ and abs(y2_[0] - yer_[0]) < 20 and abs(y2_[1] - yer_[1]) < 20:
+                        break
                 print(f"{time.strftime('%H:%M:%S')}  pot yuvasi: {a_} konamadi - geri birakildi; 10 dk denenmeyecek")
                 pot_yasak[0] = time.time() + 600
         if acildi_:
