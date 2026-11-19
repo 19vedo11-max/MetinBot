@@ -165,6 +165,8 @@ VARSAYILAN = {
     "kamera_ters_tusu": "q",
     "kamera_durt_sn": 0.15,       # slot icinde yaratik kaybolunca kamerayi bu kadar sn dondur (yarim aci; eski 0.3)
     "yururken_kamera": True,
+    "vurulurken_kacma": True,     # ulasilamayan hedefte bile vuruluyorsam kosup kacma: yanimdakilere don
+    "slot_sart_yakin_istisna": 350,   # bu (dunya) mesafedeki yaratik slot sartina bakilmadan kesilir
     "yon_kara_liste": True,       # takildigim yondeki (dag/engel ardindaki) diger hedeflere de bir sure gitme
     "yon_kara_liste_sn": 25,
     "harita_otomatik_kaydet": True,   # taninmayan haritaya gelince haritayi kendisi kaydetsin (panelde alan cizilebilsin)      # kamera acisini yururken duzelt (savas araliginda durmasin)
@@ -1317,6 +1319,9 @@ def calistir(ayar, sablon):
         if ayar["yon_kara_liste"] and boy > 80:               # dag/engel yonu: o yondeki uzak hedeflere de gitme
             yon_atla.append((time.time(), math.atan2(hy - ky, hx - kx), boy))
             del yon_atla[:-8]
+        if ayar["vurulurken_kacma"] and saldiri_altinda():      # yaratiklar vururken kosma (gecemez, olur): yerinde savas
+            print(f"{time.strftime('%H:%M:%S')}  hedefe ulasilamadi [{neden}] - vuruluyorum, kacmiyor: yanimdakilere donuluyor")
+            return
         diger_ = [t for t in kirmizi_etiketler(k) if math.hypot(t[0] - hx, t[1] - hy) > 60
                   and math.hypot(t[0] - kx, t[1] - ky) < 450]
         son_atla_ = [z for z, _, _ in atla if time.time() - z < 25]
@@ -5087,7 +5092,11 @@ def calistir(ayar, sablon):
                         uye.add((int(t[0]), int(t[1])))
                 dipte = {(int(t[0]), int(t[1])) for t in tum
                          if math.hypot(t[0] - karakter[0], t[1] - (karakter[1] - 110)) < ayar["saldiran_yaricapi_piksel"]}
-                yaratik = [t for t in yaratik if (int(t[0]), int(t[1])) in uye or (int(t[0]), int(t[1])) in dipte]
+                yakin_ist = {(int(t[0]), int(t[1])) for t in tum                 # yakindaki tekli/kucuk grup: atlama, kes
+                             if dunya_uzak(t[0], t[1] + 45, karakter[0], karakter[1], ayar["derinlik_ufuk"],
+                                           ayar["derinlik_carpan"]) < ayar["slot_sart_yakin_istisna"]}
+                yaratik = [t for t in yaratik if (int(t[0]), int(t[1])) in uye or (int(t[0]), int(t[1])) in dipte
+                           or (int(t[0]), int(t[1])) in yakin_ist]
                 yaratik.sort(key=lambda t: 0 if (int(t[0]), int(t[1])) in dipte else 1)
             if time.time() < olum_sayac.get("dalma_yok_bitis", 0):    # art arda olum: kalabaliga dalma
                 yaratik = [t for t in yaratik if yog(t) <= 2]
