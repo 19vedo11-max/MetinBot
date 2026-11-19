@@ -170,6 +170,7 @@ VARSAYILAN = {
     "patron_atla_sn": 30,
     "bolge_ogren": True,          # mini haritadan bolge haritasi (mozaik) cikar, konumunu bil, takildigi yerleri hatirla
     "bolge_ogren_harita": "Bakra",
+    "bolge_kayip_sifirla_sn": 45,   # bu kadar sn konum bulunamazsa mozaigi yedekleyip bastan ogren
     "bolge_engel_suz": True,      # bilinen engelin ardindaki hedefleri secme (hepsi oyleyse secer)
     "metin_ust_fark": 5,          # metinler.json'a gore seviyesi (benim + bu) ustundeki metin taslarina vurma (None = sinir yok)
     "patronlardan_kacin": True,   # patronlar.json'daki patronlara (adlarindan) ve yanlarindakilere dalma
@@ -3068,12 +3069,38 @@ def calistir(ayar, sablon):
     ogren_d = {"besle": 0.0, "kaydet": time.time(), "hata": 0.0, "suz_log": 0.0}
 
     def bolge_besle(k_b):
-        """~0.4 sn'de bir mini harita kirpintisini bolge ogrenmeye ver (8 ms); 30 sn'de bir kaydet."""
+        """~0.4 sn'de bir mini harita kirpintisini bolge ogrenmeye ver (8 ms); 30 sn'de bir kaydet.
+        Uzun sure 'kayip' kalirsa (mozaik baska yerden ya da bozuk) mozaigi yedekleyip bastan baslar."""
+        nonlocal ogren
         if ogren is None or time.time() - ogren_d["besle"] < 0.4:
             return
         ogren_d["besle"] = time.time()
         try:
-            ogren.besle(cv2.cvtColor(np.ascontiguousarray(k_b[:200, -200:]), cv2.COLOR_RGB2BGR), time.time())
+            r_b = ogren.besle(cv2.cvtColor(np.ascontiguousarray(k_b[:200, -200:]), cv2.COLOR_RGB2BGR), time.time())
+            if r_b and r_b.get("durum") == "kayip":
+                ogren_d["kayip"] = ogren_d.get("kayip") or time.time()
+                if time.time() - ogren_d["kayip"] > ayar["bolge_kayip_sifirla_sn"]:
+                    import shutil
+                    from harita_ogren import HaritaOgren
+                    hk_ = os.path.join(KLASOR, "goruntu", "haritalar")
+                    for uz_ in (".png", ".json", "_engel.json"):
+                        y_ = os.path.join(hk_, f"mozaik_{ayar['bolge_ogren_harita']}{uz_}")
+                        if os.path.exists(y_):
+                            shutil.copy(y_, y_ + ".yedek")
+                            os.remove(y_)
+                    ogren = HaritaOgren(ayar["bolge_ogren_harita"], yukle=False)
+                    ogren_d["kayip"] = 0.0
+                    print(f"{time.strftime('%H:%M:%S')}  bolge: {ayar['bolge_kayip_sifirla_sn']} sn konum bulunamadi - "
+                          f"harita bastan ogreniliyor (eskisi .yedek)")
+                    return
+            else:
+                ogren_d["kayip"] = 0.0
+            ogren_d["say"] = ogren_d.get("say", 0) + 1
+            if time.time() - ogren_d.get("log", 0) > 120:
+                ogren_d["log"] = time.time()
+                print(f"{time.strftime('%H:%M:%S')}  bolge: {ogren_d['say']} besleme, son: "
+                      + (f"{r_b.get('durum')} ({r_b.get('x', 0):.0f},{r_b.get('y', 0):.0f}) guven {r_b.get('guven', 0):.2f}" if r_b else "kirpinti yok")
+                      + f", {getattr(ogren, 't_ort', 0):.0f} ms, {len(getattr(ogren, 'engeller', []) or [])} engel")
             if time.time() - ogren_d["kaydet"] > 30:
                 ogren_d["kaydet"] = time.time()
                 ogren.kaydet()
@@ -4886,6 +4913,7 @@ def calistir(ayar, sablon):
                     _asil_press(ayar["toplama_tusu"])
                     son_z = time.time()
                 k_p = kare_al(h)
+                bolge_besle(k_p)                               # bolge ogrenme: savas sirasinda da harita (0.4 sn'de bir)
                 can_p = can_orani(k_p)
                 if can_p >= 0.02:
                     can_gecmis.append((time.time(), can_p))
