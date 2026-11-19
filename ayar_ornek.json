@@ -203,5 +203,6 @@
   ],
   "sinif": "savasci",
   "kamera_ana_dongu_kat": 2,
-  "zoom_yakin_sn": 0.5
+  "zoom_yakin_sn": 0.9,
+  "kamera_uzak_kal": false
 }

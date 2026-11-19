@@ -5077,6 +5077,8 @@ def calistir(ayar, sablon):
                         zoom_uzak()
                     elif su_an[0] in KAMERA_YAKIN and kamera_z["uzak"]:
                         zoom_yakin()
+                elif kamera_z["uzak"]:                    # zoom kapatildi ama kamera uzakta kaldi: bir kez yakina don
+                    zoom_yakin()
             except Exception:
                 pass
 
