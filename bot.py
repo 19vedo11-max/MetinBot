@@ -258,6 +258,7 @@ VARSAYILAN = {
     "pot_sira_kirmizi": ["kucuk", "orta", "buyuk"],   # yuva bosalinca envanterden bu sirayla kirmizi pot konur; hicbiri yoksa satin al
     "pot_sira_mavi": ["kucuk", "orta", "buyuk"],
     "pot_env_esik": 0.12,
+    "pot_diger_sayfa": True,      # pot 1. envanter sayfasinda yoksa II-IV sekmelerine de bak (11-20 05:00: 1. sayfa esyayla dolu, alinan paket 2. sayfaya dustu, potsuz 4 olum)
     "sablon_yukseklik": 1111,     # dukkan sablonlarinin kesildigi oyun penceresi yuksekligi (buyuk pencerede dikey olceklenir)
     "dukkan_esik": 0.09,
     "pot_yok_bekle_sn": 120,      # envanterde pot yoksa yuva doldurmayi bu kadar sn deneme (envanteri tekrar tekrar acmasin)
@@ -4085,10 +4086,33 @@ def calistir(ayar, sablon):
                     time.sleep(0.5)
                     k_e = kare_al(h)
         yk_, gn_ = k_e.shape[:2]
+        env_sayfa_ = [None]                                      # 1. sayfadan baska sekmeye gecildiyse envanter kapat dugmesi
+        def _sayfa1():
+            if env_sayfa_[0] is not None:
+                tikla(env_sayfa_[0][0] - 161, env_sayfa_[0][1] + 297)      # I. sekme (kapat dugmesine gore, 11-20 olculdu)
+                env_sayfa_[0] = None
+                time.sleep(0.3)
         for a_ in bos:
+            _sayfa1()
             yer_ = _env_ara(k_e, a_)
+            if yer_ is None and ayar.get("pot_diger_sayfa", True) and kapat_s is not None:
+                env_x_ = [p_ for p_ in acik_pencereler(k_e, kapat_s) if p_[0] > gn_ * 0.75]   # envanter sagda
+                if env_x_:
+                    ex_, ey_ = max(env_x_)
+                    for sn_, dx_s in ((2, -113), (3, -64), (4, -16)):          # II, III, IV sekmeleri
+                        tikla(ex_ + dx_s, ey_ + 297)
+                        env_sayfa_[0] = (ex_, ey_)
+                        time.sleep(0.45)
+                        k_e = kare_al(h)
+                        yer_ = _env_ara(k_e, a_)
+                        if yer_ is not None:
+                            print(f"{time.strftime('%H:%M:%S')}  pot yuvasi: {a_} envanterin {sn_}. sayfasinda bulundu")
+                            break
+                    if yer_ is None:
+                        _sayfa1()
+                        k_e = kare_al(h)
             if yer_ is None:
-                print(f"{time.strftime('%H:%M:%S')}  pot yuvasi: {a_} bos ama envanterde (1. sayfa) {a_} yok")
+                print(f"{time.strftime('%H:%M:%S')}  pot yuvasi: {a_} bos ama envanterde (1-4. sayfa) {a_} yok")
                 if a_ == "kirmizi_pot":                              # can potu bitti: olum dongusune girmesin
                     if time.time() - pot_bitti[0] > 300:
                         print(f"{time.strftime('%H:%M:%S')}  POT BITTI - 30 dk temkinli: kalabaliga dalmiyor, yalniz kolay yaratik (pot alinmali)")
@@ -4141,6 +4165,7 @@ def calistir(ayar, sablon):
                 if a_ == "kirmizi_pot" and ayar["pot_yoksa_dalma"]:   # can potu basilamiyor: kalabaliga dalma
                     olum_sayac["dalma_yok_bitis"] = max(olum_sayac.get("dalma_yok_bitis", 0), time.time() + ayar["pot_yuva_tekrar_sn"] + 30)
                     olum_sayac["temkin_bitis"] = max(olum_sayac["temkin_bitis"], time.time() + ayar["pot_yuva_tekrar_sn"] + 30)
+        _sayfa1()                                                # envanter 1. sayfada kalsin
         if acildi_:
             pydirectinput.press(ayar["envanter_tusu"])
             time.sleep(0.2)
