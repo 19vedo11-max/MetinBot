@@ -241,6 +241,8 @@ VARSAYILAN = {
     "grup_en_az": 3,              # bir grupta en az bu kadar canavar olmeden slot bitmis sayilmaz
     "guc_can_esigi": 0.5,         # can bunun altindayken hava kilici / ofke (sureli_tuslar) basilmaz
     "mini_harita_yuru": True,     # buyuk haritadan once mini haritadaki kirmizi nokta kumesine yuru
+    "alan_mini_harita": True,     # alan modunda da mini haritadaki YAKIN kirmizi kumeye yuru (alandan cikmadan)
+    "alan_mini_en_uzak_px": 35,   # alan modunda mini harita merkezine en cok bu kadar px uzaktaki kume (yaricap ~55)
     "alan_kisa_yuruyus": 5,      # slot bitince haritasiz kisa yuruyusle ayni alanda kac kez aransin
     "dolum_esigi": 0.7,           # grup bitince can bu orana kadar pot ile doldurulur (sonrasini pot izlegi yurur, beklemeden)
     "dolum_en_uzun_sn": 2.5,      # grup sonu can doldurma icin en cok bu kadar dur (eski 8 sn)
@@ -2463,9 +2465,10 @@ def calistir(ayar, sablon):
             if not saldiri_altinda():
                 hizli_adim(hz_, kf_)
 
-    def mini_harita_yuru():
+    def mini_harita_yuru(en_uzak=None):
         """Buyuk haritayi acmadan: mini haritadaki en yakin kirmizi nokta kumesine dogru ekranda bos yone yuru.
-        Hedef etiketi gorunurse durur. Donus: True yurundu (kume vardi), False kume yok."""
+        Hedef etiketi gorunurse durur. Donus: True yurundu (kume vardi), False kume yok.
+        en_uzak: (alan modu) yalniz mini harita merkezine bu kadar pikselden yakin kumeler (alandan cikmasin)."""
         try:
             k_ = kare_al(h)
             mm = k_[30:140, k_.shape[1] - 140:k_.shape[1] - 30].astype(int)
@@ -2479,6 +2482,8 @@ def calistir(ayar, sablon):
                     continue
                 vx, vy = mer_m[i_m][0] - 55, mer_m[i_m][1] - 55
                 uz = math.hypot(vx, vy)
+                if en_uzak is not None and uz > en_uzak:
+                    continue
                 if en is None or uz < en[0]:
                     en = (uz, ag, math.atan2(vy, vx))
             if en is None:
@@ -6232,10 +6237,11 @@ def calistir(ayar, sablon):
                 # 3 turda da uygun hedef cikmadiysa (ya da cevrede yalniz dusuk seviyeli varsa) beklemeden baska bolgeye
                 if bos_tur < 3 and dusuk_var < 2 and etrafa_bak(ayar["etrafa_bakma_sn"]):
                     continue
-                if (ayar.get("mini_harita_yuru", True) and not alan_aktif() and dusuk_var < 2
+                alan_mini_ = alan_aktif() and ayar.get("alan_mini_harita", True)   # alanda da yakin kumelere
+                if (ayar.get("mini_harita_yuru", True) and (not alan_aktif() or alan_mini_) and dusuk_var < 2
                         and alan.get("mini", 0) < 3):
                     alan["mini"] = alan.get("mini", 0) + 1
-                    if mini_harita_yuru():
+                    if mini_harita_yuru(ayar.get("alan_mini_en_uzak_px", 35) if alan_mini_ else None):
                         continue
                 alan_bos_ = alan_aktif() and time.time() - son_savas[0] > ayar["alan_bos_sn"]   # 10 sn slot yok: alana don
                 if alan["yerel"] < ayar["alan_kisa_yuruyus"] and dusuk_var < 2 and not alan_bos_:

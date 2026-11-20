@@ -6,7 +6,7 @@
   "esyaya_tikla": true,
   "esya_yaricapi_piksel": 420,
   "en_cok_esya": 10,
-  "ilk_vurus_bekleme_sn": 3.5,
+  "ilk_vurus_bekleme_sn": 5,
   "takilma_sn": 0.9,
   "takilma_esik": 1.2,
   "durgun_esik": 1.0,
@@ -177,12 +177,12 @@
   "pot_yuvasi_doldur": true,
   "olum_dongusu_sn": 180,
   "pot_satin_al": true,
-  "pot_al_kirmizi_paket": 1,
-  "pot_al_mavi_paket": 1,
+  "pot_al_kirmizi_paket": 6,
+  "pot_al_mavi_paket": 2,
   "kare_paylas_klasoru": "",
   "kare_paylas_adi": "",
   "kare_paylas_gunluk": 200,
-  "mini_harita_yuru": false,
+  "mini_harita_yuru": true,
   "hizli_vazgec": false,
   "hizli_engel": false,
   "yolo_slot": true,
@@ -194,16 +194,18 @@
   "pot_boy": "kucuk",
   "dalma_olum_sayisi": 3,
   "dalma_olum_sn": 600,
-  "pot_yuva_iz": true,
+  "pot_yuva_iz": false,
   "bildirim": true,
   "menzil_bekle_sn": 3.0,
   "aranan_tarama_sn": 15,
   "beceri_sira_yuva": [
-    4
+    4,
+    2
   ],
   "sinif": "savasci",
   "kamera_ana_dongu_kat": 2,
   "zoom_yakin_sn": 0.9,
   "kamera_uzak_kal": false,
-  "pot_diger_sayfa": false
+  "pot_diger_sayfa": false,
+  "bolge_ogren_harita": "Seungryong"
 }
