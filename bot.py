@@ -260,6 +260,7 @@ VARSAYILAN = {
     "pot_env_esik": 0.12,
     "pot_env_maskeli": True,      # envanterde pot bulunamazsa yalniz sise piksellerine bakan maskeli eslesme (11-20: yeni alinan esyanin beyaz "yeni" parlamasi esligi 0.35e cikariyordu, pot vardi ama "yok" deniyordu)
     "pot_maske_esik": 0.06,       # maskeli eslesme bu kadar iyi olmali (gercek potlar 0.020-0.024; az pikselli maske baska kirmizi esyayi pot sanmasin)
+    "pot_alinca_hemen_doldur": True,   # pot alininca dukkandan cikmadan yuvalari doldur (11-20 08:47 alim, 08:50 doldurma: arada potsuz 2 olum)
     "pot_diger_sayfa": True,      # pot 1. envanter sayfasinda yoksa II-IV sekmelerine de bak (11-20 05:00: 1. sayfa esyayla dolu, alinan paket 2. sayfaya dustu, potsuz 4 olum)
     "sablon_yukseklik": 1111,     # dukkan sablonlarinin kesildigi oyun penceresi yuksekligi (buyuk pencerede dikey olceklenir)
     "dukkan_esik": 0.09,
@@ -4966,6 +4967,13 @@ def calistir(ayar, sablon):
         for _ in range(2):
             pydirectinput.press("esc")
             time.sleep(0.3)
+        if al and n_al and ayar.get("pot_alinca_hemen_doldur", True):   # yururken/savasta yuva dolmuyor: simdi doldur
+            try:
+                for a_pd in ("kirmizi_pot", "mavi_pot"):
+                    pot_bos_say[a_pd] = 3
+                pot_yuvasi_doldur(kare_al(h))
+            except Exception as e_pd:
+                print("pot yuvasi (alim sonrasi):", e_pd)
         return n_al if al else True
 
     def uzaktan(kapaniyor=False):
