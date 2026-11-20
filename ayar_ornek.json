@@ -194,7 +194,7 @@
   "pot_boy": "kucuk",
   "dalma_olum_sayisi": 3,
   "dalma_olum_sn": 600,
-  "pot_yuva_iz": false,
+  "pot_yuva_iz": true,
   "bildirim": true,
   "menzil_bekle_sn": 3.0,
   "aranan_tarama_sn": 15,

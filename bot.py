@@ -4060,14 +4060,22 @@ def calistir(ayar, sablon):
             """Panelde secilen siraya gore (kucuk -> orta -> buyuk) ilk bulunan pot: (x, y) ya da None."""
             k_a = k_a.copy()
             k_a[-80:] = 0
+            bolge_ = None                                        # maskeli arama YALNIZ acik envanter penceresinin icinde
+            if ayar.get("pot_env_maskeli", True) and kapat_s is not None:
+                e_p = [p_ for p_ in acik_pencereler(k_a, kapat_s) if p_[0] > k_a.shape[1] * 0.75]
+                if e_p:
+                    ex_b, ey_b = max(e_p)
+                    y0_b, x0_b = ey_b + 305, max(0, ex_b - 205)
+                    bolge_ = np.zeros_like(k_a)
+                    bolge_[y0_b:, x0_b:ex_b + 12] = k_a[y0_b:, x0_b:ex_b + 12]
             renk_ = "kirmizi" if a_a == "kirmizi_pot" else "mavi"
             for boy_ in ayar["pot_sira_" + renk_]:
                 sb_ = pot_env_sab.get((renk_, boy_))
                 if sb_ is None:
                     continue
                 v_, _, yer_e, _ = cv2.minMaxLoc(cv2.matchTemplate(k_a, sb_, cv2.TM_SQDIFF_NORMED))
-                if v_ > ayar["pot_env_esik"] and ayar.get("pot_env_maskeli", True) and (renk_, boy_) in pot_env_mask:
-                    r_m = cv2.matchTemplate(k_a, sb_, cv2.TM_SQDIFF_NORMED, mask=pot_env_mask[(renk_, boy_)])
+                if v_ > ayar["pot_env_esik"] and bolge_ is not None and (renk_, boy_) in pot_env_mask:
+                    r_m = cv2.matchTemplate(bolge_, sb_, cv2.TM_SQDIFF_NORMED, mask=pot_env_mask[(renk_, boy_)])
                     r_m[~np.isfinite(r_m)] = 9.0                    # maskeli eslesme bos bolgede inf/nan verebilir
                     v_, _, yer_e, _ = cv2.minMaxLoc(r_m)
                     if pot_son_boy.get(a_a) != boy_:
