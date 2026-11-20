@@ -258,6 +258,7 @@ VARSAYILAN = {
     "pot_sira_kirmizi": ["kucuk", "orta", "buyuk"],   # yuva bosalinca envanterden bu sirayla kirmizi pot konur; hicbiri yoksa satin al
     "pot_sira_mavi": ["kucuk", "orta", "buyuk"],
     "pot_env_esik": 0.12,
+    "pot_env_maskeli": True,      # envanterde pot bulunamazsa yalniz sise piksellerine bakan maskeli eslesme (11-20: yeni alinan esyanin beyaz "yeni" parlamasi esligi 0.35e cikariyordu, pot vardi ama "yok" deniyordu)
     "pot_diger_sayfa": True,      # pot 1. envanter sayfasinda yoksa II-IV sekmelerine de bak (11-20 05:00: 1. sayfa esyayla dolu, alinan paket 2. sayfaya dustu, potsuz 4 olum)
     "sablon_yukseklik": 1111,     # dukkan sablonlarinin kesildigi oyun penceresi yuksekligi (buyuk pencerede dikey olceklenir)
     "dukkan_esik": 0.09,
@@ -3891,12 +3892,15 @@ def calistir(ayar, sablon):
         pencereleri_kapat()
 
     pot_env_sab = {}                                    # envanterde boy boy pot simgeleri (dukkan simgesinden kesildi)
+    pot_env_mask = {}
     pot_son_boy = {}
     for _r in ("kirmizi", "mavi"):
         for _b in ("kucuk", "orta", "buyuk"):
             _y = os.path.join(KLASOR, "sablon", f"env_{_r}_{_b}.png")
             if os.path.exists(_y):
                 pot_env_sab[(_r, _b)] = cv2.cvtColor(cv2.imread(_y), cv2.COLOR_BGR2RGB)
+                _m1 = (cv2.cvtColor(pot_env_sab[(_r, _b)], cv2.COLOR_RGB2GRAY) > 35).astype(np.uint8) * 255
+                pot_env_mask[(_r, _b)] = cv2.merge([_m1, _m1, _m1])     # yalniz sise (koyu arka plan disi)
     pot_sab = {}
     for ad_p in ("kirmizi_pot", "mavi_pot"):
         yol_p = os.path.join(KLASOR, "sablon", ad_p + ".png")
@@ -4062,7 +4066,10 @@ def calistir(ayar, sablon):
                 if sb_ is None:
                     continue
                 v_, _, yer_e, _ = cv2.minMaxLoc(cv2.matchTemplate(k_a, sb_, cv2.TM_SQDIFF_NORMED))
-                if v_ <= ayar["pot_env_esik"]:
+                if v_ > ayar["pot_env_esik"] and ayar.get("pot_env_maskeli", True) and (renk_, boy_) in pot_env_mask:
+                    r_m = cv2.matchTemplate(k_a, sb_, cv2.TM_SQDIFF_NORMED, mask=pot_env_mask[(renk_, boy_)])
+                    r_m[~np.isfinite(r_m)] = 9.0                    # maskeli eslesme bos bolgede inf/nan verebilir
+                    v_, _, yer_e, _ = cv2.minMaxLoc(r_m)
                     if pot_son_boy.get(a_a) != boy_:
                         pot_son_boy[a_a] = boy_
                         print(f"{time.strftime('%H:%M:%S')}  pot yuvasi: {renk_} icin envanterde '{boy_}' kullaniliyor")
