@@ -130,6 +130,7 @@ VARSAYILAN = {
     "toplama_en_uzak_piksel": 450,   # grup toplarken ekranda bundan uzaktaki gruba gitme
     "yurumeden_once_tur": 8,      # hedef yokken yurumeden once kac adim kamera cevrilsin
     "seviye_kontrol_dk": 10,      # C penceresi bu aralikla okunur (seviye + saatlik tecrube olcumu)
+    "seviye_ocr_yedek": True,     # seviye kutusu okunamazsa dar kutu + 2x/4x olcekle yeniden dene (11-20: "27" 3x olcekte okunmuyordu, exp olcumu 1 sa durdu)
     "alan_donus_sn": 900,          # alan modunda slot bitince en erken bu araliklarla alanin icine geri yuru
     "dalma_olum_sayisi": 4,       # bu kadar olum ...
     "dalma_olum_sn": 60,          # ... bu sure icinde olursa ...
@@ -3163,6 +3164,15 @@ def calistir(ayar, sablon):
                 rak = "".join(c for c in t["yazi"] if c.isdigit())
                 if rak and 1 <= int(rak) <= 120:
                     sev_ = int(rak)
+            if sev_ is None and ayar.get("seviye_ocr_yedek", True):    # yedek: yalniz rakam kutusu, sonra baska olcekler
+                for kutu_s, olc_s in (((cx - 290, cy + 75, cx - 220, cy + 105), 3), ((cx - 290, cy + 55, cx - 220, cy + 105), 2),
+                                      ((cx - 290, cy + 55, cx - 220, cy + 105), 4)):
+                    for t in oku.oku(k_, kutu=kutu_s, olcek=olc_s):
+                        rak = "".join(c for c in t["yazi"] if c.isdigit())
+                        if rak and 1 <= int(rak) <= 120:
+                            sev_ = int(rak)
+                    if sev_ is not None:
+                        break
             sayilar_ = []
             for kutu_ in ((cx - 215, cy + 75, cx - 110, cy + 103), (cx - 108, cy + 75, cx + 12, cy + 103)):
                 rak_ = "".join(c for t in oku.oku(k_, kutu=kutu_, olcek=3) for c in t["yazi"] if c.isdigit())
