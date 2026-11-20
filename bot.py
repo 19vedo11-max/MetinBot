@@ -58,6 +58,7 @@ VARSAYILAN = {
     "hizli_vazgec": True,         # ulasilamayan hedefte bekleme kisalt + atla suresini uzat
     "hizli_vazgec_atla_sn": 45,   # ulasilamayan hedef (ayni nokta) bu kadar sn secilmez (eski: 12)
     "gorev_av_okuma_sn": 900,     # yalniz av gorevi icin gorev listesini bu aralikla oku (0 = npc_gorev_araligi_sn)
+    "kalabalik_takilma_esik": 6,  # "takildi" aninda yanimda bu kadar (450 px) yaratik varsa: yaratiklar yolu tikiyor, engel kaydetme/yon kara listesi/baska yere kacis yok (0 = kapali; 11-20 03:50: 10 yaratikli kalabaligi birakti)
     "kalabalikta_engel_sayma": True,  # "sure doldu" ulasilamamasi yaninda >=3 yaratik varken "25 sn'de 3. kez, engel var: baska yere" kacisini tetiklemesin (11-20: saldiri altinda 6 yaratigi birakip gidiyordu)
     "ilk_vurus_bekleme_sn": 7,    # hedefe tikladiktan sonra ilk vurus icin en cok bu kadar bekle
     "takilma_sn": 1.2, 
@@ -1514,14 +1515,18 @@ def calistir(ayar, sablon):
         boy = math.hypot(dx, dy) or 1.0
         atla.append((time.time(), hx, hy))
         del atla[:-12]
-        if ogren is not None and "takildi" in neden:          # bolge ogrenme: takildigim yeri haritaya isle
+        diger_ = [t for t in kirmizi_etiketler(k) if math.hypot(t[0] - hx, t[1] - hy) > 60
+                  and math.hypot(t[0] - kx, t[1] - ky) < 450]
+        kal_tk_ = (ayar.get("kalabalik_takilma_esik", 6) > 0 and "takildi" in neden
+                   and len(diger_) >= ayar.get("kalabalik_takilma_esik", 6))   # kalabalikta takilma: arazi engeli degil
+        if ogren is not None and "takildi" in neden and not kal_tk_:   # bolge ogrenme: takildigim yeri haritaya isle
             try:
                 n_e = ogren.engel_ekle(math.atan2(hy - ky, hx - kx))
                 if n_e:
                     print(f"{time.strftime('%H:%M:%S')}  bolge: engel kaydedildi ({n_e}. kez bu noktada)")
             except Exception:
                 pass
-        if ayar["yon_kara_liste"] and boy > 80:               # dag/engel yonu: o yondeki uzak hedeflere de gitme
+        if ayar["yon_kara_liste"] and boy > 80 and not kal_tk_:   # dag/engel yonu: o yondeki uzak hedeflere de gitme
             yon_atla.append((time.time(), math.atan2(hy - ky, hx - kx), boy))
             del yon_atla[:-8]
         kacmama_son[:] = [z for z in kacmama_son if time.time() - z < 20]
@@ -1529,10 +1534,8 @@ def calistir(ayar, sablon):
             kacmama_son.append(time.time())                    # (20 sn'de 3 kez ise yaramadiysa - uzaktan vuran var - normal kacis)
             print(f"{time.strftime('%H:%M:%S')}  hedefe ulasilamadi [{neden}] - vuruluyorum, kacmiyor: yanimdakilere donuluyor")
             return
-        diger_ = [t for t in kirmizi_etiketler(k) if math.hypot(t[0] - hx, t[1] - hy) > 60
-                  and math.hypot(t[0] - kx, t[1] - ky) < 450]
         son_atla_ = [z for z, _, _ in atla if time.time() - z < 25]
-        kalabalik_ = ayar["kalabalikta_engel_sayma"] and "sure doldu" in neden and len(diger_) >= 3   # engel degil, kalabalik
+        kalabalik_ = (ayar["kalabalikta_engel_sayma"] and "sure doldu" in neden and len(diger_) >= 3) or kal_tk_   # engel degil, kalabalik
         if len(son_atla_) >= 3 and not kalabalik_:                               # ust uste ulasilamiyor (cit, pazar, ev): buradan ayril
             print(f"{time.strftime('%H:%M:%S')}  hedefe ulasilamadi [{neden}] - 25 sn'de {len(son_atla_)}. kez, engel var: baska yere")
             atla.clear()
