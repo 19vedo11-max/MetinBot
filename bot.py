@@ -4114,18 +4114,18 @@ def calistir(ayar, sablon):
         for a_ in bos:
             _sayfa1()
             yer_ = _env_ara(k_e, a_)
-            if yer_ is None and ayar.get("pot_diger_sayfa", True) and kapat_s is not None:
+            if yer_ is None and kapat_s is not None:
                 env_x_ = [p_ for p_ in acik_pencereler(k_e, kapat_s) if p_[0] > gn_ * 0.75]   # envanter sagda
                 if not env_x_:                                   # cift basis envanteri kapatmis olabilir: bir kez ac
                     pydirectinput.press(ayar["envanter_tusu"])
                     acildi_ = not acildi_
-                    time.sleep(0.5)
+                    time.sleep(0.7)
                     k_e = kare_al(h)
                     env_x_ = [p_ for p_ in acik_pencereler(k_e, kapat_s) if p_[0] > gn_ * 0.75]
                     yer_ = _env_ara(k_e, a_)
                     if not env_x_:
                         print(f"{time.strftime('%H:%M:%S')}  pot yuvasi: envanter penceresi bulunamadi (sayfa aramasi yapilamadi)")
-                if env_x_ and yer_ is None:
+                if env_x_ and yer_ is None and ayar.get("pot_diger_sayfa", True):
                     ex_, ey_ = max(env_x_)
                     for sn_, dx_s in ((2, -113), (3, -64), (4, -16)):          # II, III, IV sekmeleri
                         tikla(ex_ + dx_s, ey_ + 297)
